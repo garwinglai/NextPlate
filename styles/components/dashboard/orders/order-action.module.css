@@ -1,0 +1,166 @@
+.Box {
+	width: 50%;
+}
+
+.OrderAction {
+	width: 100%;
+}
+
+.flexRow {
+	display: flex;
+	align-items: center;
+}
+
+.flexCol {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.Decline__status {
+	text-align: right;
+	justify-content: space-between;
+	padding: 10px;
+}
+
+.Reserved {
+	background-color: var(--orange);
+	color: white;
+	padding: 5px;
+	border-radius: 5px;
+  font-size: 14px;
+}
+
+.Confirmed {
+	background-color: var(--light-green);
+	color: white;
+	padding: 5px;
+	border-radius: 5px;
+  font-size: 14px;
+}
+
+.Decline__status > button {
+	font-size: 8px;
+}
+
+.Header {
+	justify-content: space-between;
+	padding: 10px;
+}
+
+.Header__right {
+	font-size: 14px;
+}
+
+.paymentInfo {
+	padding: 10px;
+}
+
+.paymentInfo p {
+	color: var(--gray);
+}
+
+.items {
+	justify-content: space-between;
+	padding: 10px;
+	margin: 20px 0;
+	background-color: var(--light-blue);
+}
+
+.items__left {
+	gap: 25px;
+}
+
+.totals {
+	justify-content: flex-end;
+	padding: 10px;
+	margin: 20px 0 30px;
+	gap: 40px;
+}
+
+.totals__right {
+	text-align: right;
+}
+
+@media screen and (max-width: 768px) {
+	.Box {
+		width: 90%;
+	}
+
+	.Decline__status {
+		text-align: right;
+	}
+
+	.Decline__status > button {
+		font-size: 14px;
+	}
+
+	.Header {
+		font-size: 25px;
+	}
+
+	.Header__right {
+		font-size: 18px;
+	}
+
+	.paymentInfo {
+		font-size: 20px;
+	}
+
+	.items {
+		font-size: 25px;
+		margin: 70px 0;
+	}
+
+	.totals {
+		font-size: 25px;
+		margin: 60px 0;
+	}
+
+	.OrderAction > button {
+		height: 60px;
+		font-size: 25px;
+		margin-bottom: 10px;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.Box {
+		width: 90%;
+	}
+
+	.Decline__status {
+		text-align: right;
+	}
+
+	.Decline__status > button {
+		font-size: 10px;
+	}
+
+	.Header {
+		font-size: 16px;
+	}
+
+	.Header__right {
+		font-size: 12px;
+	}
+
+	.paymentInfo {
+		font-size: 14px;
+	}
+
+	.items {
+		font-size: 16px;
+		margin: 50px 0;
+	}
+
+	.totals {
+		font-size: 16px;
+		margin: 50px 0;
+	}
+
+	.OrderAction > button {
+		height: 40px;
+		font-size: 18px;
+	}
+}

@@ -1,0 +1,31 @@
+.NotificationsMobile {
+	z-index: 1;
+	background-color: white;
+	position: fixed;
+	top: 70px;
+	height: 93.2%;
+	overflow-y: scroll;
+	width: 100%;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+}
+
+@media screen and (min-width: 769px) {
+	.NotificationsMobile {
+		display: none;
+	}
+}
+
+.DashMenuMobile {
+	background-color: var(--nav-blue);
+	color: white;
+	height: 100%;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	z-index: 1;
+	position: fixed;
+	padding-top: 80px;
+}

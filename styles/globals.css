@@ -1,16 +1,45 @@
+:root {
+	--nav-blue: rgb(5, 19, 48);
+	--bg-blue: rgba(247, 251, 255, 0.514);
+	--dark-bg-blue: rgb(248, 252, 255);
+	--light-blue: #eef2ff;
+	--med-blue: #cddeff;
+	--dark-blue: #393e6e;
+	--btn-blue: #4285f4;
+	--light-btn-blue: #6ba0f5;
+	--dark-btn-blue: #557bb8;
+	--dark-red: #852b2b;
+	--red: #db4437;
+	--light-red: #f7a7a7;
+	--light-green: #46c990;
+	--green: #0f9d58;
+	--orange: #ffb24e;
+	--flash:rgb(255, 0, 0);
+	--flash-bg: #fffda3;
+	--gray: #a3a3a3;
+	--light-gray: #d8d8d8;
+	--dark-gray: #303030;
+	--bg-gray: #fafafa;
+}
+
 html,
 body {
-  padding: 0;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+	padding: 0;
+	margin: 0;
+	font-family: "Roboto", sans-serif;
+}
+
+textarea {
+	font-family: "Roboto", sans-serif;
 }
 
 a {
-  color: inherit;
-  text-decoration: none;
+	color: inherit;
+	text-decoration: none;
 }
 
 * {
-  box-sizing: border-box;
+	box-sizing: border-box;
+	padding: 0;
+	margin: 0;
 }

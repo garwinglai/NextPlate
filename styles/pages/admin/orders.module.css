@@ -1,0 +1,142 @@
+.Orders {
+	display: flex;
+}
+
+/* //* Filter */
+.Orders__filters {
+	width: 15%;
+	padding-left: 10px;
+	padding-top: 10px;
+	/* background-color: royalblue; */
+}
+
+.Orders__filtersItemContainer {
+	display: flex;
+	flex-direction: column;
+	margin-left: 30px;
+	margin-top: 40px;
+}
+
+.Orders__filtersItemContainer div {
+	margin-left: 20px;
+	margin-top: 10px;
+}
+
+.Orders__filtersItemContainer div > input {
+	margin-right: 5px;
+}
+
+/* //* Main */
+
+.Orders__main {
+	width: 85%;
+	/* background-color: aqua; */
+	height: 100%;
+}
+
+.Orders_searchBar {
+	display: flex;
+	width: 90%;
+	margin: 20px auto;
+}
+
+.Orders_searchBar div {
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	width: 50%;
+	gap: 20px;
+}
+
+.Orders_searchBar input,
+.Orders_searchBar button {
+	height: 30px;
+}
+
+.Orders_searchBar input {
+	width: 50%;
+	border-radius: 5px 0 0 5px;
+	border: 1px solid black;
+	border-right: none;
+	text-indent: 25px;
+}
+
+.Orders_searchBar button {
+	width: 15%;
+	border: 1px solid black;
+	border-radius: 0 5px 5px 0;
+}
+
+.Orders__listContainer {
+	margin: 0 auto;
+}
+
+.Orders__listHeader {
+	display: grid;
+	grid-template-columns: 1.2fr 2fr 1fr 2.5fr 1.5fr 1fr 1.5fr 1fr 1.5fr 1fr 1fr;
+	justify-items: center;
+	align-items: center;
+	word-wrap: break-word;
+	/* word-break: break-all; */
+	width: 90%;
+	height: 40px;
+	border: 1px solid black;
+	border-radius: 5px;
+	margin: 0 auto 20px;
+}
+
+.Orders__listHeader div {
+	display: flex;
+	align-items: center;
+	gap: 3px;
+}
+
+.Orders__listHeader div h5 {
+	width: min-content;
+}
+
+.Orders__listHeader div button {
+	width: 15px;
+	height: 15px;
+}
+
+.Orders__error {
+	color: gray;
+	opacity: 0.7;
+	width: 90%;
+	text-align: center;
+	margin: 0 auto;
+}
+
+.Orders__list {
+	display: grid;
+	grid-template-columns: 1.2fr 2fr 1fr 2.5fr 1.5fr 1fr 1.5fr 1fr 1.5fr 1fr 1fr;
+	justify-items: center;
+	align-items: center;
+	word-wrap: break-word;
+	word-break: break-all;
+	height: 35px;
+	width: 90%;
+	border: 1px solid rgb(206, 206, 206);
+	border-radius: 5px;
+	margin: 0 auto 10px;
+}
+
+.Orders__list p {
+	font-size: 10px;
+	width: fit-content;
+	font-weight: bold;
+	/* background-color: brown; */
+}
+
+.Orders__nextPrev {
+	width: 90%;
+	display: flex;
+	justify-content: center;
+	gap: 15px;
+	margin: 20px auto;
+}
+
+.Orders__nextPrev button {
+	width: 50px;
+}

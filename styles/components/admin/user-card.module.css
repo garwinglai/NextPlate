@@ -1,0 +1,27 @@
+.UserCard_right button {
+	height: 30px;
+	width: 50px;
+	margin-right: 10px;
+}
+
+.UserCardContainer p {
+	margin: 5px 0;
+}
+
+.UserCardContainer {
+	border: 1px solid gray;
+	margin: 20px 20px;
+	padding: 10px;
+}
+
+@media screen and (min-width: 769px) {
+	.UserCardContainer {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr) 0.2fr;
+		column-gap: 10px;
+	}
+
+	.UserCard_right button {
+		margin-bottom: 10px;
+	}
+}

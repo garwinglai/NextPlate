@@ -1,0 +1,72 @@
+.DashMenu {
+	background-color: var(--nav-blue);
+	color: white;
+	width: 20%;
+	box-sizing: border-box;
+	display: flex;
+	/* position: fixed; */
+	overflow-y: scroll;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.DashMenu_CenterContainer {
+	margin: 0 auto;
+}
+
+.DashMenu_TitleContainer {
+	margin: 50px 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.DashMenu_Logo {
+	margin-bottom: 80px;
+}
+
+.DashMenu_UserName {
+	margin-top: 10px;
+	height: 40px;
+}
+
+.DashMenu_Menu {
+	display: flex;
+	flex-direction: column;
+}
+
+.DashMenu_Menu > div {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	width: 145px;
+}
+
+.DashMenu_MenuItems:hover {
+	cursor: pointer;
+}
+
+.DashMenu li {
+	list-style: none;
+}
+
+.Logout_Container {
+	display: flex;
+	align-items: center;
+	width: 145px;
+	margin: 0 auto;
+	margin-bottom: 100px;
+	gap: 5px;
+}
+
+.DashMenu_Logout {
+	color: white;
+	font-size: smaller;
+	margin-left: 10px;
+}
+
+@media screen and (max-width: 768px) {
+	.DashMenu {
+		display: none;
+	}
+}

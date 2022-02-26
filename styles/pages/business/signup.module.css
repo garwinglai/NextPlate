@@ -1,0 +1,40 @@
+.SignUpFlowChart {
+	/* background-color: red; */
+	margin: 30px auto;
+	display: block;
+	/* text-align: center; */
+}
+
+@media screen and (max-width: 768px) {
+	.SignUpFlowChart {
+		display: flex;
+		justify-content: center;
+		gap: 10px;
+	}
+
+	.SignUpFlowChart div {
+		display: flex;
+		justify-content: flex-start;
+		align-items: center;
+		gap: 5px;
+	}
+
+	.SignUpFlowChart div img {
+		width: 30px;
+	}
+
+	.SignUpFlowChart div p {
+		width: min-content;
+	}
+
+	.SignUpFlowChart__arrows {
+		display: none;
+	}
+}
+
+one, two, three, and four.
+
+c= 
+2=
+
+and 

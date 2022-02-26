@@ -1,0 +1,222 @@
+.HistoryOrders {
+	/* background-color: #f8ceec00;
+	background-image: linear-gradient(180deg, #f8ceec00 0%, #a88beb28 74%); */
+	width: 100%;
+	height: 100%;
+	padding: 10px 0 0 0;
+	margin: 0 auto;
+	display: flex;
+}
+
+.HistoryOrders__statusQuery {
+	width: 20%;
+}
+
+.HistoryOrders__statusQuery label {
+	font-size: 15px;
+}
+
+.Orders__filtersItemContainer {
+	margin: 10px auto 0;
+	width: min-content;
+	background-color: white;
+	border-radius: 5px;
+	padding: 25px 15px;
+	box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
+}
+
+.Orders__filtersItemContainer div div {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	margin-left: 10px;
+	margin-bottom: 10px;
+}
+
+.Orders__filtersItemContainer > h3 {
+	color: var(--dark-blue);
+	margin-bottom: 10px;
+}
+
+.HistoryOrders__main {
+	width: 90%;
+	/* height: 100%; */
+	background-color: white;
+	border-radius: 5px;
+	margin: 10px;
+	padding: 25px 0;
+	box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
+}
+
+.HistoryOrders__searchBar {
+	margin: 0 0 15px 15px;
+	display: flex;
+	width: 100%;
+	align-items: center;
+}
+
+.HistoryOrders__searchBar > input {
+	height: 30px;
+	width: 30%;
+	text-indent: 30px;
+	border: 2px solid var(--light-btn-blue);
+	border-radius: 4px 0 0 4px;
+}
+
+.HistoryOrders__searchBar > input:focus {
+	outline: none;
+}
+
+.HistoryOrders__searchBarIcon {
+	border-radius: 0 4px 4px 0;
+	height: 30px;
+	background-color: var(--light-btn-blue);
+	color: white;
+}
+
+.HistoryOrders__orderHeader {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr;
+	justify-items: center;
+	align-items: center;
+	/* margin: 0 auto 10px; */
+	width: 100%;
+	height: 40px;
+	background-color: white;
+	border-bottom: 1px solid var(--gray);
+	gap: 10px;
+}
+
+.justifyStartItem {
+	justify-self: flex-start;
+}
+
+.justifyEndItem {
+	justify-self: flex-end;
+}
+
+.flex {
+	display: flex;
+	align-items: center;
+}
+
+.HistoryOrders__orderHeader div button {
+	width: 10px;
+	height: 10px;
+}
+
+.HistoryOrders__orderBody {
+	width: 100%;
+	overflow-y: scroll;
+}
+
+.HistoryOrders__paginationButton {
+	margin: 20px auto;
+	width: 90%;
+	display: flex;
+	justify-content: center;
+	gap: 20px;
+}
+
+.HistoryOrders__paginationButton button {
+	height: 25px;
+	width: 60px;
+}
+
+.HistoryOrders__paginationButton button:hover {
+	cursor: pointer;
+}
+
+@media screen and (min-width: 769px) {
+	@media (hover: hover) {
+		.HistoryOrders__searchBarIcon:hover {
+			/* color: black; */
+			background-color: var(--btn-blue);
+		}
+	}
+}
+
+@media screen and (max-width: 768px) {
+	.HistoryOrders {
+		flex-direction: column;
+		background-image: unset;
+		/* width: 100%; */
+		/* background-color: rebeccapurple; */
+	}
+
+	.HistoryOrders__statusQuery {
+		width: 100%;
+	}
+
+	.Orders__filtersItemContainer {
+		width: 90%;
+		height: auto;
+	}
+
+	.Orders__filtersItemContainer > div {
+		display: flex;
+		justify-content: flex-start;
+		overflow-x: scroll;
+		gap: 20px;
+	}
+
+	.Orders__filtersItemContainer div div {
+		/* width: max-content; */
+		flex-wrap: nowrap;
+	}
+
+	.scrollHoriztonal {
+		/* overflow-x: scroll; */
+	}
+
+	.HistoryOrders__main {
+		/* width: auto; */
+
+		width: 90%;
+		margin: 20px auto 0;
+		/* margin-top: 30px; */
+		/* background-color: rebeccapurple; */
+	}
+
+	.HistoryOrders__searchBar {
+		width: 80%;
+		/* height: 30px; */
+	}
+
+	.HistoryOrders__searchBar > input {
+		width: 100%;
+		height: 30px;
+	}
+
+	.HistoryOrders__searchBar > button {
+		height: 30px;
+	}
+
+	.HistoryOrders__orderHeader {
+		/* display: flex; */
+		/* gap: 10px; */
+
+		width: 100%;
+		justify-items: center;
+		/* grid-template-columns: unset; */
+		padding: 0;
+	}
+	.HistoryOrders__orderHeader h5 {
+		font-size: 8px;
+	}
+
+	.justifyStartItem {
+		justify-self: unset;
+	}
+	
+	.justifyEndItem {
+		justify-self: unset;
+	}
+
+	.HistoryOrders__orderHeader div {
+		/* width: 200px; */
+		/* padding: 0 10px; */
+		/* background-color: red; */
+		/* justify-self: center; */
+	}
+}

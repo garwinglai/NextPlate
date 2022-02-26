@@ -1,0 +1,182 @@
+.IncomingOrders__container {
+	height: 100%;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	padding: 45px;
+}
+
+.IncomingOrders__container > button {
+	margin-left: auto;
+	font-size: 16px;
+}
+
+.tab__container {
+	position: relative;
+	width: fit-content;
+}
+
+.pendingCount {
+	background-color: var(--orange);
+	color: white;
+	width: fit-content;
+	padding: 5px 9px;
+	border-radius: 50%;
+	font-size: 14px;
+	position: absolute;
+	top: -5%;
+	left: 40%;
+}
+
+.confirmedCount {
+	background-color: var(--light-green);
+	color: white;
+	width: fit-content;
+	padding: 5px 9px;
+	border-radius: 50%;
+	font-size: 14px;
+	position: absolute;
+	top: -5%;
+	left: 87%;
+}
+.ScheduleModal__container {
+	display: flex;
+	flex-direction: column;
+	gap: 40px;
+	justify-content: space-between;
+	align-items: flex-start;
+}
+
+.Schedule__meals {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 20px;
+}
+
+.Schedule__scheduleModal {
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	gap: 20px;
+}
+
+.Schedule__meals > input {
+	height: 30px;
+	width: 40px;
+	text-indent: 5px;
+	outline: none;
+	border: 1px solid var(--btn-blue);
+	border-radius: 5px;
+}
+
+.Schedule__meals > input:focus {
+	outline: none;
+	border: 2px solid var(--btn-blue);
+	border-radius: 5px;
+}
+
+.Schedule__meals > input::-webkit-outer-spin-button,
+.Schedule__meals > input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+/* Firefox */
+.Schedule__meals input[type="number"] {
+	-moz-appearance: textfield;
+}
+
+.Schedule__scheduleModal input[name="numHours"] {
+	accent-color: var(--btn-blue);
+}
+
+.RadioGroup {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.Radio {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.ScheduleModal__container > button {
+	height: 30px;
+	margin: 0 auto;
+}
+
+@media screen and (max-width: 768px) {
+	.IncomingOrders__container {
+		width: 95%;
+		height: auto;
+		margin: 0 auto;
+		overflow-y: scroll;
+		padding: 20px 5px 0 5px;
+	}
+
+	.IncomingOrders__container > button {
+		font-size: 30px;
+		/* margin: 35px 0 60px auto; */
+		margin: 80px auto 100px;
+		width: 90%;
+		height: 60px;
+	}
+
+	.tab__container {
+		width: fit-content;
+		width: 100%;
+	}
+
+	.tab__Group > div > div {
+		display: flex;
+		justify-content: space-evenly;
+	}
+
+	.tab {
+		font-size: 25px;
+	}
+
+	.pendingCount {
+		top: -23%;
+		left: 11%;
+		font-size: 26px;
+		padding: 5px 13px;
+	}
+
+	.confirmedCount {
+		top: -23%;
+		left: 55%;
+		font-size: 26px;
+		padding: 5px 13px;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.IncomingOrders__container > button {
+		font-size: 18px;
+		width: 90%;
+		height: 40px;
+		margin: 40px auto 50px;
+	}
+
+	.tab {
+		font-size: 18px;
+	}
+
+	.pendingCount {
+		top: -23%;
+		left: 10%;
+		font-size: 16px;
+		padding: 5px 10px;
+	}
+
+	.confirmedCount {
+		top: -23%;
+		left: 57%;
+		font-size: 16px;
+		padding: 5px 10px;
+	}
+}

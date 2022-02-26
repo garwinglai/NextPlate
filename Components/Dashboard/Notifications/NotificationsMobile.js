@@ -1,0 +1,50 @@
+import React, { useState } from "react";
+import styles from "../../../styles/components/dashboard/notifications/notificationsmobile.module.css";
+import NotificationRow from "./NotificationRow";
+import { Button } from "@mui/material";
+
+function NotificationsMobile({
+	closeNotifications,
+	uid,
+	orderData,
+	handleClickAway,
+}) {
+	const [orderCount, setOrderCount] = useState(orderData.length);
+
+	function reduceOrder() {
+		setOrderCount((prev) => prev - 1);
+	}
+
+	return (
+		<div className={styles.NotificationsMobile}>
+			{orderCount === 0 ? (
+				<div
+					style={{
+						textAlign: "center",
+						paddingTop: "100px",
+						color: "var(--gray)",
+					}}
+				>
+					<p>No notifications</p>
+				</div>
+			) : (
+				orderData.map((order, idx) => (
+					<NotificationRow
+						key={order.orderId}
+						orderData={order}
+						uid={uid}
+						orderCount={orderCount}
+						reduceOrder={reduceOrder}
+						closeNotifications={closeNotifications}
+						handleClickAway={handleClickAway}
+					/>
+				))
+			)}
+			<Button color="error" sx={{ mt: 5 }} onClick={closeNotifications}>
+				Close
+			</Button>
+		</div>
+	);
+}
+
+export default NotificationsMobile;

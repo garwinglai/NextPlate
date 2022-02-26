@@ -1,0 +1,240 @@
+.Dashboard {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	padding: 45px;
+	gap: 20px;
+}
+
+/* //* STATS RIGHT ******************************************* */
+
+.Dashboard__stats {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+}
+
+.Dashboard__statsBox {
+	background-color: white;
+	border-radius: 5px;
+	padding: 25px 15px;
+	box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
+}
+
+.Dashboard__statsBox h5 {
+	color: var(--gray);
+}
+
+.Dashboard__statsBox > div {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-wrap: nowrap;
+	gap: 10px;
+}
+
+.Dashboard__statsBox > div h1 {
+	color: var(--dark-blue);
+}
+
+/* //* Notifications Left ******************************************* */
+
+.Dashboard__notifications {
+	display: flex;
+	gap: 35px;
+}
+
+.Dashboard__notificationsContainer {
+	width: 50%;
+	padding: 25px 0;
+}
+
+.Dashboard__notificationsHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 20px;
+}
+
+.Dashboard__notificationsBody {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.Dashboard__notificationsBodyDetail {
+	background-color: white;
+	border-radius: 5px;
+	padding: 25px 15px;
+	box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
+}
+
+.Dashboard__notificationsBodyHead {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding-bottom: 5px;
+	border-bottom: 1px solid var(--gray);
+}
+
+.Dashboard__notificationsBodyHead p,
+.Dashboard__notificationsBodyHead h4 {
+	color: var(--dark-blue);
+}
+
+.Dashboard__notificationsBodyHead h5 {
+	color: var(--btn-blue);
+}
+
+.Dashboard__notificationsBodyContainer {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.Dashboard__notificationsOrderGroup > p {
+	font-size: 13px;
+	font-weight: 400;
+	color: var(--dark-btn-blue);
+	border-radius: 5px;
+	border-right: 1px solid var(--dark-btn-blue);
+	border-left: 1px solid var(--dark-btn-blue);
+	background-color: aliceblue;
+	width: fit-content;
+	padding: 5px 10px;
+	margin: 10px 0 10px 0;
+}
+
+.Dashboard__postFlash {
+	border-bottom: 1px solid var(--flash);
+	padding-bottom: 20px;
+	margin-bottom: 20px;
+}
+
+.Dashboard__notificationsFlash > p {
+	font-size: 13px;
+	font-weight: 400;
+	color: var(--dark-red);
+	border-right: 1px solid var(--dark-red);
+	border-left: 1px solid var(--dark-red);
+	background-color: rgb(255, 231, 231);
+	width: fit-content;
+	padding: 5px 10px;
+	margin-top: 10px;
+	border-radius: 5px;
+}
+
+.Dashboard__notificationsBodyOrderList {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr 1fr;
+	justify-items: center;
+	align-items: center;
+	background-color: white;
+	margin: 5px 0 0 10px;
+	padding: 5px;
+	border: 1px solid rgb(187, 187, 187);
+	border-radius: 5px;
+	box-shadow: rgba(33, 35, 38, 0.1) 0px 10px 10px -10px;
+	height: 40px;
+}
+
+.Dashboard__notificationsBodyOrderList p {
+	font-size: 12px;
+}
+
+.Dashboard__notificationsBodyScheduleList {
+	display: grid;
+	grid-template-columns: 1fr 2fr 1fr 1fr;
+	justify-items: center;
+	align-items: center;
+	background-color: white;
+	margin: 5px 0 0 10px;
+	padding: 5px;
+	border: 1px solid rgb(187, 187, 187);
+	border-radius: 5px;
+	box-shadow: rgba(33, 35, 38, 0.1) 0px 10px 10px -10px;
+	height: 40px;
+}
+
+.Dashboard__notificationsBodyScheduleListStatus {
+	background-color: var(--light-green);
+	border-radius: 5px;
+	padding: 2px 5px;
+	font-weight: 400;
+	font-size: 14px;
+}
+
+.Dashboard__orderCount {
+	color: var(--dark-gray);
+	background-color: var(--med-blue);
+	padding: 5px;
+	border-radius: 5px;
+}
+
+.Dashboard__notificationsBodyScheduleList p {
+	font-size: 12px;
+}
+
+.Dashboard__notificationsBodyScheduleListEmpty {
+	color: var(--gray);
+	margin: 20px auto;
+	text-align: center;
+}
+
+@media screen and (min-width: 769px) {
+	@media (hover: hover) {
+		.Dashboard__notificationsBodyOrderList:hover,
+		.Dashboard__notificationsBodyScheduleList:hover {
+			transform: scale(1.02);
+		}
+	}
+}
+
+@media screen and (max-width: 768px) {
+	/* .Dashboard {
+		padding: 45px 20px;
+	} */
+
+	.Dashboard__stats {
+		display: flex;
+		flex-direction: column-reverse;
+		width: 100%;
+		/* background-color: rgb(255, 137, 137); */
+	}
+
+	.Dashboard__statsBox {
+		margin: 0 auto;
+		width: 100%;
+	}
+
+	.Dashboard__notifications {
+		/* background-color: red; */
+		flex-direction: column;
+	}
+
+	.Dashboard__notificationsContainer {
+		width: 100%;
+	}
+
+	.Dashboard__notificationsBodyOrderList {
+		height: auto;
+		grid-template-columns: 1fr 2fr 1fr 2fr;
+	}
+
+	.Dashboard__notificationsBodyScheduleList {
+		height: auto;
+		grid-template-columns: 2fr 2fr 1fr 2fr;
+		padding: 5px 0;
+	}
+
+	.Dashboard__notificationsBodyOrderList p {
+		width: fit-content;
+		font-size: 10px;
+	}
+
+	.Dashboard__notificationsBodyScheduleList p {
+		width: fit-content;
+		font-size: 10px;
+	}
+}

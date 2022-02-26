@@ -1,0 +1,55 @@
+.OrderHistoryTabComponent {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr;
+	align-items: center;
+	justify-items: center;
+	width: 100%;
+	background-color: white;
+	padding: 15px 0;
+	gap: 10px;
+	border-bottom: 1px solid var(--light-gray);
+}
+
+.OrderHistoryTabComponent p {
+	font-size: 12px;
+	color: var(--dark-gray);
+}
+
+.justifyStartItem {
+	justify-self: flex-start;
+}
+
+.justifyEndItem {
+	justify-self: flex-end;
+}
+
+@media screen and (min-width: 769px) {
+	/* .OrderHistoryTabComponent:hover {
+		transform: scale(1.02);
+		cursor: pointer;
+	} */
+}
+
+@media screen and (max-width: 768px) {
+	.OrderHistoryTabComponent {
+		width: 100%;
+		justify-items: center;
+	}
+
+	.OrderHistoryTabComponent p {
+		font-size: 8px;
+		width: 100%;
+		/* background-color: red; */
+		/* justify-self: center; */
+		/* padding: 0 10px; */
+	}
+
+	.justifyStartItem {
+
+		justify-self: unset;
+	}
+
+	.justifyEndItem {
+		justify-self: unset;
+	}
+}
