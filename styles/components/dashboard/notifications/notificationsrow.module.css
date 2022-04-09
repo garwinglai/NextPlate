@@ -1,0 +1,73 @@
+.Collapse {
+	width: 100%;
+}
+
+.AlertPending {
+	background-position: center;
+	transition: background 0.5s;
+}
+
+.AlertPending:hover {
+	background: var(--light-orange)
+		radial-gradient(circle, transparent 1%, var(--light-orange) 1%)
+		center/15000%;
+}
+
+.AlertPending:active {
+	background-color: var(--light-orange);
+	background-size: 100%;
+	transition: background 0s;
+}
+
+.AlertConfirmed {
+	background-position: center;
+	transition: background 0.5s;
+}
+
+.AlertConfirmed:hover {
+	background: var(--hover-green)
+		radial-gradient(circle, transparent 1%, var(--hover-green) 1%) center/15000%;
+}
+
+.AlertConfirmed:active {
+	background-color: var(--hover-green);
+	background-size: 100%;
+	transition: background 0s;
+}
+
+.AlertTitle {
+	font-size: 13px;
+	font-weight: 700;
+	text-transform: capitalize;
+}
+
+.AlertParagraph {
+	font-size: 12px;
+	text-transform: capitalize;
+}
+
+@media (hover: hover) {
+	.Collapse:hover {
+		cursor: pointer;
+	}
+}
+
+@media screen and (max-width: 768px) {
+	.AlertTitle {
+		font-size: 24px;
+	}
+
+	.AlertParagraph {
+		font-size: 20px;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.AlertTitle {
+		font-size: 18px;
+	}
+
+	.AlertParagraph {
+		font-size: 14px;
+	}
+}

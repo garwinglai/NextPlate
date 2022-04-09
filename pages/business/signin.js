@@ -25,6 +25,8 @@ import AlertTitle from "@mui/material/AlertTitle";
 import Collapse from "@mui/material/Collapse";
 import Image from "next/image";
 import MyLoader from "../../helper/MyLoader";
+import _ from "lodash";
+import { versionNumber } from "../../staticData/versionNumber";
 
 function Copyright(props) {
 	return (
@@ -76,28 +78,43 @@ export default function SignIn() {
 				setIsRememberMeChecked(true);
 			}
 		} else {
+			setSignInLoading(true);
 			const uid = getCookie("uid");
 			router.push(`/dashboard/${uid}/orders/incoming-orders`);
 		}
-	}, [router]);
+
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	async function handleSubmitForm(e) {
 		e.preventDefault();
 		setSignInLoading(true);
 		setOpen(false);
 
-		const resSignIn = await signInBiz(signInValues);
+		const signInVal = {
+			email: _.toLower(email),
+			password,
+			rememberMe,
+		};
+
+		// console.log(signInValues);
+		const resSignIn = await signInBiz(signInVal);
 
 		if (resSignIn.success) {
 			const uid = resSignIn.uid;
+
 			const resBizUser = await getBizUserNew(uid);
 			if (resBizUser.success) {
 				const userData = resBizUser.userData;
 				const bizOwnedKeys = Object.keys(userData.bizOwned);
-
 				userData.bizId = userData.bizOwned[bizOwnedKeys[0]].id;
 				userData.bizName = userData.bizOwned[bizOwnedKeys[0]].name;
+				userData.email = userData.login.email;
+				userData.login = "";
+				userData.ownerContact = "";
+				// const version = userData.bizOwned[bizOwnedKeys[0]].version;
 
+				setLocalStorage("version", versionNumber);
 				setLocalStorage("user", userData);
 				setLocalStorage("uid", uid);
 				router.push(`/dashboard/${uid}/orders/incoming-orders`);
@@ -146,6 +163,7 @@ export default function SignIn() {
 		if (target.type === "checkbox") {
 			setIsRememberMeChecked((prev) => !prev);
 		}
+
 		setSignInValues((prev) => ({ ...prev, [name]: value }));
 	}
 
@@ -263,7 +281,7 @@ export default function SignIn() {
 									</Button>
 								</Grid>
 								<Grid item>
-									<Link href="/business/signup">
+									<Link href="https://www.home.nextplate.app/business-signup">
 										<a className={styles.links}>
 											Don&apos;t have an Account? Sign up.
 										</a>

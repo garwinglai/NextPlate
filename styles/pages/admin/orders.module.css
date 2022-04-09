@@ -29,7 +29,7 @@
 /* //* Main */
 
 .Orders__main {
-	width: 85%;
+	width: 100%;
 	/* background-color: aqua; */
 	height: 100%;
 }
@@ -73,11 +73,11 @@
 
 .Orders__listHeader {
 	display: grid;
-	grid-template-columns: 1.2fr 2fr 1fr 2.5fr 1.5fr 1fr 1.5fr 1fr 1.5fr 1fr 1fr;
+	grid-template-columns: 1fr 1.5fr 1fr 1.5fr 1fr 1.5fr 1fr 1fr 1fr 1fr;
 	justify-items: center;
 	align-items: center;
-	word-wrap: break-word;
-	/* word-break: break-all; */
+	/* word-wrap: break-word; */
+
 	width: 90%;
 	height: 40px;
 	border: 1px solid black;
@@ -92,7 +92,7 @@
 }
 
 .Orders__listHeader div h5 {
-	width: min-content;
+	width: max-content;
 }
 
 .Orders__listHeader div button {
@@ -110,11 +110,11 @@
 
 .Orders__list {
 	display: grid;
-	grid-template-columns: 1.2fr 2fr 1fr 2.5fr 1.5fr 1fr 1.5fr 1fr 1.5fr 1fr 1fr;
+	grid-template-columns: 1fr 1.5fr 1fr 1.5fr 1fr 1.5fr 1fr 1fr 1fr 1fr;
 	justify-items: center;
 	align-items: center;
-	word-wrap: break-word;
-	word-break: break-all;
+	/* word-wrap: break-word; */
+	/* word-break: break-all; */
 	height: 35px;
 	width: 90%;
 	border: 1px solid rgb(206, 206, 206);
@@ -124,7 +124,7 @@
 
 .Orders__list p {
 	font-size: 10px;
-	width: fit-content;
+	width: fax-content;
 	font-weight: bold;
 	/* background-color: brown; */
 }
@@ -139,4 +139,7 @@
 
 .Orders__nextPrev button {
 	width: 50px;
+}
+
+@media screen and (max-width: 480px) {
 }

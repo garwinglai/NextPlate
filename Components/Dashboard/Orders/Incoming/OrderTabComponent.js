@@ -1,12 +1,6 @@
 import React, { useEffect, useState } from "react";
-import styles from "../../../styles/components/dashboard/orders/ordertabcomponent.module.css";
-import { CircularProgress, ClickAwayListener } from "@mui/material";
-import { updateOrder } from "../../../actions/dashboard/ordersCrud";
+import styles from "../../../../styles/components/dashboard/orders/ordertabcomponent.module.css";
 import { useRouter } from "next/router";
-import { Button, Grid } from "@mui/material";
-import AlertTitle from "@mui/material/AlertTitle";
-import Collapse from "@mui/material/Collapse";
-import PhoneInput from "react-phone-input-2";
 import OrderAction from "./OrderAction";
 
 const styleStatusBorder = (idx) => {
@@ -47,6 +41,8 @@ const styleStatusBorder = (idx) => {
 };
 
 export default function OrderTabComponent({
+	pendingCount,
+	audio,
 	userOrderDetails,
 	item,
 	bizId,
@@ -75,7 +71,7 @@ export default function OrderTabComponent({
 		endTime,
 		pickupWindowId,
 		subtotalAmt,
-		taxAmt,
+		bizTaxAmt,
 		customerId,
 		customerPhone,
 	} = userOrderDetails;
@@ -111,15 +107,17 @@ export default function OrderTabComponent({
 	function handleViewOrderClick() {
 		setPopUpValues({ isShow: true });
 	}
-
+	console.log(status);
 	function closePopUp() {
 		setPopUpValues({ isShow: false, popUpName: "" });
 	}
 
 	return (
 		<React.Fragment>
-			<Button
-				className={`${styles.OrderTabComponent} ${styles.flexRow}`}
+			<div
+				className={`${styles.OrderTabComponent} ${styles.flexRow} ${
+					status === `Reserved` ? styles.statusReserved : styles.statusConfirmed
+				}`}
 				style={styleStatusBorder(statusIndex)}
 				onClick={handleViewOrderClick}
 			>
@@ -131,9 +129,11 @@ export default function OrderTabComponent({
 					<p className={`${styles.orderCount}`}>{quantity}x</p>
 					<p>{itemName}</p>
 				</div>
-			</Button>
+			</div>
 			{isShow && (
 				<OrderAction
+					pendingCount={pendingCount}
+					audio={audio}
 					handleSuccessError={handleSuccessError}
 					isShow={isShow}
 					onClose={closePopUp}

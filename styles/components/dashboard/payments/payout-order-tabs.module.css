@@ -1,0 +1,23 @@
+.payoutOrderTabs {
+	padding-bottom: 15px;
+	border-bottom: 1px solid var(--light-gray);
+}
+
+.payoutOrderTabs p {
+	font-size: 12px;
+}
+
+.gridSix {
+	display: grid;
+	grid-template-columns: repeat(6, 1fr);
+}
+
+.gridItem {
+	justify-self: center;
+}
+
+@media screen and (max-width: 480px) {
+	.payoutOrderTabs p {
+		font-size: 120px;
+	}
+}

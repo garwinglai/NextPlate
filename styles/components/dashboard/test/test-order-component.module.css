@@ -1,0 +1,124 @@
+.flexRow {
+	display: flex;
+	gap: 40px;
+}
+.Box {
+	width: 100%;
+	margin: 0 auto;
+	background-color: white;
+	border-radius: 5px;
+	padding: 25px 15px;
+	/* box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px; */
+}
+
+.Box h3 {
+	padding-bottom: 5px;
+	border-bottom: 1px solid var(--gray);
+	color: var(--dark-blue);
+	font-size: 25px;
+}
+
+.DateHeader {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 50px;
+	margin-bottom: 20px;
+	color: var(--gray);
+}
+
+.orderGroup > p {
+	font-size: 16px;
+	font-weight: 400;
+	color: var(--dark-btn-blue);
+	border-radius: 5px;
+	border-right: 1px solid var(--dark-btn-blue);
+	border-left: 1px solid var(--dark-btn-blue);
+	background-color: aliceblue;
+	width: fit-content;
+	padding: 5px 10px;
+	margin: 20px 0 0 0;
+}
+
+.noData {
+	color: gray;
+	text-align: center;
+	margin: 40px 0 10px 0;
+}
+
+.Alert {
+	font-size: 14px;
+}
+
+@media screen and (max-width: 768px) {
+	.OrdersComponent {
+		width: 100%;
+	}
+
+	.OrdersComponent h3 {
+		font-size: 28px;
+	}
+
+	.DateHeader {
+		width: 100%;
+		flex-direction: column;
+		gap: 20px;
+		margin: 20px 0;
+		align-items: flex-start;
+	}
+
+	.flexRow {
+		flex-direction: column;
+		width: 100%;
+	}
+
+	.Box {
+		width: 100%;
+	}
+
+	.Box h3 {
+		font-size: 30px;
+	}
+
+	.orderGroup > p {
+		font-size: 22px;
+		margin: 20px 0 15px;
+	}
+
+	.AlertTitle {
+		font-size: 22px;
+	}
+
+	.Alert {
+		font-size: 20px;
+	}
+
+	.noData {
+		font-size: 25px;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.OrdersComponent h3 {
+		font-size: 20px;
+	}
+	.orderGroup > p {
+		font-size: 14px;
+	}
+
+	.DateHeader {
+		margin: 20px 0;
+	}
+
+	.AlertTitle {
+		font-size: 14px;
+	}
+
+	.Alert {
+		font-size: 12px;
+	}
+
+	.noData {
+		font-size: 18px;
+	}
+}

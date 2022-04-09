@@ -2,6 +2,7 @@ import { getDoc, doc } from "firebase/firestore";
 import { db } from "../../firebase/fireConfig";
 import {
 	getAuth,
+	onAuthStateChanged,
 	createUserWithEmailAndPassword,
 	signInWithEmailAndPassword,
 	signOut,
@@ -11,11 +12,22 @@ import {
 	EmailAuthProvider,
 	sendPasswordResetEmail,
 } from "firebase/auth";
+import { writeBatch } from "firebase/firestore";
 import cookie from "js-cookie";
 
 // * AUTH --------------------------------------------------
 
 function isAuth() {
+	// * Check if auth is logged in
+	// const auth = getAuth();
+	// onAuthStateChanged(auth, (user) => {
+	// 	if (!user) {
+	// 		console.log("no user");
+	// 		return false;
+	// 	}
+	// 	console.log(user)
+	// });
+
 	if (typeof window !== "undefined") {
 		const adminUid = getCookie("adminUid");
 		const uid = getCookie("uid");
@@ -46,7 +58,9 @@ async function signUpAdmin({ email, password }) {
 	} else {
 		return createUserWithEmailAndPassword(auth, email, password)
 			.then((userCredential) => {
-				return { message: "Signed up successfully", success: true };
+				const user = userCredential.user;
+				const adminUid = user.uid;
+				return { message: "Signed up successfully", success: true, adminUid };
 			})
 			.catch((error) => {
 				const errorCode = error.code;
@@ -167,7 +181,6 @@ async function signInBiz({ email, password, rememberMe }) {
 				// Signed in
 
 				const { user } = userCred;
-
 				const uid = user.uid;
 
 				if (rememberMe) {
@@ -182,6 +195,7 @@ async function signInBiz({ email, password, rememberMe }) {
 			.catch((error) => {
 				const errorCode = error.code;
 				const errorMessage = error.message;
+				console.log(error);
 				return {
 					message: "Incorrect password.",
 					success: false,
@@ -199,11 +213,12 @@ async function signOutUser() {
 	const auth = getAuth();
 	return signOut(auth)
 		.then(() => {
-			removeLocalStorage("user");
 			removeCookie("uid");
+			removeCookie("adminUid");
+			removeLocalStorage("user");
+			removeLocalStorage("incOrder");
 			removeLocalStorage("uid");
 			removeLocalStorage("admin");
-			removeCookie("adminUid");
 			return { success: true };
 		})
 		.catch((error) => {
@@ -236,15 +251,25 @@ async function updateSignInEmail(updatedEmail) {
 		});
 }
 
-async function updateSignInPassword(password) {
+async function updateSignInPassword(password, uid, bizId) {
 	const auth = getAuth();
+	const batch = writeBatch(db);
 
 	const user = auth.currentUser;
 	const newPassword = password;
 
+	const bizAccDocRef = doc(db, "bizAccount", uid);
+	const bizDocRef = doc(db, "biz", bizId);
+	const recoveryDocRef = doc(db, "recovery", uid);
+
 	return updatePassword(user, newPassword)
 		.then(() => {
-			console.log("Work");
+			batch.update(bizAccDocRef, { "login.password": password });
+			batch.update(bizDocRef, { "login.password": password });
+			batch.update(recoveryDocRef, { info: password });
+		})
+		.then(() => batch.commit())
+		.then(() => {
 			return { success: true };
 		})
 		.catch((error) => {

@@ -37,7 +37,7 @@
 	height: 70px;
 	align-items: center;
 	justify-content: space-between;
-	padding: 10px;
+	padding: 40px;
 	box-sizing: border-box;
 	z-index: 1000;
 }
@@ -56,5 +56,11 @@
 
 	.Nav__dashboardMobile {
 		display: none;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.Nav__dashboardMobile {
+		padding: 20px;
 	}
 }

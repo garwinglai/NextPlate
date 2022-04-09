@@ -23,33 +23,46 @@
 	justify-self: flex-end;
 }
 
-@media screen and (min-width: 769px) {
-	/* .OrderHistoryTabComponent:hover {
-		transform: scale(1.02);
-		cursor: pointer;
-	} */
+.justifyCenter {
+	justify-self: center;
+}
+
+.textAlignCenter {
+	text-align: center;
+}
+
+.paddingLeft {
+	padding-left: 20px;
 }
 
 @media screen and (max-width: 768px) {
 	.OrderHistoryTabComponent {
-		width: 100%;
 		justify-items: center;
 	}
 
 	.OrderHistoryTabComponent p {
-		font-size: 8px;
-		width: 100%;
-		/* background-color: red; */
-		/* justify-self: center; */
-		/* padding: 0 10px; */
+		font-size: 12px;
+		width: fit-content;
+		text-align: center;
 	}
 
 	.justifyStartItem {
-
 		justify-self: unset;
 	}
 
 	.justifyEndItem {
 		justify-self: unset;
+	}
+
+	.paddingLeft {
+		padding-left: unset;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.OrderHistoryTabComponent p {
+		font-size: 9px;
+		width: fit-content;
+		text-align: center;
 	}
 }

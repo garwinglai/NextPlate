@@ -22,12 +22,12 @@ import { getAuth, updateEmail } from "firebase/auth";
 import { db, increment, decrement } from "../../firebase/fireConfig";
 import _, { update } from "lodash";
 import { getLocalStorage, setLocalStorage } from "../auth/auth";
-import fetch from "isomorphic-fetch";
+import createStripeAccount from "../heroku/stripeAccount";
 
 // * CRUD --------------------------------------------------
 
 async function checkEmailInUse(email) {
-	const userEmailRef = doc(db, "emailsInUse", email);
+	const userEmailRef = doc(db, "bizEmailsInUse", email);
 	const userEmailDocSnap = await getDoc(userEmailRef);
 
 	if (userEmailDocSnap.exists()) {
@@ -37,7 +37,7 @@ async function checkEmailInUse(email) {
 	}
 }
 
-async function createBizUser(newBusiness, uid) {
+async function createBizAccount(newBusiness, defaultProduct, uid) {
 	const {
 		name,
 		login: { email, password },
@@ -48,107 +48,69 @@ async function createBizUser(newBusiness, uid) {
 	const batch = writeBatch(db);
 
 	const docRef = doc(db, "bizEmailsInUse", email);
+
 	const docSnap = await getDoc(docRef);
+	let stripeAccountId;
 
 	if (docSnap.exists()) {
 		return { message: "Business email already in use.", success: false };
 	} else {
+		// * Create auto ID for biz
 		const bizDocRef = doc(collection(db, "biz"));
 		const bizId = bizDocRef.id;
 		const lowerBizId = _.toLower(bizId);
 
-		// Check if inviteCode exits. If so, increment
-		let inviteCodeNum;
-		const capFirstName = _.upperCase(firstName);
-		const fNameDocRef = doc(db, "firstNames", capFirstName);
+		// * Create auto ID for products
+		const productsDocRef = doc(collection(db, "biz", bizId, "products"));
+		const productId = productsDocRef.id;
 
-		const fNameDocSnap = await getDoc(fNameDocRef);
-		if (fNameDocSnap.exists()) {
-			const data = fNameDocSnap.data();
-			const num = data.num;
-			inviteCodeNum = num + 1;
-			// Increment firstNames
-			batch.update(fNameDocRef, { num: increment });
-		} else {
-			inviteCodeNum = 0;
-			batch.set(fNameDocRef, { num: 0 });
-		}
-
-		// Add bizId to keywords array for search
+		// Add bizId to keywords array for search and add default productId
 		newBusiness.keywords = [...newBusiness.keywords, lowerBizId];
+		newBusiness.productId = productId;
 
-		// Create new stripe id for user
-		let stripeId;
-		let baseUrl = "https://restoq.herokuapp.com/";
-		const capturePaymentVisa = "customerNP";
-
-		baseUrl = baseUrl.concat(capturePaymentVisa);
-		const data = { email, origin: "web_biz" };
-
+		// Create new stripe account for user
 		try {
-			const res = await fetch(baseUrl, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify(data),
-			});
-
-			const resText = await res.text();
-			const resJson = JSON.parse(resText);
-			const status = res.status;
-			console.log(status);
-
-			if (status === 200) {
-				stripeId = resJson.id;
+			let resStripe = await createStripeAccount(email);
+			if (resStripe.success) {
+				stripeAccountId = resStripe.accountId;
 			} else {
-				return { success: false, message: "Unable to create stripe id." };
+				return {
+					success: false,
+					message: `Error with stripe account. ${resStripe.error}`,
+				};
 			}
 		} catch (error) {
-			return { success: false, error };
+			console.log(error);
 		}
 
-		// TODO: stripe id -> status 200, but no stripeId returned from data
-
-		const users = {
+		const bizAccount = {
 			createdAt: new serverTimestamp(),
-			currentLocation: {
-				lastUpdated: 0,
-				locLat: 0,
-				locLong: 0,
-				locName: "",
-			},
 			device: "Web Biz",
-			email,
+			login: { email, password },
+			ownerContact: {
+				phoneNumber: newBusiness.ownerContact.phoneNumber,
+				email: newBusiness.ownerContact.email,
+			},
 			firstName,
-			hasSignUpReward: true,
-			inviteCode: capFirstName + inviteCodeNum,
 			lastName,
-			stripeId,
-			tokens: [],
-			watchListIds: [],
-			bizOwned: { [bizId]: { id: bizId, name } },
+			bizOwned: { [bizId]: { id: bizId, name, stripeAccountId } },
 		};
 
-		// Create users doc for biz
-		const userRef = doc(db, "users", uid);
-		batch.set(userRef, users);
+		// Create bizAccount doc for biz
+		const userRef = doc(db, "bizAccount", uid);
+		batch.set(userRef, bizAccount);
 
 		// Set/create biz document
 		const bizRef = doc(db, "biz", bizId);
 		batch.set(bizRef, newBusiness);
 
-		// Set invite codes
-		const inviteCodeRef = doc(db, "inviteCodes", users.inviteCode);
-		batch.set(inviteCodeRef, { userId: uid });
+		// Set/create products collection for biz
+		defaultProduct.id = productId;
+		batch.set(productsDocRef, defaultProduct, { merge: true });
 
 		// Set recover pw
 		const recoveryRef = doc(db, "recovery", uid);
 		batch.set(recoveryRef, { info: password });
-
-		// set email in use
-		const emailRef = doc(db, "emailsInUse", email);
-		batch.set(emailRef, { createdAt: new serverTimestamp() });
 
 		// Update biz email in use
 		const bizEmailRef = doc(db, "bizEmailsInUse", email);
@@ -162,6 +124,7 @@ async function createBizUser(newBusiness, uid) {
 				success: true,
 			};
 		} catch (error) {
+			console.log(error);
 			return { success: false, message: "Error batch commit: ", error };
 		}
 	}
@@ -180,73 +143,20 @@ async function updateBizUserAdmin(
 	const batch = writeBatch(db);
 
 	// * Update biz users
-	const userRef = doc(db, "users", uid);
+	const bizAccRef = doc(db, "bizAccount", uid);
 
 	if (changeLastName) {
-		batch.update(
-			userRef,
-			{ lastName: updatedBiz.ownerContact.lastName },
-			{ merge: true }
-		);
+		batch.update(bizAccRef, { lastName: updatedBiz.ownerContact.lastName });
 	}
 
 	if (changeBizName) {
-		batch.update(
-			userRef,
-			{ [`bizOwned.${bizId}.name`]: updatedBiz.name },
-			{ merge: true }
-		);
+		batch.update(bizAccRef, { [`bizOwned.${bizId}.name`]: updatedBiz.name });
 	}
 
 	if (changeFirstName) {
-		const newNameCap = _.upperCase(updatedBiz.ownerContact.firstName);
-		const newFNameDocRef = doc(db, "firstNames", newNameCap);
-
-		let inviteCodeNum;
-
-		// * Check if new firstName doc exists, if so increment, if not add firstName @ num=0
-		const newFNameDocSnap = await getDoc(newFNameDocRef);
-		if (newFNameDocSnap.exists()) {
-			const data = newFNameDocSnap.data();
-			const num = data.num;
-			inviteCodeNum = num + 1;
-			// Increment firstNames
-			batch.update(newFNameDocRef, { num: increment });
-		} else {
-			inviteCodeNum = 0;
-			batch.set(newFNameDocRef, { num: 0 });
-		}
-
-		const inviteCode = updatedBiz.ownerContact.firstName + inviteCodeNum;
-
-		// * invteCodes collection -> delete old one, create new one linked to uid
-		let prevInviteCode;
-
-		const userDocSnap = await getDoc(userRef);
-		if (userDocSnap.exists()) {
-			const userData = userDocSnap.data();
-			prevInviteCode = userData.inviteCode;
-		} else {
-			return { success: false, message: "Could not find user." };
-		}
-
-		// Delete old invite code
-		const oldInviteCodeRef = doc(db, "inviteCodes", prevInviteCode);
-		batch.delete(oldInviteCodeRef);
-
-		// Set new inviteCode for fName change
-		const inviteCodeRef = doc(db, "inviteCodes", inviteCode);
-		batch.set(inviteCodeRef, { userId: uid });
-
-		// * Update Users collection firstName & inviteCode
-		batch.update(
-			userRef,
-			{
-				firstName: updatedBiz.ownerContact.firstName,
-				inviteCode,
-			},
-			{ merge: true }
-		);
+		batch.update(bizAccRef, {
+			firstName: updatedBiz.ownerContact.firstName,
+		});
 	}
 
 	// Update biz document
@@ -272,8 +182,9 @@ async function updateBizDataUser(
 	oldLoginEmail,
 	storedUser
 ) {
+	console.log(oldLoginEmail);
 	const bizDataDocRef = doc(db, "biz", bizId);
-	const userRef = doc(db, "users", uid);
+	const userRef = doc(db, "bizAccount", uid);
 
 	const batch = writeBatch(db);
 
@@ -281,53 +192,12 @@ async function updateBizDataUser(
 		const { firstName, lastName, ownerPhoneNumber } = updatedData;
 		const firstNameCapFirst = _.capitalize(firstName);
 		const lastNameCapFirst = _.capitalize(lastName);
-		console.log(updatedData);
 
 		if (additionalChange) {
-			const newNameCap = _.upperCase(firstName);
-			const newFNameDocRef = doc(db, "firstNames", newNameCap);
-
-			let inviteCodeNum;
-
-			// * Check if new firstName doc exists, if so increment, if not add firstName @ num=0
-			const newFNameDocSnap = await getDoc(newFNameDocRef);
-			if (newFNameDocSnap.exists()) {
-				const data = newFNameDocSnap.data();
-				const num = data.num;
-				inviteCodeNum = num + 1;
-				// Increment firstNames
-				batch.update(newFNameDocRef, { num: increment });
-			} else {
-				inviteCodeNum = 0;
-				batch.set(newFNameDocRef, { num: 0 });
-			}
-
-			const inviteCode = firstNameCapFirst + inviteCodeNum;
-
-			// * invteCodes collection -> delete old one, create new one linked to uid
-			let prevInviteCode;
-
-			const userDocSnap = await getDoc(userRef);
-			if (userDocSnap.exists()) {
-				const userData = userDocSnap.data();
-				prevInviteCode = userData.inviteCode;
-			} else {
-				return { success: false, message: "Could not find user." };
-			}
-
-			// Delete old invite code
-			const oldInviteCodeRef = doc(db, "inviteCodes", prevInviteCode);
-			batch.delete(oldInviteCodeRef);
-
-			// Set new inviteCode for fName change
-			const inviteCodeRef = doc(db, "inviteCodes", inviteCode);
-			batch.set(inviteCodeRef, { userId: uid });
-
 			// * Update Users collection firstName, lastName, & inviteCode
 			batch.update(userRef, {
 				firstName: firstNameCapFirst,
 				lastName: lastNameCapFirst,
-				inviteCode,
 			});
 
 			// * Update bizData
@@ -340,7 +210,7 @@ async function updateBizDataUser(
 			// * Update localStorage
 			storedUser.firstName = firstNameCapFirst;
 			storedUser.lastName = lastNameCapFirst;
-			storedUser.inviteCode = inviteCode;
+
 			setLocalStorage("user", storedUser);
 		} else {
 			batch.update(bizDataDocRef, {
@@ -359,77 +229,54 @@ async function updateBizDataUser(
 	}
 
 	if (name == "form2") {
-		const {
-			itemName,
-			itemDescription,
-			loginEmail,
-			originalPrice,
-			defaultPrice,
-			allergens,
-		} = updatedData;
+		const { loginEmail } = updatedData;
 
-		if (additionalChange) {
-			// * Update loginEmail
+		// * Update loginEmail
 
-			// * Check if email exists
-			const emailDocRef = doc(db, "emailsInUse", loginEmail);
-			const bizEmailsDocRef = doc(db, "bizEmailsInUse", loginEmail);
-			const emailDocSnap = await getDoc(emailDocRef);
+		// * Check if email exists
+		const bizEmailsDocRef = doc(db, "bizEmailsInUse", loginEmail);
+		const emailDocSnap = await getDoc(bizEmailsDocRef);
 
-			if (emailDocSnap.exists()) {
-				return { success: false, message: `Email already exists.` };
-			}
-
-			const oldEmailDocRef = doc(db, "emailsInUse", oldLoginEmail);
-			const oldBizEmailDocRef = doc(db, "bizEmailsInUse", oldLoginEmail);
-			const auth = getAuth();
-			return updateEmail(auth.currentUser, loginEmail)
-				.then(() => {
-					batch.update(bizDataDocRef, {
-						"login.email": loginEmail,
-						"storeContact.email": loginEmail,
-						"ownerContact.email": loginEmail,
-						itemName,
-						itemDescription,
-						originalPrice,
-						defaultPrice,
-						allergens,
-					});
-
-					batch.delete(oldEmailDocRef);
-					batch.delete(oldBizEmailDocRef);
-
-					batch.update(userRef, { email: loginEmail });
-					batch.set(emailDocRef, { createdAt: new serverTimestamp() });
-					batch.set(bizEmailsDocRef, { createdAt: new serverTimestamp() });
-				})
-				.then(() => batch.commit())
-				.then(() => {
-					const ifEmailRemembered = getLocalStorage("rememberedEmail");
-
-					if (ifEmailRemembered && ifEmailRemembered !== "") {
-						setLocalStorage("rememberedEmail", loginEmail);
-					}
-
-					storedUser.email = loginEmail;
-					setLocalStorage("user", storedUser);
-
-					return { success: true };
-				})
-				.catch((e) => {
-					console.log(e);
-					return { success: false, message: `Could not update login email.` };
-				});
-		} else {
-			// * Update itemName + itemDescription
-			batch.update(bizDataDocRef, {
-				itemName,
-				itemDescription,
-				originalPrice,
-				defaultPrice,
-				allergens,
-			});
+		if (emailDocSnap.exists()) {
+			return { success: false, message: `Email already exists.` };
 		}
+
+		const oldBizEmailDocRef = doc(db, "bizEmailsInUse", oldLoginEmail);
+		const auth = getAuth();
+		return updateEmail(auth.currentUser, loginEmail)
+			.then(() => {
+				batch.update(bizDataDocRef, {
+					"login.email": loginEmail,
+					"storeContact.email": loginEmail,
+					"ownerContact.email": loginEmail,
+				});
+
+				batch.delete(oldBizEmailDocRef);
+
+				batch.update(userRef, {
+					email: loginEmail,
+					"login.email": loginEmail,
+					"ownerContact.email": loginEmail,
+				});
+				batch.set(bizEmailsDocRef, { createdAt: new serverTimestamp() });
+			})
+			.then(() => batch.commit())
+			.then(() => {
+				const ifEmailRemembered = getLocalStorage("rememberedEmail");
+
+				if (ifEmailRemembered && ifEmailRemembered !== "") {
+					setLocalStorage("rememberedEmail", loginEmail);
+				}
+
+				storedUser.email = loginEmail;
+				setLocalStorage("user", storedUser);
+
+				return { success: true };
+			})
+			.catch((e) => {
+				console.log(e);
+				return { success: false, message: `Could not update login email.` };
+			});
 	}
 
 	if (name === "form3") {
@@ -487,13 +334,11 @@ async function addBizTextNumbers({
 	action,
 }) {
 	const bizDocRef = doc(db, "biz", bizId);
-	console.log("server", noHyphenSpaceNumber);
 
 	if (action === "add") {
 		const resBizDocSnap = await getDoc(bizDocRef);
 		const data = resBizDocSnap.data();
 		const txtNumbers = data.textNumbers;
-		console.log(txtNumbers);
 
 		for (let key in txtNumbers) {
 			if (noHyphenSpaceNumber === key) {
@@ -559,14 +404,13 @@ async function getAllBizUserInfo() {
 }
 
 async function getBizUserNew(uid) {
-	const userRef = doc(db, "users", uid);
+	const userRef = doc(db, "bizAccount", uid);
 	const userRefSnap = await getDoc(userRef);
-
 	if (userRefSnap.exists()) {
 		const userData = userRefSnap.data();
 		userData.createdAt = "";
 		userData.currentLocation = "";
-		userData.hasSignUpReward = "";
+		// userData.hasSignUpReward = "";
 		userData.stripeId = "";
 		userData.tokens = "";
 		userData.watchListIds = "";
@@ -607,6 +451,17 @@ async function getBiz(bizId, dateArr) {
 			success: false,
 			message: `Business user does not exist.`,
 		};
+	}
+}
+
+async function getBizAccount(uid) {
+	const bizAccDocRef = doc(db, "bizAccount", uid);
+	const bizAccSnap = await getDoc(bizAccDocRef);
+	if (bizAccSnap.exists()) {
+		const bizAccData = bizAccSnap.data();
+		return { success: true, bizAccData };
+	} else {
+		return { success: false, message: "Could not find business account." };
 	}
 }
 
@@ -722,11 +577,12 @@ async function removeBankNumber(bizId, routingNumber) {
 	}
 }
 
-export default createBizUser;
+export default createBizAccount;
 export {
 	getAllBizUserInfo,
 	getBizAdminPagination,
 	getBiz,
+	getBizAccount,
 	getBizUserNew,
 	updateBizUserAdmin,
 	updateBizDataUser,

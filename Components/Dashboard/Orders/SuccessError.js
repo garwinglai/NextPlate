@@ -18,7 +18,6 @@ const style = {
 
 function SuccessError({ handleOrderUpdate, setHandleOrderUpdates }) {
 	const { errorMessage, successMessage, isOpen } = handleOrderUpdate;
-	console.log(handleOrderUpdate);
 
 	useEffect(() => {
 		setTimeout(() => {

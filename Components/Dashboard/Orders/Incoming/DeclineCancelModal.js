@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
-import { updateOrder } from "../../../actions/dashboard/ordersCrud";
-import { Button, Grid } from "@mui/material";
-import Alert from "@mui/material/Alert";
-import AlertTitle from "@mui/material/AlertTitle";
-import Collapse from "@mui/material/Collapse";
-import styles from "../../../styles/components/dashboard/orders/declinecancelmodal.module.css";
+import { updateOrder } from "../../../../actions/dashboard/ordersCrud";
+import { Button } from "@mui/material";
+import styles from "../../../../styles/components/dashboard/orders/declinecancelmodal.module.css";
+import {
+	getLocalStorage,
+	setLocalStorage,
+} from "../../../../actions/auth/auth";
+import playNotificationSound from "../../../../helper/PlayAudio";
 
 const style = {
 	position: "absolute",
@@ -24,6 +25,8 @@ const style = {
 };
 
 function DeclineCancelModal({
+	pendingCount,
+	audio,
 	timeEpoch,
 	endTimeEpoch,
 	handleSuccessError,
@@ -47,8 +50,8 @@ function DeclineCancelModal({
 		customerName,
 		customerPhone,
 		subtotalAmt,
-		taxAmt,
-		totalPriceAmt,
+		bizTaxAmt,
+		bizTotalPrice,
 		shortDate,
 		orderId,
 		pickupWindow,
@@ -75,6 +78,7 @@ function DeclineCancelModal({
 		const { name } = e.target;
 
 		if (name === "no-show") {
+			handleLSIncOrder(name);
 			const resUpdate = await updateOrder(
 				customerId,
 				orderId,
@@ -84,8 +88,8 @@ function DeclineCancelModal({
 				null,
 				dayIndex,
 				pickupWindowId,
-				subtotalAmt,
-				taxAmt,
+				null,
+				null,
 				null
 			);
 			if (resUpdate.success) {
@@ -121,6 +125,7 @@ function DeclineCancelModal({
 	};
 
 	async function handleDeclineAndCancel() {
+		handleLSIncOrder(declineOrCancel);
 		if (declineOrCancel === "decline") {
 			const resUpdate = await updateOrder(
 				customerId,
@@ -136,7 +141,8 @@ function DeclineCancelModal({
 				null
 			);
 			if (resUpdate.success) {
-				handleSuccessError(null, "Declined.");
+				playNotificationSound(audio, "end");
+				// handleSuccessError(null, "Declined.");
 			} else {
 				// Open error message
 				setIsOpen(true);
@@ -153,17 +159,16 @@ function DeclineCancelModal({
 				customerId,
 				orderId,
 				bizId,
-				"Cancelled",
+				"Canceled",
 				4,
 				declineReasons,
 				dayIndex,
 				pickupWindowId,
-				subtotalAmt,
-				taxAmt,
+				bizTotalPriceDouble,
 				chargeId
 			);
 			if (resUpdate.success) {
-				handleSuccessError(null, "Cancelled.");
+				// handleSuccessError(null, "Canceled.");
 			} else {
 				// Open error message
 				setIsOpen(true);
@@ -175,6 +180,18 @@ function DeclineCancelModal({
 					errMessage: resUpdate.message,
 				});
 			}
+		}
+	}
+
+	function handleLSIncOrder(action) {
+		const incOrderLS = JSON.parse(getLocalStorage("incOrder"));
+
+		if (action === "decline") {
+			let incOrder = { ...incOrderLS, isViewed: true };
+			setLocalStorage("incOrder", incOrder);
+		} else {
+			let incOrder = { ...incOrderLS, isViewed: false };
+			setLocalStorage("incOrder", incOrder);
 		}
 	}
 

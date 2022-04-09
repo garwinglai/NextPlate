@@ -15,6 +15,7 @@ function UserCard({ data }) {
 		lName: "",
 		fName: "",
 		loginEmail: "",
+		password: "",
 		createdAtDate: "",
 		totalRevenue: 0,
 		pickUpBuffer: 30,
@@ -30,6 +31,7 @@ function UserCard({ data }) {
 		storePhone,
 		ownerPhone,
 		loginEmail,
+		password,
 		createdAtDate,
 		createdAtTime,
 		totalRevenue,
@@ -52,6 +54,7 @@ function UserCard({ data }) {
 			loginEmail: bizData.login.email,
 			pickUpBuffer: bizData.pickUpBuffer,
 			totalRevenue: bizData.totalRevenue,
+			password: bizData.login.password,
 			// createdAtDate: bizData.createdAt.toDate().toLocaleDateString("en-US"),
 			// createdAtTime: bizData.createdAt.toDate().toLocaleTimeString(),
 		});
@@ -97,10 +100,16 @@ function UserCard({ data }) {
 					<p>
 						<b>Status:</b> {status}
 					</p>
+					<p>
+						<b>Biz Id</b> {bizId}
+					</p>
 				</div>
 				<div className={styles.UserCard_mid}>
 					<p>
 						<b>Login Email:</b> {loginEmail}
+					</p>
+					<p>
+						<b>Password:</b> {password}
 					</p>
 					<p>
 						<b>Store Phone:</b> {storePhone}
@@ -113,7 +122,7 @@ function UserCard({ data }) {
 						{createdAtDate}
 					</p>
 					<p>
-						<b>Total Revenue </b>${totalRevenue}
+						<b>Total Revenue </b>${totalRevenue.toFixed(2)}
 					</p>
 				</div>
 				<div className={styles.UserCard_right}>

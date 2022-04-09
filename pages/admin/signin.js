@@ -15,12 +15,11 @@ function Signin() {
 	const { email, password } = adminLoginCred;
 
 	useEffect(() => {
-		if (!isAuth()) {
-			router.push("/admin/signin");
-		} else {
+		if (isAuth()) {
 			router.push("/admin");
 		}
-	}, [router]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	async function handleClick(e) {
 		e.preventDefault();

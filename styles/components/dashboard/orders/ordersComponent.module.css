@@ -3,18 +3,19 @@
 	gap: 40px;
 }
 .Box {
-	width: 80%;
+	width: 100%;
 	margin: 0 auto;
 	background-color: white;
 	border-radius: 5px;
 	padding: 25px 15px;
-	box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
+	/* box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px; */
 }
 
 .Box h3 {
 	padding-bottom: 5px;
 	border-bottom: 1px solid var(--gray);
 	color: var(--dark-blue);
+	font-size: 25px;
 }
 
 .DateHeader {
@@ -22,12 +23,12 @@
 	align-items: center;
 	justify-content: center;
 	gap: 50px;
-	margin-bottom: 20px;
+	margin-bottom: 10px;
 	color: var(--gray);
 }
 
 .orderGroup > p {
-	font-size: 13px;
+	font-size: 16px;
 	font-weight: 400;
 	color: var(--dark-btn-blue);
 	border-radius: 5px;
@@ -55,14 +56,15 @@
 	}
 
 	.OrdersComponent h3 {
-		font-size: 25px;
+		font-size: 28px;
 	}
 
 	.DateHeader {
 		width: 100%;
 		flex-direction: column;
 		gap: 20px;
-		margin: 50px 0 100px;
+		margin: 10px 0;
+		align-items: flex-start;
 	}
 
 	.flexRow {
@@ -79,8 +81,8 @@
 	}
 
 	.orderGroup > p {
-		font-size: 18px;
-		margin-top: 20px;
+		font-size: 22px;
+		margin: 20px 0 15px;
 	}
 
 	.AlertTitle {
@@ -105,7 +107,7 @@
 	}
 
 	.DateHeader {
-		margin: 50px 0 70px;
+		margin: 20px 0;
 	}
 
 	.AlertTitle {

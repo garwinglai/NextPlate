@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from "react";
 import styles from "../../styles/components/dashboard/dashmenumobile.module.css";
 import Link from "next/link";
-import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
 import { IconButton } from "@mui/material";
-import AccountBoxIcon from "@mui/icons-material/AccountBox";
 import SettingsIcon from "@mui/icons-material/Settings";
 import CreditScoreIcon from "@mui/icons-material/CreditScore";
 import EventNoteIcon from "@mui/icons-material/EventNote";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import CloseIcon from "@mui/icons-material/Close";
 import Avatar from "@mui/material/Avatar";
 import { useRouter } from "next/router";
@@ -15,6 +12,9 @@ import { getLocalStorage, signOutUser } from "../../actions/auth/auth";
 import CircularProgress from "@mui/material/CircularProgress";
 import GridViewIcon from "@mui/icons-material/GridView";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import CategoryIcon from "@mui/icons-material/Category";
+import ScienceIcon from "@mui/icons-material/Science";
+import Version from "../Misc/Version";
 
 function DashMenuMobile({ currentPage, closeMenu }) {
 	const [userInfo, setUserInfo] = useState({
@@ -39,13 +39,6 @@ function DashMenuMobile({ currentPage, closeMenu }) {
 
 	// * ACTIONS ----------------------------------
 
-	async function handleLogOutClick(e) {
-		const { success, message } = await signOutUser();
-		if (success) {
-			router.push("/business/signin");
-		}
-	}
-
 	// * DISPLAY ------------------------------------
 	function showMenu() {
 		return (
@@ -63,7 +56,7 @@ function DashMenuMobile({ currentPage, closeMenu }) {
 					<Link href={`/dashboard/${routerUid}`}>
 						<a>
 							<IconButton>
-								<GridViewIcon sx={{ color: "var(--gray)" }} />
+								<GridViewIcon sx={{ color: "var(--gray)", fontSize: 35 }} />
 							</IconButton>
 						</a>
 					</Link>
@@ -84,7 +77,7 @@ function DashMenuMobile({ currentPage, closeMenu }) {
 					<Link href={`/dashboard/${routerUid}/schedule`}>
 						<a>
 							<IconButton>
-								<EventNoteIcon sx={{ color: "var(--gray)" }} />
+								<EventNoteIcon sx={{ color: "var(--gray)", fontSize: 30 }} />
 							</IconButton>
 						</a>
 					</Link>
@@ -105,7 +98,7 @@ function DashMenuMobile({ currentPage, closeMenu }) {
 					<Link href={`/dashboard/${routerUid}/orders/incoming-orders`}>
 						<a>
 							<IconButton>
-								<CreditScoreIcon sx={{ color: "var(--gray)" }} />
+								<CreditScoreIcon sx={{ color: "var(--gray)", fontSize: 35 }} />
 							</IconButton>
 						</a>
 					</Link>
@@ -126,7 +119,9 @@ function DashMenuMobile({ currentPage, closeMenu }) {
 					<Link href={`/dashboard/${routerUid}/payments`}>
 						<a>
 							<IconButton>
-								<AccountBalanceIcon sx={{ color: "var(--gray)" }} />
+								<AccountBalanceIcon
+									sx={{ color: "var(--gray)", fontSize: 35 }}
+								/>
 							</IconButton>
 						</a>
 					</Link>
@@ -136,7 +131,7 @@ function DashMenuMobile({ currentPage, closeMenu }) {
 				</div>
 				<div
 					style={
-						currentPage === "Account"
+						currentPage === "Products"
 							? {
 									backgroundColor: "var(--dark-blue)",
 									borderRadius: "5px",
@@ -144,15 +139,15 @@ function DashMenuMobile({ currentPage, closeMenu }) {
 							: undefined
 					}
 				>
-					<Link href={`/dashboard/${routerUid}/account`}>
+					<Link href={`/dashboard/${routerUid}/products`}>
 						<a>
 							<IconButton>
-								<AccountBoxIcon sx={{ color: "var(--gray)" }} />
+								<CategoryIcon sx={{ color: "var(--gray)", fontSize: 35 }} />
 							</IconButton>
 						</a>
 					</Link>
-					<Link href={`/dashboard/${routerUid}/account`}>
-						<a className={styles.DashMenuMobile_MenuItems}>Account</a>
+					<Link href={`/dashboard/${routerUid}/products`}>
+						<a className={styles.DashMenuMobile_MenuItems}>Products</a>
 					</Link>
 				</div>
 				<div
@@ -168,12 +163,33 @@ function DashMenuMobile({ currentPage, closeMenu }) {
 					<Link href={`/dashboard/${routerUid}/settings`}>
 						<a>
 							<IconButton>
-								<SettingsIcon sx={{ color: "var(--gray)" }} />
+								<SettingsIcon sx={{ color: "var(--gray)", fontSize: 35 }} />
 							</IconButton>
 						</a>
 					</Link>
 					<Link href={`/dashboard/${routerUid}/settings`}>
 						<a className={styles.DashMenuMobile_MenuItems}>Settings</a>
+					</Link>
+				</div>
+				<div
+					style={
+						currentPage === "Test mode"
+							? {
+									backgroundColor: "var(--dark-blue)",
+									borderRadius: "5px",
+							  }
+							: undefined
+					}
+				>
+					<Link href={`/dashboard/${routerUid}/test`}>
+						<a>
+							<IconButton>
+								<ScienceIcon sx={{ color: "var(--gray)", fontSize: 35 }} />
+							</IconButton>
+						</a>
+					</Link>
+					<Link href={`/dashboard/${routerUid}/test`}>
+						<a className={styles.DashMenuMobile_MenuItems}>Test Mode</a>
 					</Link>
 				</div>
 			</menu>
@@ -191,7 +207,7 @@ function DashMenuMobile({ currentPage, closeMenu }) {
 					<CloseIcon className={styles.DashMenuMobile_closeIcon} />
 				</IconButton>
 				<div className={styles.DashMenuMobile_TitleContainer}>
-					<h4 className={styles.DashMenuMobile_Logo}>Next Plate</h4>
+					{/* <h4 className={styles.DashMenuMobile_Logo}>NextPlate</h4>
 					<Avatar>GL</Avatar>
 					{loading ? (
 						<div className={styles.DashMenuMobile_UserName}>
@@ -199,16 +215,12 @@ function DashMenuMobile({ currentPage, closeMenu }) {
 						</div>
 					) : (
 						<h3 className={styles.DashMenuMobile_UserName}>Hello, {fName}</h3>
-					)}
+					)} */}
 				</div>
 				{showMenu()}
 			</div>
-			<div className={styles.Logout_Container}>
-				<IconButton sx={{ fontSize: 16 }} onClick={handleLogOutClick}>
-					<PowerSettingsNewIcon sx={{ color: "var(--gray)" }} />
-					<p className={styles.DashMenuMobile_Logout}>Logout</p>
-				</IconButton>
-			</div>
+
+			<Version route="mobile" />
 		</div>
 	);
 }

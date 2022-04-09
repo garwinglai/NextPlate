@@ -16,15 +16,29 @@ import MobileTimePicker from "@mui/lab/MobileTimePicker";
 import DesktopTimePicker from "@mui/lab/DesktopTimePicker";
 
 function CreateSchedule({ uid, onClose, date, bizId, userData }) {
+	// const [values, setValues] = useState({
+	// 	itemName: userData.itemName,
+	// 	itemDescription: userData.itemDescription,
+	// 	itemPrice: userData.defaultPrice.slice(1),
+	// 	numAvailable: 1,
+	// 	startTime: "",
+	// 	endTime: "",
+	// 	originalPrice: userData.originalPrice.slice(1),
+	// 	allergens: userData.allergens,
+	// 	recurring: false,
+	// 	scheduledDate: date.actualDate,
+	// 	scheduledDateShort: date.shortDate,
+	// });
+
 	const [values, setValues] = useState({
-		itemName: userData.itemName,
-		itemDescription: userData.itemDescription,
-		itemPrice: userData.defaultPrice.slice(1),
+		itemName: "",
+		itemDescription: "",
+		itemPrice: "",
 		numAvailable: 1,
 		startTime: "",
 		endTime: "",
-		originalPrice: userData.originalPrice.slice(1),
-		allergens: userData.allergens,
+		originalPrice: "",
+		allergens: "",
 		recurring: false,
 		scheduledDate: date.actualDate,
 		scheduledDateShort: date.shortDate,
@@ -71,7 +85,6 @@ function CreateSchedule({ uid, onClose, date, bizId, userData }) {
 			endTime === "" ||
 			endTime === "Invalid Date"
 		) {
-			console.log("here");
 			setLoading(false);
 			setSaveError(true);
 			setSuccessMessage(
@@ -79,78 +92,6 @@ function CreateSchedule({ uid, onClose, date, bizId, userData }) {
 			);
 			alertRef.current.scrollIntoView();
 			return;
-		}
-
-		const allergenArray = allergens.split(" ");
-		let commaCount = 0;
-		let wordCount = 0;
-
-		for (let i = 0; i < allergenArray.length; i++) {
-			const curr = allergenArray[i];
-
-			if (i === allergenArray.length - 1) {
-				if (curr[curr.length - 1] !== ".") {
-					setSuccessMessage(
-						"Please finish your allergens description with a period under Product details."
-					);
-					setSaveError(true);
-					setLoading(false);
-					alertRef.current.scrollIntoView();
-					return;
-				}
-			} else if (i === allergenArray.length - 2) {
-				if (curr[curr.length - 1] === "," || curr[curr.length - 1] === ".") {
-					setSuccessMessage(
-						"Plese check your allergens description to match this format. Ex: Milk, nuts, soybean, and wheat."
-					);
-					setSaveError(true);
-					setLoading(false);
-					alertRef.current.scrollIntoView();
-					return;
-				}
-				wordCount += 1;
-			} else {
-				if (curr[curr.length - 1] === ",") {
-					commaCount += 1;
-					wordCount += 1;
-				} else {
-					wordCount += 1;
-				}
-			}
-		}
-
-		if (allergenArray.length === 3) {
-			if (commaCount + 2 !== wordCount) {
-				setSuccessMessage(
-					"Please type your allergens with the correct commas under Product details. Ex: Milk, nuts, soybean, and wheat."
-				);
-				setSaveError(true);
-				setLoading(false);
-				alertRef.current.scrollIntoView();
-				return;
-			}
-		} else if (allergenArray.length === 1) {
-			if (commaCount !== wordCount) {
-				if (commaCount + 1 !== wordCount) {
-					setSuccessMessage(
-						"Please type your allergens with the correct commas under Product details. Ex: Milk, nuts, soybean, and wheat."
-					);
-					setSaveError(true);
-					setLoading(false);
-					alertRef.current.scrollIntoView();
-					return;
-				}
-			}
-		} else {
-			if (commaCount + 1 !== wordCount) {
-				setSuccessMessage(
-					"Please type your allergens with the correct commas under Product details. Ex: Milk, nuts, soybean, and wheat."
-				);
-				setSaveError(true);
-				setLoading(false);
-				alertRef.current.scrollIntoView();
-				return;
-			}
 		}
 
 		const dateStart = new Date(startTime);
@@ -178,6 +119,24 @@ function CreateSchedule({ uid, onClose, date, bizId, userData }) {
 		const hourEnd = parseInt(timeEnd.split("").slice(0, 2).join(""));
 		const minEnd = parseInt(timeEnd.split("").slice(3, 5).join(""));
 
+		const oneHourEpoch = 60 * 60 * 1000;
+
+		if (!endTimeEpochMiliSec) {
+			setSuccessMessage("Please enter a valid time. (12 am - 11:45 pm)");
+			setSaveError(true);
+			setLoading(false);
+			alertRef.current.scrollIntoView();
+			return;
+		}
+
+		if (endTimeEpochMiliSec - startTimeEpochMiliSec < oneHourEpoch) {
+			setSuccessMessage("Please provide at least 1 hour timeframe.");
+			setSaveError(true);
+			setLoading(false);
+			alertRef.current.scrollIntoView();
+			return;
+		}
+
 		if (itemPrice[0] === "1" && itemPrice[1] === ".") {
 			setLoading(false);
 			setSaveError(true);
@@ -188,6 +147,8 @@ function CreateSchedule({ uid, onClose, date, bizId, userData }) {
 		const scheduleData = {
 			itemName,
 			itemDescription,
+			originalPrice: "$" + originalPrice,
+			allergens,
 			itemPrice: itemPriceWithDollarSign,
 			itemPriceDouble: itemPriceDoubleConvert,
 			itemPricePenny: itemPricePennyConvert,
@@ -284,7 +245,7 @@ function CreateSchedule({ uid, onClose, date, bizId, userData }) {
 							<h3>Item information:</h3>
 							<div>
 								<div className={styles.CreateSchedule__formDefaultsInfo}>
-									<label htmlFor="itemName">Item name</label>
+									<label htmlFor="itemName">* Item name</label>
 									<input
 										required
 										id="itemName"
@@ -296,7 +257,7 @@ function CreateSchedule({ uid, onClose, date, bizId, userData }) {
 									/>
 								</div>
 								<div className={styles.CreateSchedule__formDefaultsInfo}>
-									<label htmlFor="itemDescription">Item description</label>
+									<label htmlFor="itemDescription">* Item description</label>
 									<textarea
 										required
 										id="itemDescription"
@@ -317,11 +278,9 @@ function CreateSchedule({ uid, onClose, date, bizId, userData }) {
 											margin: "5px 0",
 										}}
 									>
-										* Separate by comma. Ex: Milk, eggs, nuts, and fish. <br />*
-										If only two: Milk and eggs.
+										Please type as you would like it to be shown.
 									</label>
 									<textarea
-										required
 										id="allergens"
 										name="allergens"
 										type="text"
@@ -350,7 +309,7 @@ function CreateSchedule({ uid, onClose, date, bizId, userData }) {
 							<div>
 								<h3>Item values:</h3>
 								<div className={styles.CreateSchedule__formQuantities}>
-									<label htmlFor="originalPrice">Original price</label>
+									<label htmlFor="originalPrice">* Original price</label>
 									<CurrencyInput
 										className={styles.CreateSchedule__currentInput}
 										autoFocus
@@ -365,7 +324,7 @@ function CreateSchedule({ uid, onClose, date, bizId, userData }) {
 											setValues((prev) => ({ ...prev, [name]: value }))
 										}
 									/>
-									<label htmlFor="itemPrice">Item price</label>
+									<label htmlFor="itemPrice">* Item price</label>
 									<CurrencyInput
 										className={styles.CreateSchedule__currentInput}
 										autoFocus
@@ -381,7 +340,7 @@ function CreateSchedule({ uid, onClose, date, bizId, userData }) {
 											setValues((prev) => ({ ...prev, [name]: value }))
 										}
 									/>
-									<label htmlFor="quantity">Quantity</label>
+									<label htmlFor="quantity">* Quantity</label>
 									<input
 										className={styles.CreateSchedule__currentInput}
 										id="quantity"
@@ -398,7 +357,7 @@ function CreateSchedule({ uid, onClose, date, bizId, userData }) {
 							<div>
 								<div className={styles.CreateSchedule__timeTitle}>
 									<h3>Pick up time:</h3>
-									<p>(12:00 am - 11:59 pm)</p>
+									<p>(12:00 am - 11:45 pm)</p>
 								</div>
 								<div className={styles.CreateSchedule__formTimes}>
 									<div>
@@ -409,7 +368,6 @@ function CreateSchedule({ uid, onClose, date, bizId, userData }) {
 												// className={styles.CreateSchedule__currentInput}
 												value={startTime}
 												onChange={(newValue) => {
-													// console.log(newValue);
 													setValues((prev) => ({
 														...prev,
 														startTime: newValue,

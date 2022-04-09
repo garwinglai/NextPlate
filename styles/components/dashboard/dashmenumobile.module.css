@@ -9,6 +9,7 @@
 	z-index: 1;
 	position: fixed;
 	padding-top: 80px;
+	overflow-y: scroll;
 }
 
 .DashMenuMobile_closeIconContainer {
@@ -22,7 +23,7 @@
 }
 
 .DashMenuMobile_TitleContainer {
-	margin: 40px 0 50px;
+	margin: 40px 0 0 0;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -37,14 +38,26 @@
 }
 
 .DashMenuMobile_Menu {
+	/* background-color: white; */
 	display: flex;
 	flex-direction: column;
+	justify-content: center;
 	margin: 0 auto;
-	gap: 10px;
+	gap: 20px;
 	padding: 10px 0;
 	border-top: 1px solid white;
 	border-bottom: 1px solid white;
-	width: 150px;
+	width: max-content;
+}
+
+.DashMenuMobile_Menu > div {
+	display: flex;
+	align-items: center;
+	padding: 5px 0;
+}
+
+.DashMenuMobile_MenuItems {
+	font-size: 30px;
 }
 
 .DashMenuMobile_MenuItems:hover {
@@ -66,12 +79,26 @@
 
 .DashMenuMobile_Logout {
 	color: white;
-	font-size: smaller;
+	font-size: 25px;
 	margin-left: 10px;
 }
 
 @media screen and (min-width: 768px) {
 	.DashMenuMobile {
 		display: none;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.DashMenuMobile a {
+		font-size: 18px;
+	}
+
+	.DashMenuMobile_Menu {
+		gap: 10px;
+	}
+
+	.DashMenuMobile_Logout {
+		font-size: 18px;
 	}
 }

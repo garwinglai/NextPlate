@@ -1,13 +1,15 @@
 import React, { useState } from "react";
-import styles from "../../../styles/components/dashboard/orders/ordersComponent.module.css";
+import styles from "../../../../styles/components/dashboard/orders/ordersComponent.module.css";
 import OrderTabComponent from "./OrderTabComponent";
-import { Button, Grid } from "@mui/material";
+import { Grid } from "@mui/material";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Collapse from "@mui/material/Collapse";
-import SuccessError from "./SuccessError";
+import SuccessError from "../SuccessError";
 
 function OrdersComponent({
+	pendingCount,
+	audio,
 	date,
 	tab,
 	uid,
@@ -40,7 +42,6 @@ function OrdersComponent({
 	} = date;
 
 	function handleSuccessError(errorMessage, successMessage) {
-		console.log(errorMessage, successMessage);
 		setHandleOrderUpdates((prev) => ({
 			...prev,
 			errorMessage,
@@ -58,7 +59,7 @@ function OrdersComponent({
 						setHandleOrderUpdates={setHandleOrderUpdates}
 					/>
 				)}
-				<h3>{actualDate}</h3>
+				{/* <h3>{actualDate}</h3> */}
 				{ordersPendingMessage && (
 					<Grid item xs={12} md={4}>
 						<Collapse in={isAlertOpen}>
@@ -76,28 +77,6 @@ function OrdersComponent({
 								<AlertTitle>Error</AlertTitle>
 								{ordersConfirmedMessage}
 							</Alert>
-						</Collapse>
-					</Grid>
-				)}
-
-				{!ordersPendingMessage && !ordersConfirmedMessage && (
-					<Grid item xs={12} md={8}>
-						<Collapse in={isAlertOpen}>
-							{tab === 0 ? (
-								<Alert severity="info" className={styles.Alert}>
-									<AlertTitle className={styles.AlertTitle}>
-										Click order to accept.
-									</AlertTitle>
-									Orders automatically <u>declined</u> at end of day.
-								</Alert>
-							) : (
-								<Alert severity="info" className={styles.Alert}>
-									<AlertTitle className={styles.AlertTitle}>
-										Click order to Complete.
-									</AlertTitle>
-									Orders automatically <u>completed</u> at end of day.
-								</Alert>
-							)}
 						</Collapse>
 					</Grid>
 				)}
@@ -157,6 +136,8 @@ function OrdersComponent({
 												) {
 													return (
 														<OrderTabComponent
+															pendingCount={pendingCount}
+															audio={audio}
 															handleSuccessError={handleSuccessError}
 															key={confirmedOrder.orderId}
 															userOrderDetails={confirmedOrder}

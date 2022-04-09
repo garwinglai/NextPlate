@@ -27,7 +27,8 @@ import {
 	decrementArgs,
 } from "../../firebase/fireConfig";
 import _ from "lodash";
-import fetch from "isomorphic-fetch";
+import sendNotification from "../heroku/notifications";
+import chargePayment from "../heroku/chargePayment";
 
 // * Admin & Biz orders page will update
 async function updatePastOrders(bizId) {
@@ -35,9 +36,10 @@ async function updatePastOrders(bizId) {
 		return;
 	}
 
-	const adminUid = "l8Nwe8miQOMhBsFfMGuJCwY0qLH3";
+	const adminUid = "6IUWvD23ayVkRlxaO2wtSM2faNB3";
 
 	// * Orders collection ref -----------------------------------
+	const bizDocRef = doc(db, "biz", bizId);
 	const ordersCollectionRef = collection(db, "biz", bizId, "orders");
 	const adminOrders = collection(db, "admin", adminUid, "orders");
 
@@ -46,32 +48,33 @@ async function updatePastOrders(bizId) {
 	const actualDate = date.toDateString();
 	const todayStartTime = "00:00";
 	const dateStartEpocMS = Date.parse(actualDate + " " + todayStartTime);
+	// console.log(dateStartEpocMS);
 
 	const batch = writeBatch(db);
 
 	// * Specific Biz's order queries -------------------------------
 	const queryConfirmedPast = query(
 		ordersCollectionRef,
-		where("endTime", "<", dateStartEpocMS),
+		where("endTime", "<=", dateStartEpocMS),
 		where("status", "==", "Confirmed")
 	);
 
 	const queryReservedPast = query(
 		ordersCollectionRef,
-		where("endTime", "<", dateStartEpocMS),
+		where("endTime", "<=", dateStartEpocMS),
 		where("status", "==", "Reserved")
 	);
 
 	// * Admin queries ----------------------------------------------
 	const queryConfirmedPastAdmin = query(
 		adminOrders,
-		where("endTime", "<", dateStartEpocMS),
+		where("endTime", "<=", dateStartEpocMS),
 		where("status", "==", "Confirmed")
 	);
 
 	const queryReservedPastAdmin = query(
 		adminOrders,
-		where("endTime", "<", dateStartEpocMS),
+		where("endTime", "<=", dateStartEpocMS),
 		where("status", "==", "Reserved")
 	);
 
@@ -91,6 +94,8 @@ async function updatePastOrders(bizId) {
 			const id = doc.id;
 			pastAdminConfirmedUidArr.push(id);
 		});
+
+		// console.log(pastAdminConfirmedUidArr);
 
 		pastAdminReservedOrdersSnapShot.forEach((doc) => {
 			const id = doc.id;
@@ -135,8 +140,11 @@ async function updatePastOrders(bizId) {
 		const pastReservedUidArr = [];
 
 		pastConfirmedOrdersSnapShot.forEach((doc) => {
+			const data = doc.data();
 			const id = doc.id;
-			pastConfirmedUidArr.push(id);
+			const bizTotalPriceNum = data.bizTotalPriceDouble;
+			const dataSet = { id, bizTotalPriceNum };
+			pastConfirmedUidArr.push(dataSet);
 		});
 
 		pastReservedOrdersSnapShot.forEach((doc) => {
@@ -146,7 +154,8 @@ async function updatePastOrders(bizId) {
 
 		// * Biz Orders, looping UID to update
 		for (let i = 0; i < pastConfirmedUidArr.length; i++) {
-			const currorderId = pastConfirmedUidArr[i];
+			const currorderId = pastConfirmedUidArr[i].id;
+			// const bizTotalNum = pastConfirmedUidArr[i].bizTotalPriceNum;
 			const orderRef = doc(db, "biz", bizId, "orders", currorderId);
 			batch.update(
 				orderRef,
@@ -184,7 +193,6 @@ async function getOrderHistory(bizId, round, prevEndTime) {
 	if (!bizId) {
 		return;
 	}
-	console.log(bizId, round);
 	const date = new Date();
 	// const actualDate = date.toDateString();
 	// const todayStartTime = "00:00";
@@ -198,7 +206,6 @@ async function getOrderHistory(bizId, round, prevEndTime) {
 			orderCollectionRef,
 			where("endTime", "<", todayStartEpoch),
 			orderBy("endTime", "desc"),
-			// orderBy("endTime"),
 			limit(10)
 		);
 	} else if (round === "prev") {
@@ -239,7 +246,6 @@ async function getOrderHistory(bizId, round, prevEndTime) {
 			data.orderId = doc.id;
 			ordersArr.push(data);
 		});
-		console.log(ordersArr);
 
 		return { success: true, ordersArr, lastDocu, prevDocu };
 	} catch (error) {
@@ -249,124 +255,50 @@ async function getOrderHistory(bizId, round, prevEndTime) {
 
 async function getSearchOrderHistory(
 	bizId,
-	searchQuery,
-	statusQuery,
 	round,
-	prevDoc
+	prevDoc,
+	startDate,
+	endDate
 ) {
 	let firstQuery;
-	let searchArr;
 
 	const bizOrdersDocRef = collection(db, "biz", bizId, "orders");
 
-	// * Search order keywords only
-	if (searchQuery && !statusQuery) {
-		searchArr = searchQuery.split(" ");
-		if (round === "first") {
-			firstQuery = query(
-				bizOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("keywords", "array-contains-any", searchArr),
-				limit(10)
-			);
-		} else if (round === "prev") {
-			firstQuery = query(
-				bizOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("keywords", "array-contains-any", searchArr),
-				endBefore(prevDoc),
-				limitToLast(10)
-			);
-		} else if (round === "next") {
-			firstQuery = query(
-				bizOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("keywords", "array-contains-any", searchArr),
-				startAfter(prevDoc),
-				limit(10)
-			);
-		} else if (round === "last") {
-			firstQuery = query(
-				bizOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("keywords", "array-contains-any", searchArr),
-				endAt(prevDoc),
-				limitToLast(10)
-			);
-		}
-	}
-
-	// * Search order status only
-	if (!searchQuery && statusQuery) {
-		if (round === "first") {
-			firstQuery = query(
-				bizOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("status", "in", statusQuery),
-				limit(10)
-			);
-		} else if (round === "prev") {
-			firstQuery = query(
-				bizOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("status", "in", statusQuery),
-				endBefore(prevDoc),
-				limitToLast(10)
-			);
-		} else if (round === "next") {
-			firstQuery = query(
-				bizOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("status", "in", statusQuery),
-				startAfter(prevDoc),
-				limit(10)
-			);
-		} else if (round === "last") {
-			firstQuery = query(
-				bizOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("status", "in", statusQuery),
-				endAt(prevDoc),
-				limitToLast(10)
-			);
-		}
-	}
-
-	// * Search order keywords & Status
-	if (searchQuery && statusQuery) {
-		searchArr = searchQuery.split(" ");
-		if (round === "first") {
-			firstQuery = query(
-				bizOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("keywords", "array-contains-any", searchArr),
-				limit(10)
-			);
-		} else if (round === "prev") {
-			firstQuery = query(
-				bizOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("keywords", "array-contains-any", searchArr),
-				endBefore(prevDoc),
-				limitToLast(10)
-			);
-		} else if (round === "next") {
-			firstQuery = query(
-				bizOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("keywords", "array-contains-any", searchArr),
-				startAfter(prevDoc),
-				limit(10)
-			);
-		} else if (round === "last") {
-			firstQuery = query(
-				bizOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("keywords", "array-contains-any", searchArr),
-				endAt(prevDoc),
-				limitToLast(10)
-			);
-		}
+	if (round === "first") {
+		firstQuery = query(
+			bizOrdersDocRef,
+			orderBy("startTime", "desc"),
+			where("startTime", ">=", startDate),
+			where("startTime", "<=", endDate),
+			limit(10)
+		);
+	} else if (round === "prev") {
+		firstQuery = query(
+			bizOrdersDocRef,
+			orderBy("startTime", "desc"),
+			where("startTime", ">=", startDate),
+			where("startTime", "<=", endDate),
+			endBefore(prevDoc),
+			limitToLast(10)
+		);
+	} else if (round === "next") {
+		firstQuery = query(
+			bizOrdersDocRef,
+			orderBy("startTime", "desc"),
+			where("startTime", ">=", startDate),
+			where("startTime", "<=", endDate),
+			startAfter(prevDoc),
+			limit(10)
+		);
+	} else if (round === "last") {
+		firstQuery = query(
+			bizOrdersDocRef,
+			orderBy("startTime", "desc"),
+			where("startTime", ">=", startDate),
+			where("startTime", "<=", endDate),
+			endAt(prevDoc),
+			limitToLast(10)
+		);
 	}
 
 	try {
@@ -385,19 +317,10 @@ async function getSearchOrderHistory(
 			ordersArr.push(data);
 		});
 
-		if (statusQuery && searchQuery) {
-			if (statusQuery.length !== 0 && searchArr.length !== 0) {
-				ordersArr = ordersArr.filter((item) =>
-					statusQuery.includes(item.status)
-				);
-			}
-		}
-
 		const sortedOrdersArr = ordersArr.sort((a, b) => (a.endTime = b.endTime));
 
 		return { success: true, sortedOrdersArr, lastDocu, prevDocu };
 	} catch (error) {
-		console.log(error);
 		return { success: false, message: "Error fetching search results." };
 	}
 }
@@ -405,7 +328,6 @@ async function getSearchOrderHistory(
 async function getSearchOrderHistoryAdmin(
 	adminUid,
 	searchQuery,
-	statusQuery,
 	round,
 	prevDoc
 ) {
@@ -415,19 +337,19 @@ async function getSearchOrderHistoryAdmin(
 	const adminOrdersDocRef = collection(db, "admin", adminUid, "orders");
 
 	// * Search order keywords only
-	if (searchQuery && !statusQuery) {
+	if (searchQuery) {
 		searchArr = searchQuery.split(" ");
 		if (round === "first") {
 			firstQuery = query(
 				adminOrdersDocRef,
-				orderBy("endTime", "desc"),
+				orderBy("createdAt", "desc"),
 				where("keywords", "array-contains-any", searchArr),
 				limit(10)
 			);
 		} else if (round === "prev") {
 			firstQuery = query(
 				adminOrdersDocRef,
-				orderBy("endTime", "desc"),
+				orderBy("createdAt", "desc"),
 				where("keywords", "array-contains-any", searchArr),
 				endBefore(prevDoc),
 				limitToLast(10)
@@ -435,7 +357,7 @@ async function getSearchOrderHistoryAdmin(
 		} else if (round === "next") {
 			firstQuery = query(
 				adminOrdersDocRef,
-				orderBy("endTime", "desc"),
+				orderBy("createdAt", "desc"),
 				where("keywords", "array-contains-any", searchArr),
 				startAfter(prevDoc),
 				limit(10)
@@ -443,80 +365,7 @@ async function getSearchOrderHistoryAdmin(
 		} else if (round === "last") {
 			firstQuery = query(
 				adminOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("keywords", "array-contains-any", searchArr),
-				endAt(prevDoc),
-				limitToLast(10)
-			);
-		}
-	}
-
-	// * Search order status only
-	if (!searchQuery && statusQuery) {
-		if (round === "first") {
-			firstQuery = query(
-				adminOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("status", "in", statusQuery),
-				limit(10)
-			);
-		} else if (round === "prev") {
-			firstQuery = query(
-				adminOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("status", "in", statusQuery),
-				endBefore(prevDoc),
-				limitToLast(10)
-			);
-		} else if (round === "next") {
-			firstQuery = query(
-				adminOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("status", "in", statusQuery),
-				startAfter(prevDoc),
-				limit(10)
-			);
-		} else if (round === "last") {
-			firstQuery = query(
-				adminOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("status", "in", statusQuery),
-				endAt(prevDoc),
-				limitToLast(10)
-			);
-		}
-	}
-
-	// * Search order keywords & Status
-	if (searchQuery && statusQuery) {
-		searchArr = searchQuery.split(" ");
-		if (round === "first") {
-			firstQuery = query(
-				adminOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("keywords", "array-contains-any", searchArr),
-				limit(10)
-			);
-		} else if (round === "prev") {
-			firstQuery = query(
-				adminOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("keywords", "array-contains-any", searchArr),
-				endBefore(prevDoc),
-				limitToLast(10)
-			);
-		} else if (round === "next") {
-			firstQuery = query(
-				adminOrdersDocRef,
-				orderBy("endTime", "desc"),
-				where("keywords", "array-contains-any", searchArr),
-				startAfter(prevDoc),
-				limit(10)
-			);
-		} else if (round === "last") {
-			firstQuery = query(
-				adminOrdersDocRef,
-				orderBy("endTime", "desc"),
+				orderBy("createdAt", "desc"),
 				where("keywords", "array-contains-any", searchArr),
 				endAt(prevDoc),
 				limitToLast(10)
@@ -538,16 +387,6 @@ async function getSearchOrderHistoryAdmin(
 			data.orderId = doc.id;
 			ordersArr.push(data);
 		});
-
-		console.log(ordersArr);
-
-		if (statusQuery && searchQuery) {
-			if (statusQuery.length !== 0 && searchArr.length !== 0) {
-				ordersArr = ordersArr.filter((item) =>
-					statusQuery.includes(item.status)
-				);
-			}
-		}
 
 		const sortedOrdersArr = ordersArr.sort((a, b) => (a.endTime = b.endTime));
 
@@ -567,13 +406,11 @@ async function updateOrder(
 	reason,
 	dayIndex,
 	pickupWindowId,
-	subtotalAmt,
-	taxAmt,
-	chargeId
+	bizTotalPriceDouble,
+	chargeId,
+	payMethod
 ) {
-	const adminUid = "l8Nwe8miQOMhBsFfMGuJCwY0qLH3";
-	const stringPrice = subtotalAmt + taxAmt;
-	const totalPrice = +stringPrice.toFixed(2);
+	const adminUid = "6IUWvD23ayVkRlxaO2wtSM2faNB3";
 
 	// * Order doc ref
 	const bizOrderDocRef = doc(db, "biz", bizId, "orders", orderId);
@@ -589,15 +426,23 @@ async function updateOrder(
 		"purchases",
 		orderId
 	);
+	const ordersDataDocRef = doc(db, "ordersData", "main");
+
 	// * Biz doc ref
 	const bizDocRef = doc(db, "biz", bizId);
+	const bizSnap = await getDoc(bizDocRef);
+	const bizData = bizSnap.data();
+	const bizName = bizData.name;
 
 	const batch = writeBatch(db);
 	let paymentMessage;
 
 	if (getStatus === "Confirmed") {
-		const resPaymentCharge = await chargePayment(getStatus, chargeId);
-		console.log(resPaymentCharge);
+		const resPaymentCharge = await chargePayment(
+			getStatus,
+			chargeId,
+			payMethod
+		);
 		if (!resPaymentCharge.success) {
 			if (resPaymentCharge.status) {
 				return {
@@ -630,6 +475,11 @@ async function updateOrder(
 			isNoticed: true,
 		});
 
+		// * Update total Revenue in biz Doc
+		batch.update(bizDocRef, {
+			totalRevenue: incrementArgs(bizTotalPriceDouble),
+		});
+
 		// * Update Customer Order
 		batch.update(customerOrderDocRef, {
 			status: getStatus,
@@ -640,12 +490,37 @@ async function updateOrder(
 
 		try {
 			await batch.commit();
-			return { success: true, paymentMessage };
 		} catch (error) {
+			console.log(error);
 			return {
 				success: false,
 				message: `Error updating order. The order was still accepted and the customer was charged. ${error}`,
 			};
+		}
+
+		// * Send Notifications Flash
+		try {
+			const resNotification = await sendNotification(
+				bizId,
+				bizName,
+				"response",
+				getStatus,
+				orderId,
+				null,
+				null,
+				null,
+				null
+			);
+			if (resNotification.success) {
+				return { success: true, paymentMessage };
+			} else {
+				// * notification error, still send success because flash was created.
+				return { success: true, paymentMessage };
+			}
+		} catch (err) {
+			// * return success true because schedule was posted, just notifications was not sent.
+			console.log(err);
+			return { success: true, paymentMessage };
 		}
 	}
 
@@ -692,17 +567,41 @@ async function updateOrder(
 
 		try {
 			await batch.commit();
-			return { success: true, message: "Successfully declined" };
 		} catch (error) {
 			return {
 				success: false,
 				message: `Could not decline/cancel.`,
 			};
 		}
+
+		// * Send Notifications Flash
+		try {
+			const resNotification = await sendNotification(
+				bizId,
+				bizName,
+				"response",
+				getStatus,
+				orderId,
+				reason,
+				null,
+				null,
+				null
+			);
+			if (resNotification.success) {
+				return { success: true, message: "Successfully declined" };
+			} else {
+				// * notification error, still send success because flash was created.
+				return { success: true, message: "Successfully declined" };
+			}
+		} catch (err) {
+			// * return success true because schedule was posted, just notifications was not sent.
+			console.log(err);
+			return { success: true, message: "Successfully declined" };
+		}
 	}
 
-	// * If cancelled, add reason update status
-	if (getStatus === "Cancelled") {
+	// * If canceled, add reason update status
+	if (getStatus === "Canceled") {
 		const resPaymentCharge = await chargePayment(getStatus, chargeId);
 		if (!resPaymentCharge.success) {
 			if (resPaymentCharge.status) {
@@ -724,7 +623,7 @@ async function updateOrder(
 		// * Update Admin Order
 		batch.set(
 			orderDocRefAdmin,
-			{ reasonDeclineOrCancel: reason },
+			{ reasonDeclineOrCancel: reason, isNoticed: true },
 			{ merge: true }
 		);
 		batch.update(orderDocRefAdmin, {
@@ -736,7 +635,7 @@ async function updateOrder(
 		// * Update Biz Order
 		batch.set(
 			bizOrderDocRef,
-			{ reasonDeclineOrCancel: reason },
+			{ reasonDeclineOrCancel: reason, isNoticed: true },
 			{ merge: true }
 		);
 		batch.update(bizOrderDocRef, {
@@ -745,10 +644,15 @@ async function updateOrder(
 			statusArr: arrayUnion(getStatus),
 		});
 
+		// * Update total Revenue in biz Doc
+		batch.update(bizDocRef, {
+			totalRevenue: decrementArgs(bizTotalPriceDouble),
+		});
+
 		// * Update Customer Order
 		batch.set(
 			customerOrderDocRef,
-			{ reasonDeclineOrCancel: reason },
+			{ reasonDeclineOrCancel: reason, isNoticed: true },
 			{ merge: true }
 		);
 		batch.update(customerOrderDocRef, {
@@ -759,40 +663,62 @@ async function updateOrder(
 
 		try {
 			await batch.commit();
-			return { success: true, paymentMessage };
 		} catch (error) {
 			return {
 				success: false,
 				message: `Error cancelling. The payment was still refunded to the customer. The business will accrue the credit card fees. Error: ${error}`,
 			};
 		}
+
+		// * Send Notifications Flash
+		try {
+			const resNotification = await sendNotification(
+				bizId,
+				bizName,
+				"response",
+				getStatus,
+				orderId,
+				reason,
+				null,
+				null,
+				null
+			);
+			if (resNotification.success) {
+				return { success: true, paymentMessage };
+			} else {
+				// * notification error, still send success because flash was created.
+				return { success: true, paymentMessage };
+			}
+		} catch (err) {
+			// * return success true because schedule was posted, just notifications was not sent.
+			console.log(err);
+			return { success: true, paymentMessage };
+		}
 	}
 
 	// * Update increment numOrders
 	if (getStatus === "Completed") {
-		// * Increment Orders Biz Doc
-		batch.update(bizDocRef, { numOrders: increment });
-
-		// * Increment ordreCount in AdminUid
-		batch.update(docRefAdminOrderCount, { numOrders: increment });
+		// // * Increment Orders Biz Doc
+		// batch.update(bizDocRef, { numOrders: increment });
 
 		// * Update Admin Order
 		batch.update(orderDocRefAdmin, {
 			status: getStatus,
 			statusIndex: getStatusIndex,
 			statusArr: arrayUnion(getStatus),
+			isNoticed: true,
 		});
+
+		// * Increment ordreCount in ordersData
+		// batch.update(docRefAdminOrderCount, { numOrders: increment });
+		batch.set(ordersDataDocRef, { numOrders: increment }, { merge: true });
 
 		// * Update Biz Order
 		batch.update(bizOrderDocRef, {
 			status: getStatus,
 			statusIndex: getStatusIndex,
 			statusArr: arrayUnion(getStatus),
-		});
-
-		// * Update total Revenue in biz Doc
-		batch.update(bizDocRef, {
-			totalRevenue: incrementArgs(totalPrice),
+			isNoticed: true,
 		});
 
 		// * Update Customer Order
@@ -800,6 +726,7 @@ async function updateOrder(
 			status: getStatus,
 			statusIndex: getStatusIndex,
 			statusArr: arrayUnion(getStatus),
+			isNoticed: true,
 		});
 
 		try {
@@ -814,29 +741,27 @@ async function updateOrder(
 	}
 
 	if (getStatus === "No Show") {
-		// * Increment Orders Biz
-		batch.update(bizDocRef, { numOrders: increment });
-
-		// * Increment ordreCount in AdminUid
-		batch.update(docRefAdminOrderCount, { numOrders: increment });
+		// // * Increment Orders Biz
+		// batch.update(bizDocRef, { numOrders: increment });
 
 		// * Update Admin Order
 		batch.update(orderDocRefAdmin, {
 			status: getStatus,
 			statusIndex: getStatusIndex,
 			statusArr: arrayUnion(getStatus),
+			isNoticed: true,
 		});
+
+		// * Increment ordreCount in ordersData
+		// batch.update(docRefAdminOrderCount, { numOrders: increment });
+		batch.set(ordersDataDocRef, { numOrders: increment }, { merge: true });
 
 		// * Update Biz Order
 		batch.update(bizOrderDocRef, {
 			status: getStatus,
 			statusIndex: getStatusIndex,
 			statusArr: arrayUnion(getStatus),
-		});
-
-		// * Update total Revenue in biz Doc
-		batch.update(bizDocRef, {
-			totalRevenue: incrementArgs(totalPrice),
+			isNoticed: true,
 		});
 
 		// * Update Customer Order
@@ -844,6 +769,7 @@ async function updateOrder(
 			status: getStatus,
 			statusIndex: getStatusIndex,
 			statusArr: arrayUnion(getStatus),
+			isNoticed: true,
 		});
 
 		try {
@@ -855,72 +781,6 @@ async function updateOrder(
 				message: `Error updating order. ${error}`,
 			};
 		}
-	}
-}
-
-async function chargePayment(getStatus, chargeId) {
-	console.log(getStatus, chargeId);
-	let baseUrl = "https://restoq.herokuapp.com/";
-	const capturePaymentVisa = "capturePaymentNP";
-	const refundPayment = "refundNP";
-
-	// * Free orders
-	if (chargeId === "noId") {
-		return { success: true };
-	}
-
-	// * Charge Stripe
-	if (getStatus === "Confirmed") {
-		baseUrl = baseUrl.concat(capturePaymentVisa);
-		const data = { chargeId };
-
-		return fetch(baseUrl, {
-			method: "POST",
-			headers: {
-				Accept: "application/json",
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify(data),
-		})
-			.then((data) => {
-				const status = data.status;
-
-				if (status === 200) {
-					return { success: true, status };
-				} else {
-					return { success: false, status };
-				}
-			})
-			.catch((error) => {
-				return { success: false, error };
-			});
-	}
-
-	// * Refund Stripe
-	if (getStatus === "Cancelled") {
-		baseUrl = baseUrl.concat(refundPayment);
-		const data = { chargeId };
-
-		return fetch(baseUrl, {
-			method: "POST",
-			headers: {
-				Accept: "application/json",
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify(data),
-		})
-			.then((data) => {
-				const status = data.status;
-
-				if (status === 200) {
-					return { success: true, status };
-				} else {
-					return { success: false, status };
-				}
-			})
-			.catch((error) => {
-				return { success: false, error };
-			});
 	}
 }
 
@@ -955,7 +815,7 @@ async function updateAdminAndBizPastOrders() {
 	// * Find past confirmed and reserved to update
 	const date = new Date();
 	const actualDate = date.toDateString();
-	const todayStartTime = "00:00";
+	const todayStartTime = "00:00:00";
 	const dateStartEpocMS = Date.parse(actualDate + " " + todayStartTime);
 
 	const batch = writeBatch(db);
@@ -1047,21 +907,21 @@ async function getAdminOrdersPaginate(round, lastDoc, adminUid) {
 	if (round === "prev") {
 		queryRound = query(
 			adminOrdersRef,
-			orderBy("endTime", "desc"),
+			orderBy("createdAt", "desc"),
 			endBefore(lastDoc),
 			limitToLast(10)
 		);
 	} else if (round === "next") {
 		queryRound = query(
 			adminOrdersRef,
-			orderBy("endTime", "desc"),
+			orderBy("createdAt", "desc"),
 			startAfter(lastDoc),
 			limit(10)
 		);
 	} else if (round === "last") {
 		queryRound = query(
 			adminOrdersRef,
-			orderBy("endTime", "desc"),
+			orderBy("createdAt", "desc"),
 			endAt(lastDoc),
 			limitToLast(10)
 		);

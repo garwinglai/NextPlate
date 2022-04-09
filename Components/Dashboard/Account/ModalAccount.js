@@ -45,6 +45,7 @@ function ModalAccount({
 		message: "",
 		success: "",
 		isVerified: false,
+		showPassword: false,
 	});
 	const [loginInfo, setLoginInfo] = useState({
 		email: "",
@@ -52,7 +53,8 @@ function ModalAccount({
 	});
 
 	const { email, password } = loginInfo;
-	const { loading, message, success, isVerified } = handleResponse;
+	const { loading, message, success, isVerified, showPassword } =
+		handleResponse;
 
 	async function handleReauthenticateSubmit(e) {
 		e.preventDefault();
@@ -97,7 +99,9 @@ function ModalAccount({
 				// * If password, set is Verified true, then update modal to new pw input.
 				// * New input will trigger outter else statement.
 				if (modalName === "password") {
+					console.log("here");
 					setHandleResponse({ loading: false, message: "", isVerified: true });
+					setLoginInfo((prev) => ({ ...prev, password: "" }));
 				}
 			} else {
 				setOpen(true);
@@ -108,7 +112,11 @@ function ModalAccount({
 				});
 			}
 		} else {
-			const resUpdatePassword = await updateSignInPassword(password);
+			const resUpdatePassword = await updateSignInPassword(
+				password,
+				uid,
+				bizId
+			);
 			if (resUpdatePassword.success) {
 				setOpen(true);
 				setHandleResponse({
@@ -153,12 +161,26 @@ function ModalAccount({
 						<input
 							onChange={handleChangeForm}
 							name="password"
-							type="password"
+							type={!showPassword ? "password" : "text"}
 							placeholder={isVerified ? "New password" : "Password *"}
 							value={password}
 							required
 							style={{ width: "100%", height: "40px", marginBottom: "20px" }}
 						/>
+
+						<div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+							<input
+								type="checkbox"
+								id="show-pw-checkbox"
+								onChange={() =>
+									setHandleResponse((prev) => ({
+										...prev,
+										showPassword: !prev.showPassword,
+									}))
+								}
+							/>
+							<label htmlFor="show-pw-checkbox">Show password</label>
+						</div>
 						{message && (
 							<Grid item xs={12} md={12} mt={2}>
 								<Collapse in={open}>

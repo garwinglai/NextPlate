@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
-import styles from "../../../styles/components/dashboard/orders/order-action.module.css";
-import { updateOrder } from "../../../actions/dashboard/ordersCrud";
+import styles from "../../../../styles/components/dashboard/orders/order-action.module.css";
+import { updateOrder } from "../../../../actions/dashboard/ordersCrud";
 import { Button, Grid } from "@mui/material";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
@@ -11,8 +10,16 @@ import Collapse from "@mui/material/Collapse";
 import { CircularProgress } from "@mui/material";
 import { useRouter } from "next/router";
 import DeclineCancelModal from "./DeclineCancelModal";
+import playNotificationSound from "../../../../helper/PlayAudio";
+import {
+	getLocalStorage,
+	removeLocalStorage,
+	setLocalStorage,
+} from "../../../../actions/auth/auth";
 
 function OrderAction({
+	pendingCount,
+	audio,
 	isShow,
 	onClose,
 	orderDetails,
@@ -28,14 +35,15 @@ function OrderAction({
 		errMessage: "",
 		successMessage: "",
 	});
-
+	console.log(orderDetails);
 	const { loading, success, errMessage, successMessage } = onUpdateResponse;
 	const {
 		customerName,
 		customerPhone,
 		subtotalAmt,
-		taxAmt,
-		totalPriceAmt,
+		bizTaxAmt,
+		bizTotalPrice,
+		bizTotalPriceDouble,
 		shortDate,
 		orderId,
 		pickupWindow,
@@ -79,13 +87,7 @@ function OrderAction({
 					<Button
 						variant="contained"
 						fullWidth
-						name={
-							status === "Reserved"
-								? timeEpoch > endTimeEpoch + fiveMinMiliSec
-									? "past"
-									: "accept"
-								: "complete"
-						}
+						name={status === "Reserved" ? "accept" : "complete"}
 						onClick={handleClick}
 					>
 						{status === "Reserved" ? "Accept" : "Complete"}
@@ -102,10 +104,13 @@ function OrderAction({
 
 		return (
 			<DeclineCancelModal
+				pendingCount={pendingCount}
+				audio={audio}
 				timeEpoch={timeEpoch}
 				endTimeEpoch={endTimeEpoch}
 				handleSuccessError={handleSuccessError}
 				orderDetails={orderDetails}
+				bizTotalPriceDouble={bizTotalPriceDouble}
 				bizId={bizId}
 				dayIndex={dayIndex}
 				setIsOpen={setIsOpen}
@@ -120,32 +125,33 @@ function OrderAction({
 	async function handleClick(e) {
 		setOnUpdateResponse({ loading: true, success: false, errMessage: "" });
 		const { name } = e.target;
-		if (name === "past") {
-			console.log(name);
-			const resUpdate = await updateOrder(
-				customerId,
-				orderId,
-				bizId,
-				"Declined",
-				2,
-				"Business did not accept in time",
-				dayIndex,
-				pickupWindowId,
-				null,
-				null,
-				null
-			);
-			if (resUpdate.success) {
-				handleSuccessError("Time passed. Order declined.", null);
-			} else {
-				setIsOpen(true);
-				setOnUpdateResponse({
-					loading: false,
-					success: false,
-					errMessage: resUpdate.message,
-				});
-			}
-		}
+		handleLSIncOrder(name);
+		// if (name === "past") {
+		// 	const resUpdate = await updateOrder(
+		// 		customerId,
+		// 		orderId,
+		// 		bizId,
+		// 		"Declined",
+		// 		2,
+		// 		"Business did not accept in time",
+		// 		dayIndex,
+		// 		pickupWindowId,
+		// 		null,
+		// 		null,
+		// 		null,
+		// 		null
+		// 	);
+		// 	if (resUpdate.success) {
+		// 		handleSuccessError("Time passed. Order declined.", null);
+		// 	} else {
+		// 		setIsOpen(true);
+		// 		setOnUpdateResponse({
+		// 			loading: false,
+		// 			success: false,
+		// 			errMessage: resUpdate.message,
+		// 		});
+		// 	}
+		// }
 
 		if (name === "accept") {
 			const resUpdate = await updateOrder(
@@ -157,12 +163,17 @@ function OrderAction({
 				null,
 				dayIndex,
 				pickupWindowId,
-				null,
-				null,
-				chargeId
+				bizTotalPriceDouble,
+				chargeId,
+				payMethod
 			);
 			if (resUpdate.success) {
-				handleSuccessError(null, "Accepted.");
+				// if (pendingCount == 0) {
+				// 	playNotificationSound(audio, "end");
+				// 	removeLocalStorage("playSoundOrders");
+				// }
+				// setLocalStorage("playSound", "end");
+				// handleSuccessError(null, "Accepted.");
 			} else {
 				setIsOpen(true);
 				setOnUpdateResponse({
@@ -172,6 +183,7 @@ function OrderAction({
 				});
 			}
 		} else if (name === "complete") {
+			console.log(name);
 			const resUpdate = await updateOrder(
 				customerId,
 				orderId,
@@ -181,12 +193,12 @@ function OrderAction({
 				null,
 				null,
 				pickupWindowId,
-				subtotalAmt,
-				taxAmt,
+				null,
+				null,
 				null
 			);
 			if (resUpdate.success) {
-				handleSuccessError(null, "Completed.");
+				// handleSuccessError(null, "Completed.");
 			} else {
 				setIsOpen(true);
 				setOnUpdateResponse({
@@ -195,6 +207,18 @@ function OrderAction({
 					errMessage: resUpdate.message,
 				});
 			}
+		}
+	}
+
+	function handleLSIncOrder(action) {
+		const incOrderLS = JSON.parse(getLocalStorage("incOrder"));
+
+		if (action === "complete") {
+			let incOrder = { ...incOrderLS, isViewed: false };
+			setLocalStorage("incOrder", incOrder);
+		} else {
+			let incOrder = { ...incOrderLS, isViewed: true };
+			setLocalStorage("incOrder", incOrder);
 		}
 	}
 
@@ -264,9 +288,9 @@ function OrderAction({
 								</p>
 							</div>
 							<div className={`${styles.flexCol} ${styles.totals__right}`}>
-								<p>{items[0].itemPrice}</p>
-								<p>{taxAmt}</p>
-								<p>{totalPriceAmt}</p>
+								<p>${subtotalAmt.toFixed(2)}</p>
+								<p>${bizTaxAmt.toFixed(2)}</p>
+								<p>{bizTotalPrice}</p>
 							</div>
 						</div>
 						{showAcceptButton()}

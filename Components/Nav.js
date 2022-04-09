@@ -10,8 +10,10 @@ import DashMenuMobile from "./Dashboard/DashMenuMobile";
 import NotificationsMobile from "./Dashboard/Notifications/NotificationsMobile";
 import { Avatar } from "@mui/material";
 import Image from "next/image";
+import { getAuth } from "firebase/auth";
+import { IconButton } from "@mui/material";
 
-function Nav({ currentPage, notifications }) {
+function Nav({ currentPage, notifications, notificationsConfirmed }) {
 	const [isLoggedIn, setIsLoggedIn] = useState(false);
 	const [mobileNav, setMobileNav] = useState({
 		showHamburger: false,
@@ -24,7 +26,7 @@ function Nav({ currentPage, notifications }) {
 
 	const { fName, loading } = userInfo;
 	const { showHamburger, showNotifications } = mobileNav;
-	// const { numOrdersUnoticed, orderData } = notifications;
+
 	const router = useRouter();
 	const uid = router.query.uid;
 
@@ -49,17 +51,10 @@ function Nav({ currentPage, notifications }) {
 				fName: firstName,
 				loading: false,
 			}));
-			if (
-				notifications &&
-				notifications.numOrdersUnoticed !== 0 &&
-				notifications.orderData.length !== 0
-			) {
-				setMobileNav((prev) => ({ ...prev, showNotifications: true }));
-			}
 		} else {
 			setIsLoggedIn(false);
 		}
-	}, [notifications, uid]);
+	}, [uid]);
 
 	// * ADMIN NAV -----------------------------------
 
@@ -103,7 +98,7 @@ function Nav({ currentPage, notifications }) {
 	function authAndLandingNav() {
 		return (
 			<div className={styles.Nav__user}>
-				<Link href="/business/signin">
+				<Link href="https://www.home.nextplate.app/">
 					<a>
 						<Image
 							priority={true}
@@ -144,19 +139,61 @@ function Nav({ currentPage, notifications }) {
 
 	// * DISPLAY
 
-	function mobileDashboardNav() {
+	function mobileDashboardNav(currentPage) {
+		const auth = getAuth();
+		const user = auth.currentUser;
+		if (!user) {
+			return;
+		}
 		const { numOrdersUnnoticed, errorMessage, orderData } = notifications;
+		const {
+			numOrdersConfirmed,
+			ordersConfirmedErrorMessage,
+			ordersConfirmedData,
+		} = notificationsConfirmed;
+
+		let count = numOrdersConfirmed + numOrdersUnnoticed;
+		let dataArr = [...orderData, ...ordersConfirmedData];
+
+		if (errorMessage) {
+			count++;
+		}
+		if (ordersConfirmedErrorMessage) {
+			count++;
+		}
+
 		return (
 			<ClickAwayListener onClickAway={handleClickAway}>
 				<div>
 					<div className={styles.Nav__dashboardMobile}>
-						<MenuIcon name="hamburger" onClick={handleBurgerClick} />
+						<IconButton sx={{ padding: "20px" }} onClick={handleBurgerClick}>
+							<MenuIcon
+								name="hamburger"
+								sx={{
+									color: "white",
+									width: "40px",
+									height: "40px",
+									["@media (max-width:480px)"]: {
+										// eslint-disable-line no-useless-computed-key
+										width: "30px",
+										height: "30px",
+									},
+									// padding: "10px",
+								}}
+							/>
+						</IconButton>
 						<Link href={`/dashboard/${uid}`}>
-							<a>
-								<h3>Hello, {fName}</h3>
+							<a style={{ padding: "0", margin: "0" }}>
+								<Image
+									priority={true}
+									src="/images/NP_White.png"
+									alt="logo"
+									width="150px"
+									height="60px"
+								/>
 							</a>
 						</Link>
-						{numOrdersUnnoticed !== 0 && (
+						{count !== 0 && (
 							<Avatar
 								alt="notifications"
 								sx={{
@@ -168,14 +205,27 @@ function Nav({ currentPage, notifications }) {
 									right: "30px",
 								}}
 							>
-								{numOrdersUnnoticed}
+								{count}
 							</Avatar>
 						)}
-						<NotificationsNoneIcon
-							name="notifications"
+						<IconButton
+							sx={{ padding: "20px" }}
 							onClick={handleNotificationsClick}
-							sx={{ width: "30px", height: "30px" }}
-						/>
+						>
+							<NotificationsNoneIcon
+								name="notifications"
+								sx={{
+									width: "40px",
+									height: "40px",
+									color: "white",
+									["@media (max-width:480px)"]: {
+										// eslint-disable-line no-useless-computed-key
+										width: "30px",
+										height: "30px",
+									},
+								}}
+							/>
+						</IconButton>
 					</div>
 					{showHamburger && (
 						<DashMenuMobile
@@ -187,8 +237,10 @@ function Nav({ currentPage, notifications }) {
 						<NotificationsMobile
 							closeNotifications={handleClickAway}
 							uid={uid}
-							orderData={orderData}
-							handleClickAway={handleClickAway}
+							count={count}
+							orderData={dataArr}
+							orderConfirmErrorMessage={ordersConfirmedErrorMessage}
+							orderPendingErrorMessage={errorMessage}
 						/>
 					)}
 				</div>
@@ -205,9 +257,10 @@ function Nav({ currentPage, notifications }) {
 					currentPage === "Schedule" ||
 					currentPage === "Orders" ||
 					currentPage === "Payments" ||
-					currentPage === "Account" ||
-					currentPage === "Settings") &&
-					mobileDashboardNav()}
+					currentPage === "Products" ||
+					currentPage === "Settings" ||
+					currentPage === "Test mode") &&
+					mobileDashboardNav(currentPage)}
 			</nav>
 		</React.Fragment>
 	);

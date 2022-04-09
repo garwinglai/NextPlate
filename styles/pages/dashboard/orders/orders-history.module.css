@@ -1,15 +1,10 @@
 .HistoryOrders {
-	/* background-color: #f8ceec00;
-	background-image: linear-gradient(180deg, #f8ceec00 0%, #a88beb28 74%); */
-	width: 100%;
+	width: 95%;
 	height: 100%;
-	padding: 10px 0 0 0;
-	margin: 0 auto;
+	padding: 20px 0;
 	display: flex;
-}
-
-.HistoryOrders__statusQuery {
-	width: 20%;
+	justify-content: center;
+	gap: 20px;
 }
 
 .HistoryOrders__statusQuery label {
@@ -17,11 +12,11 @@
 }
 
 .Orders__filtersItemContainer {
-	margin: 10px auto 0;
 	width: min-content;
 	background-color: white;
 	border-radius: 5px;
 	padding: 25px 15px;
+	margin-left: 15px;
 	box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
 }
 
@@ -29,7 +24,6 @@
 	display: flex;
 	align-items: center;
 	gap: 5px;
-	margin-left: 10px;
 	margin-bottom: 10px;
 }
 
@@ -39,39 +33,37 @@
 }
 
 .HistoryOrders__main {
-	width: 90%;
-	/* height: 100%; */
+	width: 85%;
 	background-color: white;
 	border-radius: 5px;
-	margin: 10px;
 	padding: 25px 0;
 	box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
 }
 
-.HistoryOrders__searchBar {
-	margin: 0 0 15px 15px;
+.SearchGroup {
+	/* background-color: rebeccapurple; */
 	display: flex;
 	width: 100%;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	margin: 15px 0 30px;
+	padding: 0 20px;
+}
+
+.DatePickerContainer {
+	display: flex;
+	width: 350px;
+}
+
+.DateGroup {
+	width: 100%;
+	display: flex;
 	align-items: center;
+	gap: 10px;
 }
 
-.HistoryOrders__searchBar > input {
-	height: 30px;
-	width: 30%;
-	text-indent: 30px;
-	border: 2px solid var(--light-btn-blue);
-	border-radius: 4px 0 0 4px;
-}
-
-.HistoryOrders__searchBar > input:focus {
-	outline: none;
-}
-
-.HistoryOrders__searchBarIcon {
-	border-radius: 0 4px 4px 0;
-	height: 30px;
-	background-color: var(--light-btn-blue);
-	color: white;
+.DateGroup > p {
+	color: var(--btn-blue);
 }
 
 .HistoryOrders__orderHeader {
@@ -79,12 +71,11 @@
 	grid-template-columns: 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr;
 	justify-items: center;
 	align-items: center;
-	/* margin: 0 auto 10px; */
 	width: 100%;
 	height: 40px;
 	background-color: white;
 	border-bottom: 1px solid var(--gray);
-	gap: 10px;
+	gap: 5px;
 }
 
 .justifyStartItem {
@@ -93,6 +84,14 @@
 
 .justifyEndItem {
 	justify-self: flex-end;
+}
+
+.justifyCenter {
+	justify-self: center;
+}
+
+.paddingLeft {
+	padding-left: 20px;
 }
 
 .flex {
@@ -111,7 +110,7 @@
 }
 
 .HistoryOrders__paginationButton {
-	margin: 20px auto;
+	margin: 5px auto;
 	width: 90%;
 	display: flex;
 	justify-content: center;
@@ -127,21 +126,11 @@
 	cursor: pointer;
 }
 
-@media screen and (min-width: 769px) {
-	@media (hover: hover) {
-		.HistoryOrders__searchBarIcon:hover {
-			/* color: black; */
-			background-color: var(--btn-blue);
-		}
-	}
-}
-
 @media screen and (max-width: 768px) {
 	.HistoryOrders {
 		flex-direction: column;
 		background-image: unset;
-		/* width: 100%; */
-		/* background-color: rebeccapurple; */
+		width: 100%;
 	}
 
 	.HistoryOrders__statusQuery {
@@ -151,6 +140,7 @@
 	.Orders__filtersItemContainer {
 		width: 90%;
 		height: auto;
+		margin: 0 auto;
 	}
 
 	.Orders__filtersItemContainer > div {
@@ -161,62 +151,72 @@
 	}
 
 	.Orders__filtersItemContainer div div {
-		/* width: max-content; */
 		flex-wrap: nowrap;
 	}
 
-	.scrollHoriztonal {
-		/* overflow-x: scroll; */
-	}
-
 	.HistoryOrders__main {
-		/* width: auto; */
-
 		width: 90%;
 		margin: 20px auto 0;
-		/* margin-top: 30px; */
-		/* background-color: rebeccapurple; */
 	}
 
-	.HistoryOrders__searchBar {
-		width: 80%;
-		/* height: 30px; */
-	}
-
-	.HistoryOrders__searchBar > input {
+	.SearchGroup {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
 		width: 100%;
-		height: 30px;
+		margin: 15px 0 30px;
+		padding: 0 20px;
 	}
 
-	.HistoryOrders__searchBar > button {
-		height: 30px;
+	.DatePickerContainer {
+		width: fit-content;
+		display: flex;
+		/* flex-direction: column; */
+		justify-content: flex-end;
+		align-items: flex-end;
+		gap: 20px;
+	}
+
+	.DateGroup {
+		width: fit-content;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.DateGroup > p {
+		font-size: 18px;
+		color: var(--btn-blue);
 	}
 
 	.HistoryOrders__orderHeader {
-		/* display: flex; */
-		/* gap: 10px; */
-
 		width: 100%;
 		justify-items: center;
-		/* grid-template-columns: unset; */
 		padding: 0;
 	}
 	.HistoryOrders__orderHeader h5 {
-		font-size: 8px;
+		font-size: 12px;
 	}
 
 	.justifyStartItem {
 		justify-self: unset;
 	}
-	
+
 	.justifyEndItem {
 		justify-self: unset;
 	}
 
-	.HistoryOrders__orderHeader div {
-		/* width: 200px; */
-		/* padding: 0 10px; */
-		/* background-color: red; */
-		/* justify-self: center; */
+	.paddingLeft {
+		padding-left: unset;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.SearchGroup {
+		margin: 20px 0 35px;
+	}
+	.DatePickerContainer {
+		width: 50%;
+		flex-direction: column;
 	}
 }

@@ -1,0 +1,59 @@
+.RemoveScheduleTab {
+	background-color: white;
+	display: grid;
+	grid-template-columns: 1.5fr 1fr 2fr 1fr 1fr;
+	justify-items: center;
+	align-items: center;
+	margin: 5px 0 0 10px;
+	border: 1px solid rgb(187, 187, 187);
+	box-shadow: rgba(33, 35, 38, 0.1) 0px 10px 10px -10px;
+	/* padding: 5px 0; */
+	border-radius: 5px;
+	height: 40px;
+}
+
+.Status {
+	background-color: var(--light-green);
+	border-radius: 5px;
+	padding: 2px 5px;
+	margin: 0 1px;
+	font-weight: 400;
+	color: white;
+}
+
+.Quantity {
+	display: flex;
+	align-items: center;
+	gap: 3px;
+}
+
+.Quantity p:first-child {
+	color: var(--dark-gray);
+	background-color: var(--light-blue);
+	padding: 5px;
+	border-radius: 5px;
+}
+
+@media screen and (max-width: 768px) {
+	.RemoveScheduleTab {
+		height: 60px;
+	}
+
+	.RemoveScheduleTab p {
+		font-size: 20px;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.RemoveScheduleTab {
+		height: 40px;
+	}
+
+	.RemoveScheduleTab p {
+		font-size: 10px;
+	}
+
+	.RemoveScheduleTab > button {
+		font-size: 10px;
+	}
+}

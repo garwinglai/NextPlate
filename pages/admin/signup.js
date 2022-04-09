@@ -2,7 +2,11 @@ import React, { useState } from "react";
 import Layout from "../../Components/Layout";
 import { useRouter } from "next/router";
 import { signUpAdmin } from "../../actions/auth/auth";
-import { addEmailsInUse, addAdminEmailsInUse } from "../../actions/crud/emails";
+import {
+	addAdminEmails,
+	addEmailsInUse,
+	addAdminEmailsInUse,
+} from "../../actions/crud/emails";
 import Admin from "../../Components/Admin";
 
 function SignUp() {
@@ -22,19 +26,15 @@ function SignUp() {
 
 		const signUpAdminRes = await signUpAdmin(adminLoginCred);
 		if (signUpAdminRes.success) {
-			const adminEmailRes = await addAdminEmailsInUse(email);
+			const adminUid = signUpAdminRes.adminUid;
+			console.log(adminUid);
+			const adminEmailRes = await addAdminEmails(email, adminUid, password);
 			if (adminEmailRes.success) {
-				const emailRes = await addEmailsInUse(email);
-				if (emailRes.success) {
-					setLoading(false);
-					setMessage(signUpAdminRes.message);
-					setTimeout(() => {
-						router.push("/admin");
-					}, 1000);
-				} else {
-					setLoading(false);
-					setMessage(emailRes.message);
-				}
+				setLoading(false);
+				setMessage(signUpAdminRes.message);
+				setTimeout(() => {
+					router.push("/admin");
+				}, 1000);
 			} else {
 				setLoading(false);
 				setMessage(adminEmailRes.message);
@@ -42,28 +42,6 @@ function SignUp() {
 		} else {
 			setLoading(false);
 			setMessage(signUpAdminRes.message);
-		}
-
-		try {
-			const user = await signUpAdmin(adminLoginCred);
-
-			if (user.signedUp) {
-				const userEmail = user.user.email;
-				await addEmailsInUse(userEmail);
-				await addAdminEmailsInUse(userEmail);
-				setLoading(false);
-				router.push("/admin");
-			} else {
-				setLoading(false);
-				setMessage(user.message);
-			}
-		} catch (e) {
-			setLoading(false);
-			if ((e.message = "Email already in use.")) {
-				setMessage(e.message);
-			} else {
-				setMessage(e.message);
-			}
 		}
 	}
 
@@ -96,8 +74,6 @@ function SignUp() {
 							name="password"
 							id="password"
 							minLength="8"
-							// pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
-							// 1 lc letter, 1 uc letter, 1 number, 8 length
 							required
 						/>
 						<label htmlFor="password">Admin password</label>

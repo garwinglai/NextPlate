@@ -1,6 +1,5 @@
 import React from "react";
-import styles from "../../../styles/components/dashboard/orders/orderhistorytabcomp.module.css";
-import { Avatar } from "@mui/material";
+import styles from "../../../../styles/components/dashboard/orders/orderhistorytabcomp.module.css";
 
 //TODO: Add items array to each other - remove condition
 
@@ -13,14 +12,14 @@ function OrderHistoryTabComponent({ order }) {
 		status,
 		endTime,
 		itemName,
-		totalPriceAmt,
+		bizTotalPrice,
 		quantity,
 	} = order;
 
 	function statusColor(status) {
 		if (
 			status === "Declined" ||
-			status === "Cancelled" ||
+			status === "Canceled" ||
 			status === "No Show"
 		) {
 			return {
@@ -44,14 +43,16 @@ function OrderHistoryTabComponent({ order }) {
 
 	return (
 		<div className={styles.OrderHistoryTabComponent}>
-			<p className={styles.justifyEndItem}>#{orderId.slice(0, 5)}</p>
-			<p className={styles.justifyStartItem}>{shortDate}</p>
-			<p>{customerName}</p>
+			<p className={`${styles.justifyStartItem} ${styles.paddingLeft}`}>
+				#{orderId.slice(0, 5)}
+			</p>
+			<p className={styles.justifyEndItem}>{shortDate}</p>
+			<p className={`${styles.justifyStartItem}`}>{customerName}</p>
 
-			<p>{items && items[0].itemName}</p>
+			<p className={styles.textAlignCenter}>{items && items[0].itemName}</p>
 			<p className={styles.justifyEndItem}>{items && items[0].quantity}x</p>
-			<p className={styles.justifyStartItem}>{totalPriceAmt}</p>
-			<p style={statusColor(status)} className={styles.justifyStartItem}>
+			<p className={styles.justifyStartItem}>{bizTotalPrice}</p>
+			<p style={statusColor(status)} className={styles.justifyCenter}>
 				{status}
 			</p>
 		</div>

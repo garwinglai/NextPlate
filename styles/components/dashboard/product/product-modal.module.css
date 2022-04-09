@@ -1,0 +1,98 @@
+.flexCol {
+	display: flex;
+	flex-direction: column;
+}
+
+.flexRow {
+	display: flex;
+}
+
+.header {
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
+}
+
+.title {
+	text-decoration: underline;
+}
+
+.itemContainer {
+	gap: 20px;
+	width: 400px;
+}
+
+.itemContainer label {
+	color: var(--dark-gray);
+	font-size: 14px;
+	width: 100%;
+	margin-bottom: 5px;
+}
+
+.itemContainer input {
+	height: 40px;
+	text-indent: 5px;
+	width: 100%;
+}
+
+.itemGroup {
+	/* display: flex; */
+	/* background-color: red; */
+}
+
+.listPriceRadioGroup {
+	display: flex;
+	margin: 5px 0 20px 0;
+	/* background-color: rebeccapurple; */
+}
+
+.listPriceRadioGroup label {
+	font-size: 18px;
+}
+
+.priceGroup {
+	margin-right: 10px;
+}
+
+.radios {
+	display: none;
+}
+
+.labels {
+	border: 1px solid var(--btn-blue);
+	color: var(--dark-blue);
+	white-space: nowrap;
+	padding: 5px;
+	border-radius: 5px;
+	margin: 5px 10px 5px 0;
+}
+
+.listPriceRadioGroup input[type="radio"]:checked ~ .labelsChecked {
+	background-color: var(--light-btn-blue);
+	color: white;
+	font-weight: 500;
+}
+
+@media screen and (max-width: 768px) {
+	.itemContainer label {
+		font-size: 20px;
+	}
+
+	.itemContainer input {
+		font-size: 20px;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.itemContainer {
+		width: 270px;
+	}
+
+	.itemContainer label {
+		font-size: 15px;
+	}
+
+	.itemContainer input {
+		font-size: 15px;
+	}
+}

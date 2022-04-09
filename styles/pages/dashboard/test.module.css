@@ -1,0 +1,310 @@
+.Box {
+	background-color: var(--dark-orange);
+	animation-name: pulse;
+	animation-duration: 1.5s;
+	animation-iteration-count: infinite;
+	animation-direction: alternate;
+}
+
+@keyframes pulse {
+	0% {
+		background-color: var(--orange);
+	}
+
+	100% {
+		background-color: var(--dark-orange);
+	}
+}
+
+.BoxContent {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	gap: 50px;
+}
+
+.BoxDescription {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 20px;
+}
+
+.BoxContent h1 {
+	font-size: 180px;
+	color: white;
+	border-radius: 50%;
+	padding: 10px 65px;
+	background-color: var(--orange);
+	animation-name: order;
+	animation-duration: 1.5s;
+	animation-iteration-count: infinite;
+	animation-direction: alternate;
+}
+
+@keyframes order {
+	0% {
+		background-color: var(--dark-orange);
+	}
+
+	100% {
+		background-color: var(--orange);
+	}
+}
+
+.BoxContent h2 {
+	font-size: 40px;
+	color: white;
+}
+
+.BoxContent p {
+	font-size: 25px;
+	color: black;
+}
+
+.IncomingOrders__container {
+	height: 100%;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	padding: 45px;
+}
+
+.IncomingOrders__container > button {
+	margin-left: auto;
+	font-size: 16px;
+}
+
+.tab__container {
+	position: relative;
+	width: fit-content;
+}
+
+.pendingCount {
+	background-color: var(--orange);
+	color: white;
+	width: fit-content;
+	padding: 5px 9px;
+	border-radius: 50%;
+	font-size: 14px;
+	position: absolute;
+	top: -5%;
+	left: 40%;
+}
+
+.confirmedCount {
+	background-color: var(--light-green);
+	color: white;
+	width: fit-content;
+	padding: 5px 9px;
+	border-radius: 50%;
+	font-size: 14px;
+	position: absolute;
+	top: -5%;
+	left: 87%;
+}
+
+.ScheduleModal__container {
+	gap: 30px;
+	width: 350px;
+}
+
+.hourTitleGroup {
+	align-items: center;
+	gap: 20px;
+}
+
+.Description {
+	font-size: 12px;
+	color: var(--gray);
+}
+
+.titleGap {
+	margin-bottom: 10px;
+}
+
+.mealLabels {
+	border: 1px solid var(--btn-blue);
+	color: var(--dark-blue);
+	white-space: nowrap;
+	font-size: 16px;
+	border-radius: 5px;
+	display: inline-block;
+	width: 35px;
+	text-align: center;
+	padding: 5px 0;
+	margin: 5px 10px 5px 10px;
+}
+
+.radios {
+	display: none;
+}
+
+.itemGroup {
+	flex-wrap: wrap;
+}
+
+.labels {
+	border: 1px solid var(--btn-blue);
+	color: var(--dark-blue);
+	white-space: nowrap;
+	font-size: 16px;
+	padding: 5px;
+	border-radius: 5px;
+	margin: 5px 10px 5px 10px;
+}
+
+.ScheduleModal__container input[type="radio"]:checked ~ .labelsChecked {
+	background-color: var(--light-btn-blue);
+	color: white;
+	font-weight: 500;
+}
+
+.flexCol {
+	display: flex;
+	flex-direction: column;
+}
+
+.flexRow {
+	display: flex;
+}
+
+.ScheduleModal__container > button {
+	height: 35px;
+	width: 100%;
+	margin: 0 auto;
+}
+
+.hourDisabled {
+	background-color: var(--light-gray);
+	border: none;
+	color: var(--dark-gray);
+}
+
+@media screen and (max-width: 768px) {
+	.IncomingOrders__container {
+		width: 95%;
+		height: auto;
+		margin: 0 auto;
+		overflow-y: scroll;
+		padding: 10px 5px 0 5px;
+	}
+
+	.IncomingOrders__container > button {
+		font-size: 30px;
+		/* margin: 35px 0 60px auto; */
+		margin: 40px auto;
+		width: 90%;
+		height: 60px;
+	}
+
+	.tab__container {
+		width: fit-content;
+		width: 100%;
+	}
+
+	.tab__Group > div > div {
+		display: flex;
+		justify-content: space-evenly;
+	}
+
+	.tab {
+		font-size: 25px;
+	}
+
+	.pendingCount {
+		top: -23%;
+		left: 14%;
+		font-size: 26px;
+		padding: 5px 13px;
+	}
+
+	.confirmedCount {
+		top: -23%;
+		left: 57%;
+		font-size: 26px;
+		padding: 5px 13px;
+	}
+
+	/* Titles and hour radio font */
+	.ScheduleModal__container {
+		width: 450px;
+		gap: 50px;
+	}
+
+	.ScheduleModal__container h3 {
+		font-size: 25px;
+	}
+
+	.titleGap {
+		margin-bottom: 15px;
+	}
+
+	.mealLabels {
+		font-size: 30px;
+		width: 70px;
+		margin: 10px;
+	}
+
+	.labels {
+		font-size: 30px;
+		margin: 10px;
+	}
+
+	.ScheduleModal__container > button {
+		height: 50px;
+		width: 100%;
+		font-size: 20px;
+		margin: 0 auto;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.IncomingOrders__container > button {
+		font-size: 18px;
+		width: 90%;
+		height: 40px;
+		margin: 40px auto 50px;
+	}
+
+	.tab {
+		font-size: 18px;
+	}
+
+	.pendingCount {
+		top: -18%;
+		left: 12%;
+		font-size: 16px;
+		padding: 5px 10px;
+	}
+
+	.confirmedCount {
+		top: -18%;
+		left: 57%;
+		font-size: 16px;
+		padding: 5px 10px;
+	}
+
+	.ScheduleModal__container {
+		width: 290px;
+		gap: 20px;
+	}
+
+	.ScheduleModal__container h3 {
+		font-size: 20px;
+	}
+
+	.mealLabels {
+		font-size: 18px;
+		width: 40px;
+		margin: 10px;
+	}
+
+	.labels {
+		font-size: 18px;
+		margin: 5px 10px;
+	}
+}

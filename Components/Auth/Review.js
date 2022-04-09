@@ -9,11 +9,13 @@ import {
 } from "../../actions/auth/auth";
 import { serverTimestamp } from "firebase/firestore";
 import { signUpBiz } from "../../actions/auth/auth";
-import createBizUser from "../../actions/crud/bizUser";
+import createBizAccount from "../../actions/crud/bizUser";
 import { CircularProgress } from "@mui/material";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Collapse from "@mui/material/Collapse";
+import _ from "lodash";
+import { versionNumber } from "../../staticData/versionNumber";
 
 const createNameCombinations = (name) => {
 	let fullCombination;
@@ -28,7 +30,6 @@ const createNameCombinations = (name) => {
 	if (nameArrLen === 0) {
 		return;
 	}
-
 	if (nameArrLen === 1) {
 		return nameArr;
 	} else if (nameArrLen === 2) {
@@ -119,7 +120,9 @@ export default function Review({
 			.split(" ")
 			.map((name) => _.capitalize(name))
 			.join(" ");
+		const lowerCaseEmail = _.toLower(email);
 
+		// * New Business
 		const businessInfo = {
 			name: capitalName,
 			itemName,
@@ -127,13 +130,14 @@ export default function Review({
 			status: 0,
 			address: { ...address, fullAddress },
 			website,
-			storeContact,
+			storeContact: { ...storeContact, email: lowerCaseEmail },
 			ownerContact: {
 				...ownerContact,
+				email: lowerCaseEmail,
 				firstName: capFirst,
 				lastName: capLast,
 			},
-			login: { email, password },
+			login: { email: lowerCaseEmail, password },
 			createdAt: new serverTimestamp(),
 			pickUpBuffer: parseInt(pickUpBuffer),
 			categoryArr: keywords,
@@ -154,15 +158,42 @@ export default function Review({
 			originalPrice: "$" + originalPrice,
 			defaultPrice: "$" + defaultPrice,
 			allergens,
+			weeklySchedules: {},
+			// TODO: inclue tax
+			// includeTax: true,
+			// version: versionNumber,
 		};
+
+		// * Default Product
+		const defaultProduct = {
+			itemName,
+			itemDescription,
+			originalPrice: "$" + originalPrice,
+			defaultPrice: "$" + defaultPrice,
+			allergens,
+			isDefault: true,
+			createdAt: new serverTimestamp(),
+		};
+
+		console.log(defaultProduct);
 		console.log(businessInfo);
+
+		// * Uncomment when testing to stop loading
+		// setCreateBizResponse({
+		// 	loading: false,
+		// 	message,
+		// });
 
 		const bizSignUpResponse = await signUpBiz(businessInfo.login);
 
 		if (bizSignUpResponse.success) {
 			const uid = bizSignUpResponse.uid;
 			businessInfo.userInfo = { uid };
-			const { success, message } = await createBizUser(businessInfo, uid);
+			const { success, message } = await createBizAccount(
+				businessInfo,
+				defaultProduct,
+				uid
+			);
 			if (success) {
 				setCreateBizResponse({
 					loading: false,
@@ -301,7 +332,7 @@ export default function Review({
 													categoryName = "Meals";
 													break;
 												case 2:
-													categoryName = "Break & Pastries";
+													categoryName = "Bread & Pastries";
 													break;
 												case 3:
 													categoryName = "Groceries";

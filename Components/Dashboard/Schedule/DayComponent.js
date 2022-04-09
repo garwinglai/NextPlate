@@ -1,8 +1,7 @@
-import { ClickAwayListener, Button, Avatar } from "@mui/material";
+import { Button } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import React, { useEffect, useState } from "react";
 import styles from "../../../styles/components/dashboard/schedule/daycomponent.module.css";
-import CreateSchedule from "./CreateSchedule";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import {
@@ -10,6 +9,7 @@ import {
 	query,
 	onSnapshot,
 	where,
+	doc,
 	getDocs,
 } from "firebase/firestore";
 import { db } from "../../../firebase/fireConfig";
@@ -20,6 +20,9 @@ import { removeSchedule } from "../../../actions/dashboard/scheduleCrud";
 import Alert from "@mui/material/Alert";
 import Collapse from "@mui/material/Collapse";
 import SuccessError from "../Orders/SuccessError";
+import ManualCreateSchedule from "./ManualCreateSchedule";
+import sendNotification from "../../../actions/heroku/notifications";
+import { getLocalStorage, setLocalStorage } from "../../../actions/auth/auth";
 
 const style = {
 	position: "absolute",
@@ -43,7 +46,9 @@ const styleAlert = {
 	border: "2px solid #000",
 };
 
-function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
+function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
+	const [isNotificationSent, setIsNotificationSent] = useState(false);
+	const [disableCreateButton, setDisableCreateButton] = useState(false);
 	const [handleScheduleUpdates, setHandleScheduleUpdates] = useState({
 		errorMessage: "",
 		successMessage: "",
@@ -54,12 +59,14 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 		removeSuccess: false,
 		showRemoveMessage: false,
 		removeScheduleId: "",
+		canRemove: false,
 	});
 	const [isScheduleFlashRemoved, setIsScheduleFlashRemoved] = useState({
 		flashRemoveMessage: "",
 		flashRemoveSuccess: false,
 		showFlashRemoveMessage: false,
 		removeFlashId: "",
+		canRemoveFlash: false,
 	});
 
 	const [showRemoveModalFlash, setShowRemoveModalFlash] = useState(false);
@@ -70,6 +77,14 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 	const [incOrders, setIncOrders] = useState({
 		pendingCount: 0,
 		incOrderErrorMessage: "",
+	});
+
+	const [flash, setFlash] = useState({
+		postsFlash: [],
+		timeDisplaysFlash: [],
+		hasFlashOnDateComponent: false,
+		errorLoadingFlash: "",
+		currShortDate: "",
 	});
 
 	const [posts, setPosts] = useState([]);
@@ -85,6 +100,14 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 	const [hoverState, setHoverState] = useState(true);
 	const [errorLoadingPosts, setErrorLoadingPosts] = useState("");
 
+	const { canRemoveFlash } = isScheduleFlashRemoved;
+	const {
+		removeMessage,
+		removeSuccess,
+		showRemoveMessage,
+		removeScheduleId,
+		canRemove,
+	} = isScheduledRemoved;
 	const { errorMessage, successMessage, isOpen } = handleScheduleUpdates;
 	const {
 		flashRemoveMessage,
@@ -92,8 +115,6 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 		showFlashRemoveMessage,
 		removeFlashId,
 	} = isScheduleFlashRemoved;
-	const { removeMessage, removeSuccess, showRemoveMessage, removeScheduleId } =
-		isScheduledRemoved;
 	const { pendingCount, incOrderErrorMessage } = incOrders;
 	const { monthDay, dayOfWeek, dayOfWkIdx, actualDate, shortDate } = date;
 	const hasOrders = ordersDataArr.filter(
@@ -131,12 +152,12 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 		}
 
 		const unsubscribe = getSchedules(bizId);
-		const unsubscribeRecur = getSchedulesRecur(bizId);
+		// const unsubscribeRecur = getSchedulesRecur(bizId);
 		const unsubscribeIncOrders = getIncomingOrders(bizId);
-
+		disableCreateToday();
 		return () => {
 			unsubscribe();
-			unsubscribeRecur();
+			// unsubscribeRecur();
 			unsubscribeIncOrders();
 		};
 
@@ -145,110 +166,151 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 
 	// * UseEffect ACTIONS --------------------------------
 
-	function getSchedules(bizId) {
-		const openHistoryRef = collection(db, "biz", bizId, "openHistory");
-
-		const q = query(
-			openHistoryRef,
-			where("scheduledDateShort", "==", shortDate),
-			where("recurring", "==", false),
-			where("status", "==", "Regular")
+	function disableCreateToday() {
+		const date = new Date().toDateString();
+		const lastHourEpoch = Date.parse(
+			date + " " + "23:59:99 GMT-0800 (Pacific Standard Time)"
 		);
+		const oneHourMiliSec = 60 * 60 * 1000;
+		const currDate = new Date();
+		const currEpoch = Date.parse(currDate);
+
+		if (lastHourEpoch - currEpoch < oneHourMiliSec) {
+			setDisableCreateButton(true);
+		} else {
+			setDisableCreateButton(false);
+		}
+	}
+
+	function getSchedules(bizId) {
+		const bizDocRef = doc(db, "biz", bizId);
+
+		// TODO: query so it doesn't pull biz all the time
+
+		// * Current short date for Flash
+		const date = new Date();
+		const currShortDate = date.toLocaleDateString();
 
 		const unsubscribe = onSnapshot(
-			q,
-			(querySnapshot) => {
-				const schedArr = [];
-				querySnapshot.forEach((doc) => {
-					const data = doc.data();
-					schedArr.push(data);
-				});
+			bizDocRef,
+			(doc) => {
+				const bizData = doc.data();
+				const weeklySchedules = bizData.weeklySchedules;
+				const dayIdxObj = weeklySchedules[dayOfWkIdx];
+				let isNotified;
+				let schedId;
 
+				// * Regular schedule
 				const timeDisplayArr = [];
 				const tempTimeDisplayArr = [];
+				let hasPost = false;
+				let schedArr = [];
 
-				if (schedArr.length > 0) {
-					for (let i = 0; i < schedArr.length; i++) {
-						const curr = schedArr[i];
-						const timeObj = {
-							startTime: curr.startTime,
-							timeDisplay: curr.timeDisplay,
-							hourStart: curr.hourStart,
-							minStart: curr.minStart,
-						};
-						if (!tempTimeDisplayArr.includes(curr.startTime)) {
-							timeDisplayArr.push(timeObj);
-							tempTimeDisplayArr.push(curr.startTime);
+				// * Recur schedule
+				const timeDisplayArrRecur = [];
+				const tempTimeDisplayArrRecur = [];
+				let hasPostRecur = false;
+				let schedArrRecur = [];
+
+				// * Flash Schedule
+				const timeDisplayArrFlash = [];
+				const tempTimeDisplayArrFlash = [];
+				let hasPostFlash = false;
+				let schedArrFlash = [];
+
+				for (const scheduleId in dayIdxObj) {
+					const scheduleIdObj = dayIdxObj[scheduleId];
+					const scheduleRecur = scheduleIdObj.recurring;
+					const scheduleStatus = scheduleIdObj.status;
+					schedId = scheduleId;
+					isNotified = scheduleIdObj.notificationSent;
+					console.log("from db isNotifed", isNotified);
+					const timeObj = {
+						startTime: scheduleIdObj.startTime,
+						timeDisplay: scheduleIdObj.timeDisplay,
+						hourStart: scheduleIdObj.hourStart,
+						minStart: scheduleIdObj.minStart,
+					};
+
+					if (scheduleStatus === "Flash") {
+						if (!tempTimeDisplayArrFlash.includes(scheduleIdObj.timeDisplay)) {
+							timeDisplayArrFlash.push(timeObj);
+							tempTimeDisplayArrFlash.push(scheduleIdObj.timeDisplay);
+						}
+						schedArrFlash.push(scheduleIdObj);
+						hasPostFlash = true;
+					} else {
+						if (scheduleRecur) {
+							if (!tempTimeDisplayArrRecur.includes(scheduleIdObj.timeDisplay)) {
+								timeDisplayArrRecur.push(timeObj);
+								tempTimeDisplayArrRecur.push(scheduleIdObj.timeDisplay);
+							}
+							schedArrRecur.push(scheduleIdObj);
+							hasPostRecur = true;
+						} else {
+							if (!tempTimeDisplayArr.includes(scheduleIdObj.timeDisplay)) {
+								timeDisplayArr.push(timeObj);
+								tempTimeDisplayArr.push(scheduleIdObj.timeDisplay);
+							}
+							schedArr.push(scheduleIdObj);
+							hasPost = true;
 						}
 					}
-
-					setTimeDisplays(timeDisplayArr);
-					setHasPostOnDateComponent(true);
-					setPosts(schedArr);
-				} else {
-					setHasPostOnDateComponent(false);
 				}
+
+				// if (currShortDate === shortDate) {
+				// 	if (isNotified === false && hasPostRecur) {
+				// 		console.log("isNotified", isNotified);
+				// 		console.log("hasPostRecur", hasPostRecur);
+				// 		console.log("getSchedule sendNotification");
+				// 		sendNotification(
+				// 			bizId,
+				// 			bizName,
+				// 			"regular",
+				// 			null,
+				// 			null,
+				// 			null,
+				// 			schedId,
+				// 			dayOfWkIdx,
+				// 			isNotificationSent
+				// 		);
+				// 	}
+				// }
+
+				// setIsNotificationSent(true);
+				// * Set state for recur values
+				setTimeDisplaysRecur(timeDisplayArrRecur);
+				setHasPostOnDateComponentRecur(hasPostRecur);
+				setPostsRecur(schedArrRecur);
+
+				// * Set state for normal values
+				setTimeDisplays(timeDisplayArr);
+				setHasPostOnDateComponent(hasPost);
+				setPosts(schedArr);
+
+				// * Set state for flash values
+				setFlash((prev) => ({
+					...prev,
+					postsFlash: schedArrFlash,
+					timeDisplaysFlash: timeDisplayArrFlash,
+					hasFlashOnDateComponent: hasPostFlash,
+					currShortDate,
+				}));
 			},
 			(error) => {
+				console.log(`Error loading schedules: ${error}`);
 				setHasPostOnDateComponent(false);
-				setErrorLoadingPosts(`Error fetching posts: ${error}`);
+				setHasPostOnDateComponentRecur(false);
+				setFlash((prev) => ({
+					...prev,
+					hasFlashOnDateComponent: false,
+					errorLoadingFlash: `Error loading flash posts`,
+				}));
+				setErrorLoadingPosts("Error loading schedules.");
 			}
 		);
 
 		return unsubscribe;
-	}
-
-	function getSchedulesRecur(bizId) {
-		const openHistoryRef = collection(db, "biz", bizId, "openHistory");
-
-		const qRecur = query(
-			openHistoryRef,
-			// where("scheduledDateShort", "==", shortDate),
-			where("dayOfWeek", "==", dayOfWeek),
-			where("recurring", "==", true)
-		);
-
-		const unsubscribeRecur = onSnapshot(
-			qRecur,
-			(querySnapshot) => {
-				const schedArr = [];
-				querySnapshot.forEach((doc) => {
-					const data = doc.data();
-					schedArr.push(data);
-				});
-
-				const timeDisplayArr = [];
-				const tempTimeDisplayArr = [];
-
-				if (schedArr.length > 0) {
-					for (let i = 0; i < schedArr.length; i++) {
-						const curr = schedArr[i];
-						const timeObj = {
-							startTime: curr.startTime,
-							timeDisplay: curr.timeDisplay,
-							hourStart: curr.hourStart,
-							minStart: curr.minStart,
-						};
-						if (!tempTimeDisplayArr.includes(curr.startTime)) {
-							timeDisplayArr.push(timeObj);
-							tempTimeDisplayArr.push(curr.startTime);
-						}
-					}
-
-					setTimeDisplaysRecur(timeDisplayArr);
-					setHasPostOnDateComponentRecur(true);
-					setPostsRecur(schedArr);
-				} else {
-					setHasPostOnDateComponentRecur(false);
-				}
-			},
-			(error) => {
-				setHasPostOnDateComponentRecur(false);
-				setErrorLoadingPosts(`Error fetching posts: ${error}`);
-			}
-		);
-
-		return unsubscribeRecur;
 	}
 
 	function getIncomingOrders(bizId) {
@@ -327,7 +389,8 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 		const { success, message } = await removeSchedule(
 			bizId,
 			scheduleId,
-			dayIndex
+			dayIndex,
+			null
 		);
 
 		if (success) {
@@ -348,12 +411,12 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 	}
 
 	async function handleRemoveScheduleFlash(e, scheduleId, dayIndex) {
-		console.log(scheduleId, dayIndex);
-
+		const event = "flash";
 		const { success, message } = await removeSchedule(
 			bizId,
 			scheduleId,
-			dayIndex
+			dayIndex,
+			event
 		);
 
 		if (success) {
@@ -375,7 +438,7 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 
 	return (
 		<div className={styles.DayComponent__container}>
-			{(errorMessage || successMessage) && (
+			{errorMessage && (
 				<SuccessError
 					handleOrderUpdate={handleScheduleUpdates}
 					setHandleOrderUpdates={setHandleScheduleUpdates}
@@ -456,40 +519,33 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 							<h4>Today </h4>
 						</div>
 					)}
-					<ClickAwayListener onClickAway={handleClickAway}>
-						<div>
-							<Button
-								onClick={handleCreateClick}
-								variant="contained"
-								size="small"
-							>
-								Create
-							</Button>
-
-							{showCreateSchedule && (
-								<div className={styles.DayComponent_clickAwayListerner}>
-									<div
-										className={styles.DayComponent__createScheduleContainer}
-									></div>
-									<CreateSchedule
-										uid={uid}
-										onClose={handleCreateClick}
-										date={date}
-										bizId={bizId}
-										userData={userData}
-										shortDate={shortDate}
-									/>
-								</div>
-							)}
-						</div>
-					</ClickAwayListener>
+					<div>
+						<Button
+							onClick={handleCreateClick}
+							variant="contained"
+							size="small"
+							disabled={isToday && disableCreateButton}
+						>
+							Create
+						</Button>
+					</div>
+					<ManualCreateSchedule
+						open={showCreateSchedule}
+						close={handleClickAway}
+						uid={uid}
+						date={date}
+						bizId={bizId}
+						userData={userData}
+						shortDate={shortDate}
+					/>
 				</div>
 				<div
 					className={`${styles.DayComponent__body} ${
 						(isToday || isTomorrow) && styles.DayComponent__todayTomorrow
 					}`}
 				>
-					{flash.currShortDate === shortDate ? (
+					{flash.postsFlash.length !== 0 &&
+					flash.currShortDate === shortDate ? (
 						<div className={styles.DayComponent__postsFlash}>
 							{flash.errorLoadingFlash ? (
 								<p>{flash.errorLoadingFlash}</p>
@@ -520,9 +576,11 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 																className={styles.DayComponent__bodyDetailTrue}
 																style={
 																	isToday || isTomorrow
-																		? flash.numAvailable > 0
-																			? keyFlash
-																			: keyRed
+																		? flash.endTime > Date.parse(new Date())
+																			? flash.numAvailable > 0
+																				? keyFlash
+																				: keyGray
+																			: keyGray
 																		: keyGray
 																}
 															>
@@ -534,16 +592,20 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 																		color: "white",
 																		backgroundColor:
 																			isToday || isTomorrow
-																				? flash.numAvailable > 0
-																					? "var(--flash)"
-																					: "var(--light-red)"
+																				? flash.endTime > Date.parse(new Date())
+																					? flash.numAvailable > 0
+																						? "var(--flash)"
+																						: "var(--gray)"
+																					: "var(--gray)"
 																				: "var(--gray)",
 																	}}
 																>
 																	{isToday || isTomorrow
-																		? flash.numAvailable > 0
-																			? "Flash"
-																			: "Sold out"
+																		? flash.endTime > Date.parse(new Date())
+																			? flash.numAvailable > 0
+																				? "Flash"
+																				: "Sold out"
+																			: "Past"
 																		: "Scheduled"}
 																</p>
 																<p>{flash.itemPrice}</p>
@@ -553,7 +615,7 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 																	<p>{flash.itemName}</p>
 																</div>
 
-																{flash.reccurring ? (
+																{flash.recurring ? (
 																	<p
 																		style={{
 																			color: "var(--gray)",
@@ -577,16 +639,34 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 																	variant="text"
 																	color="error"
 																	size="small"
+																	// disabled={
+																	// 	flash.numAvailable < flash.numAvailableStart
+																	// 		? true
+																	// 		: false
+																	// }
 																	onClick={() => {
-																		setShowRemoveModalFlash(true);
-																		setIsScheduleFlashRemoved((prev) => ({
-																			...prev,
-																			removeFlashId: flash.id,
-																		}));
+																		const currDate = new Date();
+																		const currEpoch = Date.parse(currDate);
+
+																		if (currEpoch > flash.endTime) {
+																			setShowRemoveModalFlash(true);
+																			setIsScheduleFlashRemoved((prev) => ({
+																				...prev,
+																				canRemoveFlash: false,
+																			}));
+																		} else {
+																			setShowRemoveModalFlash(true);
+																			setIsScheduleFlashRemoved((prev) => ({
+																				...prev,
+																				removeFlashId: flash.id,
+																				canRemoveFlash: true,
+																			}));
+																		}
 																	}}
 																>
 																	remove
 																</Button>
+
 																<Modal
 																	open={showRemoveModalFlash}
 																	onClose={() => setShowRemoveModalFlash(false)}
@@ -599,32 +679,37 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 																			variant="h6"
 																			component="h2"
 																		>
-																			Removing set schedule
+																			{canRemoveFlash
+																				? "Removing set schedule"
+																				: "Can't remove"}
 																		</Typography>
 																		<Typography
 																			id="modal-modal-description"
 																			sx={{ mt: 2, mb: 2 }}
 																		>
-																			Are you sure you want to remove the
-																			schedule?
+																			{canRemoveFlash
+																				? "Are you sure you want to remove the schedule?"
+																				: "Cannot remove during pickup time, or time passed."}
 																		</Typography>
 																		<div>
+																			{canRemoveFlash && (
+																				<Button
+																					variant="contained"
+																					color="error"
+																					sx={{ mr: 5 }}
+																					onClick={(e) =>
+																						handleRemoveScheduleFlash(
+																							e,
+																							removeFlashId,
+																							flash.dayOfWkIdx
+																						)
+																					}
+																				>
+																					Remove
+																				</Button>
+																			)}
 																			<Button
-																				variant="contained"
-																				color="error"
-																				sx={{ mr: 5 }}
-																				onClick={(e) =>
-																					handleRemoveScheduleFlash(
-																						e,
-																						removeFlashId,
-																						flash.dayOfWkIdx
-																					)
-																				}
-																			>
-																				Remove
-																			</Button>
-																			<Button
-																				variant="text"
+																				variant="outlined"
 																				onClick={() =>
 																					setShowRemoveModalFlash(false)
 																				}
@@ -675,9 +760,11 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 															className={styles.DayComponent__bodyDetailTrue}
 															style={
 																isToday || isTomorrow
-																	? schedule.numAvailable > 0
-																		? keyGreen
-																		: keyRed
+																	? schedule.endTime > Date.parse(new Date())
+																		? schedule.numAvailable > 0
+																			? keyGreen
+																			: keyGray
+																		: keyGray
 																	: keyGray
 															}
 														>
@@ -689,16 +776,21 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 																	color: "white",
 																	backgroundColor:
 																		isToday || isTomorrow
-																			? schedule.numAvailable > 0
-																				? "var(--light-green)"
-																				: "var(--light-red)"
+																			? schedule.endTime >
+																			  Date.parse(new Date())
+																				? schedule.numAvailable > 0
+																					? "var(--light-green)"
+																					: "var(--light-red)"
+																				: "var(--gray)"
 																			: "var(--gray)",
 																}}
 															>
 																{isToday || isTomorrow
-																	? schedule.numAvailable > 0
-																		? "Live"
-																		: "Sold out"
+																	? schedule.endTime > Date.parse(new Date())
+																		? schedule.numAvailable > 0
+																			? "Live"
+																			: "Sold out"
+																		: "Past"
 																	: "Scheduled"}
 															</p>
 															<p>{schedule.itemPrice}</p>
@@ -707,7 +799,7 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 
 																<p>{schedule.itemName}</p>
 															</div>
-															{schedule.reccurring ? (
+															{schedule.recurring ? (
 																<p
 																	style={{
 																		color: "var(--gray)",
@@ -719,7 +811,6 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 																<p
 																	style={{
 																		color: "var(--gray)",
-
 																		textDecoration: "line-through",
 																	}}
 																>
@@ -730,12 +821,30 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 															<Button
 																variant="text"
 																color="error"
+																// disabled={
+																// 	schedule.numAvailable <
+																// 	schedule.numAvailableStart
+																// 		? true
+																// 		: false
+																// }
 																onClick={() => {
-																	setShowRemoveModal(true);
-																	setIsScheduledRemoved((prev) => ({
-																		...prev,
-																		removeScheduleId: schedule.id,
-																	}));
+																	const currDate = new Date();
+																	const currEpoch = Date.parse(currDate);
+
+																	if (currEpoch > schedule.endTime) {
+																		setShowRemoveModal(true);
+																		setIsScheduledRemoved((prev) => ({
+																			...prev,
+																			canRemove: false,
+																		}));
+																	} else {
+																		setShowRemoveModal(true);
+																		setIsScheduledRemoved((prev) => ({
+																			...prev,
+																			removeScheduleId: schedule.id,
+																			canRemove: true,
+																		}));
+																	}
 																}}
 															>
 																remove
@@ -752,32 +861,37 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 																		variant="h6"
 																		component="h2"
 																	>
-																		Removing set schedule
+																		{canRemove
+																			? "Removing set schedule"
+																			: "Can't remove"}
 																	</Typography>
 																	<Typography
 																		id="modal-modal-description"
 																		sx={{ mt: 2, mb: 2 }}
 																	>
-																		Are you sure you want to remove the
-																		schedule?
+																		{canRemove
+																			? "Are you sure you want to remove the schedule?"
+																			: "Cannot remove posts during pickup time."}
 																	</Typography>
 																	<div>
+																		{canRemove && (
+																			<Button
+																				variant="contained"
+																				color="error"
+																				sx={{ mr: 5 }}
+																				onClick={(e) =>
+																					handleRemoveSchedule(
+																						e,
+																						removeScheduleId,
+																						schedule.dayOfWkIdx
+																					)
+																				}
+																			>
+																				Remove
+																			</Button>
+																		)}
 																		<Button
-																			variant="contained"
-																			color="error"
-																			sx={{ mr: 5 }}
-																			onClick={(e) =>
-																				handleRemoveSchedule(
-																					e,
-																					removeScheduleId,
-																					schedule.dayOfWkIdx
-																				)
-																			}
-																		>
-																			Remove
-																		</Button>
-																		<Button
-																			variant="text"
+																			variant="outlined"
 																			onClick={() => setShowRemoveModal(false)}
 																		>
 																			Close
@@ -792,7 +906,8 @@ function DayComponent({ date, bizId, uid, userData, ordersDataArr, flash }) {
 										</div>
 									);
 								})
-						) : flash.currShortDate === shortDate ? (
+						) : flash.postsFlash.length !== 0 &&
+						  flash.currShortDate === shortDate ? (
 							<p style={{ display: "none" }}>No Posts</p>
 						) : (
 							<p className={styles.DayComponent__bodyDetailFalse}>No Posts</p>

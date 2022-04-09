@@ -2,11 +2,14 @@ import React, { useState, useEffect } from "react";
 import Layout from "../../../../Components/Layout";
 import { useRouter } from "next/router";
 import styles from "../../../../styles/pages/dashboard/orders/incoming-orders.module.css";
-import OrdersComponent from "../../../../Components/Dashboard/Orders/OrdersComponent";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import OrdersComponent from "../../../../Components/Dashboard/Orders/Incoming/OrdersComponent";
+import { collection, query, where, onSnapshot, doc } from "firebase/firestore";
 import { db } from "../../../../firebase/fireConfig";
 import { updatePastOrders } from "../../../../actions/dashboard/ordersCrud";
-import { getLocalStorage } from "../../../../actions/auth/auth";
+import {
+	getLocalStorage,
+	setLocalStorage,
+} from "../../../../actions/auth/auth";
 import PropTypes from "prop-types";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
@@ -20,13 +23,16 @@ import Collapse from "@mui/material/Collapse";
 import { getBiz } from "../../../../actions/crud/bizUser";
 import { createFlashSchedule } from "../../../../actions/dashboard/scheduleCrud";
 import SuccessError from "../../../../Components/Dashboard/Orders/SuccessError";
+import getProducts from "../../../../actions/dashboard/productsCrud";
+import playNotificationSound from "../../../../helper/PlayAudio";
+import RemoveSchedule from "../../../../Components/Dashboard/Orders/Incoming/RemoveSchedule";
 
 const style = {
 	position: "absolute",
 	top: "50%",
 	left: "50%",
+	width: "max-content",
 	transform: "translate(-50%, -50%)",
-	width: 350,
 	bgcolor: "background.paper",
 	border: "2px solid var(--gray)",
 	boxShadow: 24,
@@ -64,7 +70,11 @@ function a11yProps(index) {
 }
 
 function IncomingOrders() {
+	const [openSchedule, setOpenSchedule] = useState(false);
+	const [audio, setAudio] = useState(null);
+	// * Tab Values
 	const [value, setValue] = useState(0);
+	const [flashScheduleLoading, setFlashScheduleLoading] = useState(false);
 	const [handleScheduleUpdates, setHandleScheduleUpdates] = useState({
 		errorMessage: "",
 		successMessage: "",
@@ -77,13 +87,16 @@ function IncomingOrders() {
 		errorLoadingFlash: "",
 		currShortDate: "",
 	});
+	const [defaultItemName, setDefaultItemName] = useState("");
 	const [scheduleNowValues, setScheduleNowValues] = useState({
 		scheduleNowLoading: false,
 		scheduleNowMessage: "",
 		showScheduleNowAlert: false,
 		showScheduleModal: false,
-		numAvailable: 1,
-		numHours: "1",
+		numAvailable: "1",
+		numMins: "60",
+		products: [],
+		itemName: "",
 	});
 	const [userDataValues, setUserDataValues] = useState({
 		loading: false,
@@ -109,6 +122,13 @@ function IncomingOrders() {
 		hasConfirmedTomorrow: false,
 		confirmedCount: 0,
 	});
+	const [scheduleValues, setScheduleValues] = useState({
+		scheduleNumAvail: 0,
+		scheduleDate: new Date().toLocaleDateString(),
+		scheduleOpen: false,
+		schedules: [],
+		timeDisplay: [],
+	});
 	const [user, setUser] = useState({
 		storedUser: {},
 		bizId: "",
@@ -122,9 +142,14 @@ function IncomingOrders() {
 			dayIndex: "",
 		},
 	]);
-
 	const { storedUser, bizId } = user;
-
+	const {
+		scheduleNumAvail,
+		scheduleDate,
+		scheduleOpen,
+		schedules,
+		timeDisplay,
+	} = scheduleValues;
 	const { errorMessage, successMessage, isOpen } = handleScheduleUpdates;
 	const { loading, userData, message, ordersDataArr } = userDataValues;
 	const {
@@ -140,7 +165,9 @@ function IncomingOrders() {
 		showScheduleNowAlert,
 		showScheduleModal,
 		numAvailable,
-		numHours,
+		numMins,
+		products,
+		itemName,
 	} = scheduleNowValues;
 	const {
 		ordersPendingLoading,
@@ -160,11 +187,13 @@ function IncomingOrders() {
 		hasConfirmedTomorrow,
 		confirmedCount,
 	} = ordersConfirmedValues;
+	const arrayOfTwenty = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 
 	const router = useRouter();
 	const uid = router.query.uid;
 
 	useEffect(() => {
+		document.addEventListener("visibilitychange", onPageChangeVisibility);
 		const storedUser = JSON.parse(getLocalStorage("user"));
 		let bizIdTemp;
 		if (storedUser) {
@@ -175,23 +204,67 @@ function IncomingOrders() {
 			setUser({ storedUser, bizId: bizIdTemp });
 		}
 
+		// * Set audio if null
+		if (audio === null) {
+			setAudio(new Audio("/sounds/smsTone.mp3"));
+		}
+
 		if (!bizIdTemp) {
 			return;
 		}
+
 		loadDates();
+		loadProducts(bizIdTemp);
 		loadUserData(bizIdTemp);
+		updatePast(bizIdTemp);
 		const unsubscribePendingOrders = loadPendingOrdersData(bizIdTemp);
 		const unsubscribeConfirmedOrders = loadConfirmedOrdersData(bizIdTemp);
-		updatePast(bizIdTemp);
+		const unsubscribeSchedules = loadSchedules(bizIdTemp);
 
 		return () => {
 			unsubscribePendingOrders();
 			unsubscribeConfirmedOrders();
+			unsubscribeSchedules();
+			document.removeEventListener("visibilitychange", onPageChangeVisibility);
 		};
+
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [uid]);
+
+	async function onPageChangeVisibility() {
+		const date = new Date();
+		const currShortDate = date.toLocaleDateString();
+		const localStorageDate = JSON.parse(getLocalStorage("currentDate"));
+
+		if (
+			currShortDate === localStorageDate &&
+			document.visibilityState === "visible"
+		) {
+			loadDates();
+			// window.confirm("loaded dates");
+		}
+	}
 
 	async function updatePast(bizIdTemp) {
 		const res = await updatePastOrders(bizIdTemp);
+	}
+
+	async function loadProducts(bizId) {
+		const productRes = await getProducts(bizId);
+		const { success, message, productsArr } = productRes;
+		if (success) {
+			const isDefaultItemName = productsArr.filter((item) => item.isDefault)[0]
+				.itemName;
+			setScheduleNowValues((prev) => ({
+				...prev,
+				products: productsArr,
+				itemName: isDefaultItemName,
+			}));
+			setDefaultItemName(isDefaultItemName);
+		} else {
+			// TODO: handleError
+			console.log("loadProducts", message);
+		}
 	}
 
 	async function loadUserData(bizIdTemp) {
@@ -231,11 +304,87 @@ function IncomingOrders() {
 		}
 	}
 
+	function loadSchedules(bizId) {
+		const bizDocRef = doc(db, "biz", bizId);
+
+		const date = new Date();
+		const shortDate = date.toDateString();
+		const dayOne = date.getDay() + 1;
+		date.setDate(date.getDate() + 1);
+		const dayTwo = date.getDay() + 1;
+
+		const unsubscribeSchedules = onSnapshot(
+			bizDocRef,
+			(doc) => {
+				const data = doc.data();
+				const weeklySchedules = data.weeklySchedules;
+				const timeDisplayArr = [];
+				const tempTimeDisplayArr = [];
+				const schedulesArr = [];
+				let posts = 0;
+
+				const todaySchedules = weeklySchedules[dayOne];
+				const tomorrowSchedules = weeklySchedules[dayTwo];
+
+				const newDate = new Date();
+				const currEpochTime = Date.parse(newDate);
+				console.log(currEpochTime);
+
+				// * Count today's schedules
+				for (const scheduleId in todaySchedules) {
+					const currSchedule = todaySchedules[scheduleId];
+					const numAvail = currSchedule.numAvailable;
+					const scheduleEndTime = currSchedule.endTime;
+					const timeObj = {
+						startTime: currSchedule.startTime,
+						timeDisplay: currSchedule.timeDisplay,
+						hourStart: currSchedule.hourStart,
+						minStart: currSchedule.minStart,
+					};
+
+					if (!tempTimeDisplayArr.includes(currSchedule.timeDisplay)) {
+						timeDisplayArr.push(timeObj);
+						tempTimeDisplayArr.push(currSchedule.timeDisplay);
+					}
+
+					schedulesArr.push(currSchedule);
+
+					if (scheduleEndTime > currEpochTime) {
+						posts += numAvail;
+					}
+				}
+
+				// * Count tomorrow's schedules
+				// for (const scheduleId in tomorrowSchedules) {
+				// 	const currSchedule = tomorrowSchedules[scheduleId];
+				// 	const numAvail = currSchedule.numAvailable;
+
+				// 	posts += numAvail;
+				// }
+
+				setScheduleValues((prev) => ({
+					...prev,
+					scheduleNumAvail: posts,
+					scheduleOpen: true,
+					schedules: schedulesArr,
+					timeDisplay: timeDisplayArr,
+				}));
+			},
+			(error) => {
+				console.log(error);
+			}
+		);
+
+		return unsubscribeSchedules;
+	}
+
 	function loadPendingOrdersData(bizIdTemp) {
 		setOrdersPendingValues({
 			ordersPendingLoading: true,
 			ordersPendingMessage: "",
 		});
+
+		// * Loading orders for 2 dates
 		const dateArr = [];
 
 		for (let i = 0; i < 2; i++) {
@@ -245,10 +394,14 @@ function IncomingOrders() {
 			dateArr.push(dateString);
 		}
 
+		// * Loading orders for 1 date
+		const today = new Date();
+		const todayShort = today.toLocaleDateString();
+
 		const ordersCollectionRef = collection(db, "biz", bizIdTemp, "orders");
 		const q = query(
 			ordersCollectionRef,
-			where("shortDate", "in", dateArr),
+			where("shortDate", "==", todayShort),
 			where("status", "==", "Reserved")
 		);
 
@@ -291,6 +444,8 @@ function IncomingOrders() {
 					}
 				}
 
+				// playNotificationSound(audio, "start");
+
 				setOrdersPendingValues({
 					ordersPendingLoading: false,
 					ordersPending: ordersArr,
@@ -318,16 +473,22 @@ function IncomingOrders() {
 		});
 		const dateArr = [];
 
+		// * Loading orders for 2 dates
 		for (let i = 0; i < 2; i++) {
 			const date = new Date();
 			date.setDate(date.getDate() + i);
 			const dateString = date.toLocaleDateString();
 			dateArr.push(dateString);
 		}
+
+		// * Loading orders for 1 date
+		const today = new Date();
+		const todayShort = today.toLocaleDateString();
+
 		const ordersCollectionRef = collection(db, "biz", bizIdTemp, "orders");
 		const q = query(
 			ordersCollectionRef,
-			where("shortDate", "in", dateArr),
+			where("shortDate", "==", todayShort),
 			where("status", "==", "Confirmed")
 		);
 
@@ -396,10 +557,19 @@ function IncomingOrders() {
 
 		for (let i = 0; i < 2; i++) {
 			const date = new Date();
+
+			const currDateShort = date.toLocaleDateString();
+			const localStorageDate = JSON.parse(getLocalStorage("currentDate"));
+
+			// * Store currDate to localStorage to see if need to reload date.
+			if (currDateShort !== localStorageDate) {
+				setLocalStorage("currentDate", currDateShort);
+			}
+
 			date.setDate(date.getDate() + i);
 			const weekDayIndex = date.getDay() + 1;
 			let tempData = {};
-			tempData.shortDate = date.toLocaleDateString();
+			tempData.shortDate = currDateShort;
 			tempData.statusTodayOrTomorrow = i;
 			tempData.actualDate = date.toDateString();
 			tempData.dayIndex = weekDayIndex;
@@ -435,147 +605,13 @@ function IncomingOrders() {
 		setTwoDates(dateArr);
 	}
 
-	// * Displays ---------------------------------------------------------------
-	function showScheduleNowModal() {
-		const date = new Date();
-		const currHour = date.getHours();
-		const currMin = date.getMinutes();
-
-		let disable1Hr = false;
-		let disable2Hr = false;
-		let disable3Hr = false;
-
-		if (currHour === 22) {
-			disable3Hr = true;
-		}
-
-		if (currHour === 23) {
-			disable2Hr = true;
-			disable3Hr = true;
-
-			if (currMin !== 0) {
-				disable1Hr = true;
-			}
-		}
-
-		return (
-			<Modal
-				open={showScheduleModal}
-				onClose={() =>
-					setScheduleNowValues((prev) => ({
-						...prev,
-						showScheduleModal: false,
-						numAvailable: 1,
-						numHours: "1",
-						showScheduleNowAlert: false,
-					}))
-				}
-				aria-labelledby="modal-modal-title"
-				aria-describedby="modal-modal-description"
-			>
-				<Box sx={style}>
-					{scheduleNowMessage && (
-						<Grid item xs={12} md={12} mb={2}>
-							<Collapse in={showScheduleNowAlert}>
-								<Alert
-									severity={"error"}
-									onClose={() => {
-										setScheduleNowValues((prev) => ({
-											...prev,
-											showScheduleNowAlert: false,
-										}));
-									}}
-								>
-									{scheduleNowMessage}
-								</Alert>
-							</Collapse>
-						</Grid>
-					)}
-					<div className={styles.ScheduleModal__container}>
-						<div className={` ${styles.Schedule__meals}`}>
-							<p>How many meals?</p>
-							<input
-								className={styles.CreateSchedule__currentInput}
-								id="quantity"
-								type="number"
-								placeholder="0"
-								min="1"
-								autoFocus
-								value={numAvailable}
-								onChange={handleFlashChange}
-								name="numAvailable"
-								required
-							/>
-						</div>
-						<div className={styles.Schedule__scheduleModal}>
-							<div>
-								<p>How many hours?</p>
-								<p
-									style={{
-										color: "var(--gray)",
-										fontSize: "12px",
-										marginTop: "10px",
-									}}
-								>
-									Last schedule before 11pm.
-								</p>
-								<p
-									style={{
-										color: "var(--gray)",
-										fontSize: "12px",
-										marginTop: "10px",
-									}}
-								>
-									(12am - 11:59pm)
-								</p>
-							</div>
-							<div className={styles.RadioGroup}>
-								<div className={styles.Radio}>
-									<input
-										className={styles.CreateSchedule__currentInput}
-										id="one"
-										type="radio"
-										disabled={disable1Hr}
-										checked={numHours === "1"}
-										value={1}
-										onChange={handleFlashChange}
-										name="numHours"
-									/>
-									<label htmlFor="one">1 hr</label>
-								</div>
-								<div className={styles.Radio}>
-									<input
-										className={styles.CreateSchedule__currentInput}
-										id="two"
-										type="radio"
-										disabled={disable2Hr}
-										checked={numHours === "2"}
-										value={2}
-										onChange={handleFlashChange}
-										name="numHours"
-									/>
-									<label htmlFor="two">2 hr</label>
-								</div>
-							</div>
-						</div>
-						<Button
-							variant={"contained"}
-							size="large"
-							onClick={handleCreateNow}
-							color={"primary"}
-						>
-							{"+ Create"}
-						</Button>
-					</div>
-				</Box>
-			</Modal>
-		);
-	}
-
 	// * Actions ---------------------------------------------------------------
 	async function handleCreateNow(e) {
-		const numHoursInt = parseInt(numHours);
+		setFlashScheduleLoading(true);
+		const numHoursInt = parseInt(numMins);
 		const numAvailInt = parseInt(numAvailable);
+		let product = products.filter((item) => item.itemName === itemName).pop();
+		const { itemDescription, defaultPrice, originalPrice, allergens } = product;
 
 		if (numAvailInt < 1 || !numAvailable) {
 			setScheduleNowValues((prev) => ({
@@ -596,22 +632,20 @@ function IncomingOrders() {
 		}
 		setScheduleNowValues((prev) => ({ ...prev, scheduleNowLoading: true }));
 
-		const {
-			itemName,
-			itemDescription,
-			defaultPrice,
-			originalPrice,
-			allergens,
-		} = userData;
-
-		const itemPriceDoubleConvert = parseFloat(defaultPrice.slice(1));
+		const itemPriceDoubleConvert = parseFloat(
+			parseFloat(defaultPrice.slice(1)).toFixed(2)
+		);
 		const itemPricePennyConvert = itemPriceDoubleConvert * 100;
 
 		const date = new Date();
 		const currShortDate = date.toLocaleDateString();
 		const startTimeEpochMiliSec = Date.parse(date);
-		const endTimeEpochMiliSec =
-			numHoursInt * 60 * 60 * 1000 + startTimeEpochMiliSec;
+		let endTimeEpochMiliSec = numHoursInt * 60 * 1000 + startTimeEpochMiliSec;
+
+		// console.log("startEpoch init", startTimeEpochMiliSec);
+		// console.log("endEpoch init", endTimeEpochMiliSec);
+
+		setScheduleNowValues((prev) => ({ ...prev, scheduleDate: currShortDate }));
 
 		const dateStart = new Date(startTimeEpochMiliSec);
 		const dateEnd = new Date(endTimeEpochMiliSec);
@@ -622,7 +656,26 @@ function IncomingOrders() {
 		let hourEnd = parseInt(timeEnd.split("").slice(0, 2).join(""));
 		let minEnd = parseInt(timeEnd.split("").slice(3, 5).join(""));
 
-		if (0 < minEnd && minEnd <= 15) {
+		// console.log("timeStart", timeStart);
+		// console.log("timeEnd", timeEnd);
+		// console.log("hourStart", hourStart);
+		// console.log("minStart", minStart);
+		// console.log("hourEnd", hourEnd);
+		// console.log("minEnd", minEnd);
+
+		const newDate = new Date();
+		const todaysDate = new Date().toDateString();
+		newDate.setDate(date.getDate() + 1);
+		const tmwsDate = newDate.toDateString();
+
+		// console.log("today Date", todaysDate);
+		// console.log("tmw Date", tmwsDate);
+
+		if (hourStart === 24) {
+			hourStart = 0;
+		}
+
+		if (0 <= minEnd && minEnd <= 15) {
 			minEnd = 15;
 		} else if (15 < minEnd && minEnd <= 30) {
 			minEnd = 30;
@@ -633,13 +686,80 @@ function IncomingOrders() {
 			minEnd = 0;
 		}
 
-		if (hourEnd === 24) {
-			hourEnd = 1;
-		} else if (hourEnd === 25) {
-			hourEnd = 2;
-		} else if (hourEnd === 26) {
-			hourEnd = 3;
+		// if (hourEnd === 24) {
+		// 	hourEnd = 0;
+		// } else if (hourEnd === 25) {
+		// 	hourEnd = 1;
+		// } else if (hourEnd === 26) {
+		// 	hourEnd = 2;
+		// }
+
+		// console.log("new hourEnd", hourEnd);
+		// console.log("new minEnd", minEnd);
+
+		let today0 = Date.parse(todaysDate + " " + hourEnd + ":00:00");
+		let today15 = Date.parse(todaysDate + " " + hourEnd + ":16:00");
+		let today30 = Date.parse(todaysDate + " " + hourEnd + ":31:00");
+		let today45 = Date.parse(todaysDate + " " + hourEnd + ":46:00");
+		let today59 = Date.parse(todaysDate + " " + hourEnd + ":59:59");
+
+		if (minEnd === 0) {
+			today0 = Date.parse(todaysDate + " " + (hourEnd - 1) + ":00:00");
+			today15 = Date.parse(todaysDate + " " + (hourEnd - 1) + ":16:00");
+			today30 = Date.parse(todaysDate + " " + (hourEnd - 1) + ":31:00");
+			today45 = Date.parse(todaysDate + " " + (hourEnd - 1) + ":46:00");
+			today59 = Date.parse(todaysDate + " " + (hourEnd - 1) + ":59:59");
 		}
+
+		if (hourEnd === 0 && minEnd === 0) {
+			today0 = Date.parse(tmwsDate + " " + hourEnd + ":00:00");
+			today15 = Date.parse(tmwsDate + " " + hourEnd + ":16:00");
+			today30 = Date.parse(tmwsDate + " " + hourEnd + ":31:00");
+			today45 = Date.parse(tmwsDate + " " + hourEnd + ":46:00");
+			today59 = Date.parse(tmwsDate + " " + hourEnd + ":59:59");
+		}
+
+		// console.log("today0", today0);
+		// console.log("today15", today15);
+		// console.log("today30", today30);
+		// console.log("today45", today45);
+		// console.log("today59", today59);
+
+		// * Update times
+		const update0 = Date.parse(todaysDate + " " + hourEnd + ":00:00");
+		const update15 = Date.parse(todaysDate + " " + hourEnd + ":15:00");
+		const update30 = Date.parse(todaysDate + " " + hourEnd + ":30:00");
+		const update45 = Date.parse(todaysDate + " " + hourEnd + ":45:00");
+		const update59 = Date.parse(todaysDate + " " + hourEnd + ":59:59");
+
+		if (today0 <= endTimeEpochMiliSec && endTimeEpochMiliSec <= today15) {
+			endTimeEpochMiliSec = update15;
+		} else if (
+			today15 < endTimeEpochMiliSec &&
+			endTimeEpochMiliSec <= today30
+		) {
+			endTimeEpochMiliSec = update30;
+		} else if (
+			today30 < endTimeEpochMiliSec &&
+			endTimeEpochMiliSec <= today45
+		) {
+			endTimeEpochMiliSec = update45;
+		} else if (
+			today45 < endTimeEpochMiliSec &&
+			endTimeEpochMiliSec <= today59
+		) {
+			let todayRollOverAm;
+			if (hourEnd === 24) {
+				todayRollOverAm = Date.parse(tmwsDate + " " + "00:00:00");
+			} else {
+				const hourPlus = hourEnd + 1;
+				// console.log("hourPlus", hourPlus);
+				todayRollOverAm = Date.parse(todaysDate + " " + hourEnd + ":00:00");
+			}
+			endTimeEpochMiliSec = todayRollOverAm;
+		}
+
+		// console.log("new End Time", endTimeEpochMiliSec);
 
 		const startTimeString = new Date(
 			date.toDateString() + " " + hourStart + ":" + minStart
@@ -690,6 +810,8 @@ function IncomingOrders() {
 		const flashScheduledData = {
 			itemName,
 			itemDescription,
+			originalPrice,
+			allergens,
 			itemPrice: defaultPrice,
 			itemPriceDouble: itemPriceDoubleConvert,
 			itemPricePenny: itemPricePennyConvert,
@@ -712,6 +834,9 @@ function IncomingOrders() {
 			flashDay: currShortDate,
 		};
 
+		// setFlashScheduleLoading(false);
+		// console.log(flashScheduledData);
+
 		const resFlashSchedule = await createFlashSchedule(
 			bizId,
 			dayIndex,
@@ -721,23 +846,26 @@ function IncomingOrders() {
 		);
 
 		if (resFlashSchedule.success) {
-			setHandleScheduleUpdates((prev) => ({
-				...prev,
-				errorMessage: "",
-				successMessage: "Success.",
-				isOpen: true,
-			}));
+			setFlashScheduleLoading(false);
 			setScheduleNowValues((prev) => ({
 				...prev,
-				loading: false,
 				showScheduleModal: false,
+				numAvailable: "1",
+				numMins: "60",
+				showScheduleNowAlert: false,
+				loading: false,
+				itemName: defaultItemName,
 			}));
 		} else {
+			setFlashScheduleLoading(false);
 			setScheduleNowValues((prev) => ({
 				...prev,
 				loading: false,
 				scheduleNowMessage: resFlashSchedule.message,
 				showScheduleNowAlert: true,
+				numAvailable: "1",
+				numMins: "60",
+				itemName: defaultItemName,
 			}));
 		}
 	}
@@ -753,23 +881,338 @@ function IncomingOrders() {
 	}
 
 	function handleScheduleNow(e) {
-		setScheduleNowValues((prev) => ({ ...prev, showScheduleModal: true }));
+		const date = new Date();
+		const currHour = date.getHours();
+		const currMin = date.getMinutes();
+
+		let disable1Hr = false;
+		let disable2Hr = false;
+		let disable30 = false;
+		let disable15 = false;
+
+		if (currHour === 22) {
+			if (currMin >= 0) {
+				disable2Hr = true;
+			}
+		}
+
+		if (currHour === 23) {
+			disable2Hr = true;
+			if (currMin >= 0) {
+				disable1Hr = true;
+			}
+			if (currMin >= 30) {
+				disable30 = true;
+			}
+			if (currMin >= 45) {
+				disable15 = true;
+			}
+		}
+
+		if (disable1Hr) {
+			setScheduleNowValues((prev) => ({
+				...prev,
+				numMins: "30",
+			}));
+		}
+
+		if (disable30) {
+			setScheduleNowValues((prev) => ({
+				...prev,
+				numMins: "15",
+			}));
+		}
+
+		setScheduleNowValues((prev) => ({
+			...prev,
+			showScheduleModal: true,
+		}));
 	}
 
 	const handleChange = (event, newValue) => {
 		setValue(newValue);
 	};
-	console.log(pendingCount);
+
+	function handleSchedulesClick() {
+		setOpenSchedule((prev) => !prev);
+	}
+
+	// * Displays ---------------------------------------------------------------
+	function showScheduleNowModal() {
+		const date = new Date();
+		const currHour = date.getHours();
+		const currMin = date.getMinutes();
+
+		let disable1Hr = false;
+		let disable2Hr = false;
+		let disable30 = false;
+		let disable15 = false;
+
+		if (currHour === 22) {
+			if (currMin >= 0) {
+				disable2Hr = true;
+			}
+		}
+
+		if (currHour === 23) {
+			disable2Hr = true;
+			if (currMin >= 0) {
+				disable1Hr = true;
+			}
+			if (currMin >= 30) {
+				// console.log("yes");
+				disable30 = true;
+			}
+			if (currMin >= 45) {
+				disable15 = true;
+			}
+		}
+
+		return (
+			<Modal
+				open={showScheduleModal}
+				onClose={() =>
+					setScheduleNowValues((prev) => ({
+						...prev,
+						showScheduleModal: false,
+						numAvailable: "1",
+						numMins: "60",
+						showScheduleNowAlert: false,
+						itemName: defaultItemName,
+					}))
+				}
+				aria-labelledby="modal-modal-title"
+				aria-describedby="modal-modal-description"
+			>
+				<Box sx={style}>
+					{scheduleNowMessage && (
+						<Grid item xs={12} md={12} mb={2}>
+							<Collapse in={showScheduleNowAlert}>
+								<Alert
+									severity={"error"}
+									onClose={() => {
+										setScheduleNowValues((prev) => ({
+											...prev,
+											showScheduleNowAlert: false,
+										}));
+									}}
+								>
+									{scheduleNowMessage}
+								</Alert>
+							</Collapse>
+						</Grid>
+					)}
+					<div
+						className={`${styles.ScheduleModal__container} ${styles.flexCol}`}
+					>
+						<div className={` ${styles.Schedule__meals}`}>
+							<h3 className={`${styles.titleGap} ${styles.numMealGroup}`}>
+								How many meals?
+							</h3>
+							{arrayOfTwenty.map((num, idx) => {
+								return (
+									<React.Fragment key={idx}>
+										<input
+											className={`${styles.radios}`}
+											id={num}
+											type="radio"
+											checked={numAvailable === num}
+											value={num}
+											onChange={handleFlashChange}
+											name="numAvailable"
+											required
+										/>
+										<label
+											htmlFor={num}
+											className={`${styles.mealLabels} ${
+												numAvailable === num ? styles.labelsChecked : undefined
+											}`}
+										>
+											{num}
+										</label>
+									</React.Fragment>
+								);
+							})}
+						</div>
+						<div className={`${styles.Schedule__scheduleModal}`}>
+							<div className={`${styles.flexRow} ${styles.hourTitleGroup}`}>
+								<h3 className={`${styles.titleGap}`}>How many hours?</h3>
+								<p className={`${styles.Description} ${styles.titleGap}`}>
+									(12 am - 11:45 pm)
+								</p>
+							</div>
+							<div className={`${styles.RadioGroup} ${styles.flexRow} `}>
+								<input
+									className={`${styles.radios}`}
+									id="fifteen"
+									type="radio"
+									disabled={disable15}
+									checked={numMins === "15"}
+									value={15}
+									onChange={handleFlashChange}
+									name="numMins"
+								/>
+								<label
+									htmlFor="fifteen"
+									className={`${styles.labels} 
+									 ${
+											disable15
+												? styles.hourDisabled
+												: numMins === "15"
+												? styles.labelsChecked
+												: undefined
+										}`}
+								>
+									15 m
+								</label>
+								<input
+									className={`${styles.radios}`}
+									id="thirty"
+									type="radio"
+									disabled={disable30}
+									checked={numMins === "30"}
+									value={30}
+									onChange={handleFlashChange}
+									name="numMins"
+								/>
+								<label
+									htmlFor="thirty"
+									className={`${styles.labels} 
+									 ${
+											disable30
+												? styles.hourDisabled
+												: numMins === "30"
+												? styles.labelsChecked
+												: undefined
+										}`}
+								>
+									30 m
+								</label>
+
+								<input
+									className={`${styles.radios}`}
+									id="one"
+									type="radio"
+									disabled={disable1Hr}
+									checked={numMins === "60"}
+									value={60}
+									onChange={handleFlashChange}
+									name="numMins"
+								/>
+								<label
+									htmlFor="one"
+									className={`${styles.labels} 
+									 ${
+											disable1Hr
+												? styles.hourDisabled
+												: numMins === "60"
+												? styles.labelsChecked
+												: undefined
+										}`}
+								>
+									1 hr
+								</label>
+
+								<input
+									className={`${styles.radios}`}
+									id="two"
+									type="radio"
+									disabled={disable2Hr}
+									checked={numMins === "120"}
+									value={120}
+									onChange={handleFlashChange}
+									name="numMins"
+								/>
+								<label
+									htmlFor="two"
+									className={`${styles.labels}  ${
+										numMins === "120" ? styles.labelsChecked : undefined
+									} ${disable2Hr ? styles.hourDisabled : undefined}`}
+								>
+									2 hr
+								</label>
+							</div>
+						</div>
+						<div className={`${styles.flexCol} ${styles.selectItemGroup}`}>
+							<h3 className={`${styles.titleGap}`}>Select item:</h3>
+							<div className={`${styles.flexRow} ${styles.itemGroup}`}>
+								{products.map((product) => {
+									return (
+										<React.Fragment key={product.id}>
+											<input
+												className={`${styles.radios}`}
+												id={product.id}
+												checked={itemName === product.itemName}
+												type="radio"
+												name="itemName"
+												value={product.itemName}
+												onChange={handleFlashChange}
+											/>
+											<label
+												htmlFor={product.id}
+												className={`${styles.labels} ${
+													itemName === product.itemName
+														? styles.labelsChecked
+														: undefined
+												}`}
+											>
+												{product.itemName}
+											</label>
+										</React.Fragment>
+									);
+								})}
+							</div>
+						</div>
+						{flashScheduleLoading ? (
+							<CircularProgress />
+						) : (
+							<Button
+								variant={"contained"}
+								size="large"
+								disabled={disable15}
+								onClick={handleCreateNow}
+								color={"primary"}
+							>
+								{"+ Create"}
+							</Button>
+						)}
+					</div>
+				</Box>
+			</Modal>
+		);
+	}
+
 	return (
 		<Layout uid={uid} currentPage="Orders" subPage="incoming-orders">
-			{ordersConfirmedLoading || (ordersPendingLoading && <CircularProgress />)}
-			{(errorMessage || successMessage) && (
+			{openSchedule && (
+				<RemoveSchedule
+					bizId={bizId}
+					open={openSchedule}
+					close={handleSchedulesClick}
+					schedules={schedules}
+					timeDisplay={timeDisplay}
+				/>
+			)}
+			{(ordersConfirmedLoading || ordersPendingLoading) && <CircularProgress />}
+			{errorMessage && (
 				<SuccessError
 					handleOrderUpdate={handleScheduleUpdates}
 					setHandleOrderUpdates={setHandleScheduleUpdates}
 				/>
 			)}
 			<div className={styles.IncomingOrders__container}>
+				{scheduleNumAvail > 0 && (
+					<div className={`${styles.scheduleNumItemsLeft} ${styles.flexRow}`}>
+						<Button
+							onClick={handleSchedulesClick}
+							variant="contained"
+							color="success"
+							size="large"
+						>
+							{scheduleNumAvail} {scheduleNumAvail > 1 ? "meals" : "meal"} left
+						</Button>
+					</div>
+				)}
 				<Button variant="contained" onClick={handleScheduleNow}>
 					⚡️ Flash Sale
 				</Button>
@@ -777,7 +1220,7 @@ function IncomingOrders() {
 				<Box sx={{ width: "100%" }}>
 					<Box
 						sx={{
-							borderBottom: 1,
+							// borderBottom: 1,
 							borderColor: "divider",
 							width: "100%",
 						}}
@@ -807,10 +1250,12 @@ function IncomingOrders() {
 
 					<TabPanel value={value} index={0}>
 						<OrdersComponent
+							audio={audio}
 							date={twoDates[0]}
 							tab={0}
 							uid={uid}
 							bizId={bizId}
+							pendingCount={pendingCount}
 							ordersPending={ordersPending}
 							pickupWindowsPending={pickupWindowsPending}
 							hasPendingToday={hasPendingToday}
@@ -825,6 +1270,7 @@ function IncomingOrders() {
 					</TabPanel>
 					<TabPanel value={value} index={1}>
 						<OrdersComponent
+							audio={audio}
 							date={twoDates[0]}
 							tab={1}
 							uid={uid}

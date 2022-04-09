@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { isAuth, signOutUser } from "../../actions/auth/auth";
+import {
+	isAuth,
+	signOutUser,
+	removeCookie,
+	removeLocalStorage,
+} from "../../actions/auth/auth";
 import { useRouter } from "next/router";
 import CircularProgress from "@mui/material/CircularProgress";
 

@@ -8,17 +8,23 @@
 	--btn-blue: #4285f4;
 	--light-btn-blue: #6ba0f5;
 	--dark-btn-blue: #557bb8;
-	--dark-red: #852b2b;
+	--dark-red: #611f1f;
 	--red: #db4437;
 	--light-red: #f7a7a7;
+	--hover-green: #5efdb3;
 	--light-green: #46c990;
 	--green: #0f9d58;
+	--dark-green: #0c7440;
+	--light-orange: #ffd49b;
 	--orange: #ffb24e;
-	--flash:rgb(255, 0, 0);
+	--orange2: rgb(167, 114, 45) e;
+	--dark-orange: #fd9207;
+	--dark-orange2: rgb(94, 53, 0) 7;
+	--flash: rgb(255, 0, 0);
 	--flash-bg: #fffda3;
 	--gray: #a3a3a3;
 	--light-gray: #d8d8d8;
-	--dark-gray: #303030;
+	--dark-gray: #5a5a5a;
 	--bg-gray: #fafafa;
 }
 
@@ -42,4 +48,9 @@ a {
 	box-sizing: border-box;
 	padding: 0;
 	margin: 0;
+}
+
+.css-1t8l2tu-MuiInputBase-input-MuiOutlinedInput-input {
+	padding: 10px;
+	margin-left: 10px;
 }

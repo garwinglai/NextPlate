@@ -1,0 +1,117 @@
+.flexRow {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.flexCol {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.flexCol > p:first-child {
+	font-size: 20px;
+}
+
+.flexCol > p:nth-child(2) {
+	font-size: 12px;
+	margin-top: 5px;
+}
+
+.OrderTabComponent {
+	display: grid;
+	width: 90%;
+	height: 100px;
+	grid-template-columns: 1fr 1fr;
+	justify-items: center;
+	align-items: center;
+	background-color: white;
+	padding: 10px;
+	margin: 10px auto 0;
+	border: 1px solid rgb(187, 187, 187);
+	box-shadow: rgba(33, 35, 38, 0.1) 0px 10px 10px -10px;
+	overflow-x: scroll;
+	font-size: 14px;
+	font-weight: 500;
+}
+
+.statusReserved {
+	background-position: center;
+	transition: background 0.5s;
+}
+
+.statusReserved:hover {
+	background: var(--light-orange)
+		radial-gradient(circle, transparent 1%, var(--light-orange) 1%)
+		center/15000%;
+}
+
+.statusReserved:active {
+	background-color: var(--light-orange);
+	background-size: 100%;
+	transition: background 0s;
+}
+
+.statusConfirmed {
+	background-position: center;
+	transition: background 0.5s;
+}
+
+.statusConfirmed:hover {
+	background: var(--hover-green)
+		radial-gradient(circle, transparent 1%, var(--hover-green) 1%) center/15000%;
+}
+
+.statusConfirmed:active {
+	background-color: var(--hover-green);
+	background-size: 100%;
+	transition: background 0s;
+}
+
+.OrderTabComponent p {
+	color: var(--dark-gray);
+}
+
+.orderCount {
+	color: var(--dark-gray);
+	background-color: var(--med-blue);
+	padding: 5px 7px;
+	border-radius: 5px;
+}
+
+.OrderTabComponent__clickAwayContainer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.OrderTabComponent__orderActionsButtons {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+@media screen and (max-width: 768px) {
+	.OrderTabComponent {
+		width: 95%;
+		font-size: 16px;
+	}
+
+	.flexCol > p:first-child {
+		font-size: 22px;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.OrderTabComponent {
+		font-size: 10px;
+		/* margin: 10px 0 45px 0; */
+	}
+
+	.flexCol > p:first-child {
+		font-size: 14px;
+	}
+}

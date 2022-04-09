@@ -24,7 +24,7 @@ import MyLoader from "../../../helper/MyLoader";
 // * Conditional Styling *********************************
 
 function statusStyle(status) {
-	if (status === "Declined" || status === "Cancelled" || status === "No Show") {
+	if (status === "Declined" || status === "Canceled" || status === "No Show") {
 		return {
 			color: "white",
 			backgroundColor: "var(--light-red)",
@@ -56,7 +56,7 @@ function statusStyle(status) {
 }
 
 function statusBordersOrders(status) {
-	if (status === "Declined" || status === "Cancelled" || status === "No Show") {
+	if (status === "Declined" || status === "Canceled" || status === "No Show") {
 		return {
 			borderLeft: "3px solid var(--light-red)",
 			borderRight: "3px solid var(--light-red)",
@@ -79,30 +79,47 @@ function statusBordersOrders(status) {
 	}
 }
 
-function statusBordersPostsFlash(numAvailable) {
-	if (numAvailable <= 0) {
+function statusBordersPostsFlash(numAvailable, endTime) {
+	const date = Date.parse(new Date());
+
+	if (endTime < date) {
 		return {
-			borderLeft: "3px solid var(--light-red)",
-			borderRight: "3px solid var(--light-red)",
+			borderLeft: "3px solid var(--gray)",
+			borderRight: "3px solid var(--gray)",
+		};
+	} else {
+		if (numAvailable <= 0) {
+			return {
+				borderLeft: "3px solid var(--gray)",
+				borderRight: "3px solid var(--gray)",
+			};
+		}
+		return {
+			borderLeft: "3px solid var(--flash)",
+			borderRight: "3px solid var(--flash)",
 		};
 	}
-	return {
-		borderLeft: "3px solid var(--flash)",
-		borderRight: "3px solid var(--flash)",
-	};
 }
 
-function statusBordersPosts(numAvailable) {
-	if (numAvailable <= 0) {
+function statusBordersPosts(numAvailable, endTime) {
+	const date = Date.parse(new Date());
+	if (endTime < date) {
 		return {
-			borderLeft: "3px solid var(--light-red)",
-			borderRight: "3px solid var(--light-red)",
+			borderLeft: "3px solid var(--gray)",
+			borderRight: "3px solid var(--gray)",
+		};
+	} else {
+		if (numAvailable <= 0) {
+			return {
+				borderLeft: "3px solid var(--gray)",
+				borderRight: "3px solid var(--gray)",
+			};
+		}
+		return {
+			borderLeft: "3px solid var(--light-green)",
+			borderRight: "3px solid var(--light-green)",
 		};
 	}
-	return {
-		borderLeft: "3px solid var(--light-green)",
-		borderRight: "3px solid var(--light-green)",
-	};
 }
 
 function Dashboard() {
@@ -705,7 +722,7 @@ function Dashboard() {
 			const data = docSnap.data();
 			const numPosts = data.numSchedules;
 			const numOrders = data.numOrders;
-			const totalRevenue = data.totalRevenue;
+			const totalRevenue = data.totalRevenue.toFixed(2);
 			setLoadOrders((prev) => ({
 				...prev,
 				ordersCount: numOrders,
@@ -801,7 +818,7 @@ function Dashboard() {
 		<Layout currentPage="Dashboard" uid={uid}>
 			<div className={styles.Dashboard}>
 				<div className={styles.Dashboard__stats}>
-					<div className={styles.Dashboard__statsBox}>
+					{/* <div className={styles.Dashboard__statsBox}>
 						<h5>Posts:</h5>
 						<div>
 							<Image
@@ -826,7 +843,7 @@ function Dashboard() {
 							/>
 							<h1>{ordersCount}</h1>
 						</div>
-					</div>
+					</div> */}
 					<div className={styles.Dashboard__statsBox}>
 						<h5>Sales:</h5>
 						<div>
@@ -1102,7 +1119,8 @@ function Dashboard() {
 																					styles.Dashboard__notificationsBodyScheduleList
 																				}
 																				style={statusBordersPostsFlash(
-																					flash.numAvailable
+																					flash.numAvailable,
+																					flash.endTime
 																				)}
 																			>
 																				<p
@@ -1112,9 +1130,12 @@ function Dashboard() {
 																					style={{
 																						color: "white",
 																						backgroundColor:
-																							flash.numAvailable > 0
-																								? "var(--flash)"
-																								: "var(--light-red)",
+																							flash.endTime >
+																							Date.parse(new Date())
+																								? flash.numAvailable > 0
+																									? "var(--flash)"
+																									: "var(--gray)"
+																								: "var(--gray)",
 																					}}
 																				>
 																					{flash.numAvailable > 0
@@ -1206,7 +1227,8 @@ function Dashboard() {
 																					styles.Dashboard__notificationsBodyScheduleList
 																				}
 																				style={statusBordersPosts(
-																					post.numAvailable
+																					post.numAvailable,
+																					post.endTime
 																				)}
 																			>
 																				<p
@@ -1216,9 +1238,12 @@ function Dashboard() {
 																					style={{
 																						color: "white",
 																						backgroundColor:
-																							post.numAvailable > 0
-																								? "var(--light-green)"
-																								: "var(--light-red)",
+																							post.endTime >
+																							Date.parse(new Date())
+																								? post.numAvailable > 0
+																									? "var(--light-green)"
+																									: "var(--gray)"
+																								: "var(--gray)",
 																					}}
 																				>
 																					{post.numAvailable > 0
@@ -1327,7 +1352,8 @@ function Dashboard() {
 																					styles.Dashboard__notificationsBodyScheduleList
 																				}
 																				style={statusBordersPosts(
-																					post.numAvailable
+																					post.numAvailable,
+																					post.endTime
 																				)}
 																			>
 																				<p
@@ -1337,9 +1363,12 @@ function Dashboard() {
 																					style={{
 																						color: "white",
 																						backgroundColor:
-																							post.numAvailable > 0
-																								? "var(--light-green)"
-																								: "var(--light-red)",
+																							post.endTime >
+																							Date.parse(new Date())
+																								? post.numAvailable > 0
+																									? "var(--light-green)"
+																									: "var(--gray)"
+																								: "var(--gray)",
 																					}}
 																				>
 																					{post.numAvailable > 0

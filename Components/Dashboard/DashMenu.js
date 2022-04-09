@@ -1,15 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
 import styles from "../../styles/components/dashboard/dashmenu.module.css";
 import Link from "next/link";
-import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
 import { IconButton } from "@mui/material";
-import AccountBoxIcon from "@mui/icons-material/AccountBox";
 import SettingsIcon from "@mui/icons-material/Settings";
 import CreditScoreIcon from "@mui/icons-material/CreditScore";
 import EventNoteIcon from "@mui/icons-material/EventNote";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import Avatar from "@mui/material/Avatar";
-import { signOutUser, getLocalStorage } from "../../actions/auth/auth";
+import { getLocalStorage } from "../../actions/auth/auth";
 import GridViewIcon from "@mui/icons-material/GridView";
 import { useRouter } from "next/router";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -17,6 +14,9 @@ import _ from "lodash";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import Image from "next/image";
 import LoadingBar from "react-top-loading-bar";
+import CategoryIcon from "@mui/icons-material/Category";
+import ScienceIcon from "@mui/icons-material/Science";
+import Version from "../Misc/Version";
 
 function DashMenu({ currentPage }) {
 	const [currentTab, setCurrentTab] = useState("");
@@ -55,13 +55,6 @@ function DashMenu({ currentPage }) {
 		}));
 		loadingBarRef.current.complete();
 	}, [routerUid]);
-
-	async function handleLogOutClick() {
-		const { success, message } = await signOutUser();
-		if (success) {
-			router.push("/business/signin");
-		}
-	}
 
 	function startProgressBar(e, name) {
 		const tabName = e.target.name ? e.target.name : name;
@@ -194,7 +187,7 @@ function DashMenu({ currentPage }) {
 				</div>
 				<div
 					style={
-						currentPage === "Account"
+						currentPage === "Products"
 							? {
 									backgroundColor: "var(--dark-blue)",
 									borderRadius: "5px",
@@ -202,20 +195,20 @@ function DashMenu({ currentPage }) {
 							: undefined
 					}
 				>
-					<Link href={`/dashboard/${routerUid}/account`}>
-						<a onClick={(e) => startProgressBar(e, "account")}>
+					<Link href={`/dashboard/${routerUid}/products`}>
+						<a onClick={(e) => startProgressBar(e, "products")}>
 							<IconButton>
-								<AccountBoxIcon sx={{ color: "var(--gray)" }} />
+								<CategoryIcon sx={{ color: "var(--gray)" }} />
 							</IconButton>
 						</a>
 					</Link>
-					<Link href={`/dashboard/${routerUid}/account`}>
+					<Link href={`/dashboard/${routerUid}/products`}>
 						<a
 							className={styles.DashMenu_MenuItems}
 							onClick={startProgressBar}
-							name="account"
+							name="products"
 						>
-							Account
+							Products
 						</a>
 					</Link>
 				</div>
@@ -246,6 +239,33 @@ function DashMenu({ currentPage }) {
 						</a>
 					</Link>
 				</div>
+				<div
+					style={
+						currentPage === "Test mode"
+							? {
+									backgroundColor: "var(--dark-blue)",
+									borderRadius: "5px",
+							  }
+							: undefined
+					}
+				>
+					<Link href={`/dashboard/${routerUid}/test`}>
+						<a onClick={(e) => startProgressBar(e, "test")}>
+							<IconButton>
+								<ScienceIcon sx={{ color: "var(--gray)" }} />
+							</IconButton>
+						</a>
+					</Link>
+					<Link href={`/dashboard/${routerUid}/test`}>
+						<a
+							className={styles.DashMenu_MenuItems}
+							onClick={startProgressBar}
+							name="test"
+						>
+							Test Mode
+						</a>
+					</Link>
+				</div>
 			</menu>
 		);
 	}
@@ -267,7 +287,7 @@ function DashMenu({ currentPage }) {
 							color: "black",
 							backgroundColor: "var(--med-blue)",
 							fontSize: "14px",
-							marginTop: "30px",
+							marginTop: "10px",
 						}}
 					>
 						{initialsCap}
@@ -282,12 +302,8 @@ function DashMenu({ currentPage }) {
 				</div>
 				{showMenu()}
 			</div>
-			<div className={styles.Logout_Container}>
-				<IconButton sx={{ fontSize: 16 }} onClick={handleLogOutClick}>
-					<PowerSettingsNewIcon sx={{ color: "var(--gray)" }} />
-					<p className={styles.DashMenu_Logout}>Logout</p>
-				</IconButton>
-			</div>
+
+			<Version route="web" />
 		</nav>
 	);
 }

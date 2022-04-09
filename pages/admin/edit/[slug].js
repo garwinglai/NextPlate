@@ -88,7 +88,7 @@ function Edit({ bizId, queryBizData, isLoaded, isMessage }) {
 			setCountryArr((prev) => [...prev, value]);
 		}
 
-		b; // eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [queryBizData, isLoaded, isMessage]);
 
 	// * UseEffect ACTIONS
@@ -206,7 +206,7 @@ function Edit({ bizId, queryBizData, isLoaded, isMessage }) {
 			setLoading(false);
 			setMessage(message);
 			setTimeout(() => {
-				router.push("/admin/all");
+				router.push("/admin");
 			}, 1000);
 		} else {
 			setLoading(false);

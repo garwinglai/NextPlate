@@ -7,9 +7,11 @@ function NotificationsMobile({
 	closeNotifications,
 	uid,
 	orderData,
-	handleClickAway,
+	count,
+	orderConfirmErrorMessage,
+	orderPendingErrorMessage,
 }) {
-	const [orderCount, setOrderCount] = useState(orderData.length);
+	const [orderCount, setOrderCount] = useState(count);
 
 	function reduceOrder() {
 		setOrderCount((prev) => prev - 1);
@@ -17,7 +19,26 @@ function NotificationsMobile({
 
 	return (
 		<div className={styles.NotificationsMobile}>
-			{orderCount === 0 ? (
+			{orderConfirmErrorMessage && (
+				<NotificationRow
+					uid={uid}
+					orderCount={orderCount}
+					reduceOrder={reduceOrder}
+					closeNotifications={closeNotifications}
+					orderConfirmErrorMessage={orderConfirmErrorMessage}
+				/>
+			)}
+			{orderPendingErrorMessage && (
+				<NotificationRow
+					uid={uid}
+					orderCount={orderCount}
+					reduceOrder={reduceOrder}
+					closeNotifications={closeNotifications}
+					orderPendingErrorMessage={orderPendingErrorMessage}
+				/>
+			)}
+
+			{orderCount && orderCount === 0 ? (
 				<div
 					style={{
 						textAlign: "center",
@@ -36,7 +57,6 @@ function NotificationsMobile({
 						orderCount={orderCount}
 						reduceOrder={reduceOrder}
 						closeNotifications={closeNotifications}
-						handleClickAway={handleClickAway}
 					/>
 				))
 			)}

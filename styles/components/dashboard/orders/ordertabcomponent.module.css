@@ -11,12 +11,18 @@
 }
 
 .flexCol > p:first-child {
-	font-size: 18px;
+	font-size: 20px;
+}
+
+.flexCol > p:nth-child(2) {
+	font-size: 12px;
+	margin-top: 5px;
 }
 
 .OrderTabComponent {
 	display: grid;
 	width: 90%;
+	height: 100px;
 	grid-template-columns: 1fr 1fr;
 	justify-items: center;
 	align-items: center;
@@ -28,6 +34,55 @@
 	overflow-x: scroll;
 	font-size: 14px;
 	font-weight: 500;
+}
+
+.statusReserved {
+	background-position: center;
+	transition: background 0.5s;
+	animation-name: pulse;
+	animation-duration: 1s;
+	animation-iteration-count: infinite;
+	animation-direction: alternate;
+}
+
+@keyframes pulse {
+	0% {
+		background-color: var(--dark-orange);
+	}
+
+	100% {
+		background-color: var(--light-orange);
+	}
+}
+
+.statusReserved:hover {
+	background: var(--light-orange)
+		radial-gradient(circle, transparent 1%, var(--light-orange) 1%)
+		center/15000%;
+	cursor: pointer;
+	animation-play-state: paused;
+}
+
+.statusReserved:active {
+	background-color: var(--light-orange);
+	background-size: 100%;
+	transition: background 0s;
+}
+
+.statusConfirmed {
+	background-position: center;
+	transition: background 0.5s;
+}
+
+.statusConfirmed:hover {
+	background: var(--hover-green)
+		radial-gradient(circle, transparent 1%, var(--hover-green) 1%) center/15000%;
+}
+
+.statusConfirmed:active {
+	background-color: var(--hover-green);
+	background-size: 100%;
+	transition: background 0s;
 }
 
 .OrderTabComponent p {
@@ -58,7 +113,11 @@
 @media screen and (max-width: 768px) {
 	.OrderTabComponent {
 		width: 95%;
-		/* margin: 10px 0 45px 0; */
+		font-size: 16px;
+	}
+
+	.flexCol > p:first-child {
+		font-size: 22px;
 	}
 }
 

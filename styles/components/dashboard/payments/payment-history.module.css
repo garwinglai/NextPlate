@@ -1,0 +1,138 @@
+.Box {
+	background-color: white;
+	border-radius: 5px;
+	padding: 25px 15px;
+	box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
+}
+
+.flexRow {
+	display: flex;
+	align-items: center;
+}
+
+.flexCol {
+	display: flex;
+	flex-direction: column;
+}
+
+.gridHeader {
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	justify-items: center;
+	align-items: center;
+	width: 100%;
+	height: 40px;
+	border-bottom: 1px solid var(--gray);
+}
+
+.gridHeader h5 {
+	font-size: 14px;
+}
+
+.justifyStartItem {
+	justify-self: flex-start;
+}
+
+.justifyEndItem {
+	justify-self: flex-end;
+}
+
+.justifyCenter {
+	justify-self: center;
+}
+
+.paddingLeft {
+	padding-left: 20px;
+}
+
+/* * Targeted  */
+.header {
+	justify-content: space-between;
+	padding: 10px 20px 35px;
+	gap: 40px;
+	flex-wrap: wrap;
+}
+
+.header h5 {
+	color: var(--gray);
+	margin-bottom: 10px;
+}
+
+.header h1 {
+	font-weight: 500;
+	color: var(--dark-blue);
+}
+
+.dateGroup {
+	justify-content: space-around;
+	width: 400px;
+}
+
+.dateGroup p {
+	color: var(--btn-blue);
+}
+
+.datePair {
+	width: 100%;
+	gap: 10px;
+}
+
+@media screen and (max-width: 768px) {
+	.header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 30px;
+	}
+
+	.header h5 {
+		font-size: 20px;
+	}
+
+	.header h1 {
+		font-size: 40px;
+	}
+
+	.dateGroup {
+		/* align-self: center; */
+	}
+
+	.datePair p {
+		font-size: 20px;
+	}
+
+	.datePair {
+		text-align: center;
+		gap: 0;
+	}
+
+	.gridHeader h5 {
+		font-size: 16px;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.header h5 {
+		font-size: 16px;
+	}
+
+	.header h1 {
+		font-size: 30px;
+	}
+	.dateGroup {
+		flex-wrap: wrap;
+		width: 70%;
+		gap: 20px;
+	}
+
+	.datePair {
+		text-align: right;
+	}
+
+	.datePair p {
+		font-size: 14px;
+	}
+
+	.gridHeader h5 {
+		font-size: 12px;
+	}
+}

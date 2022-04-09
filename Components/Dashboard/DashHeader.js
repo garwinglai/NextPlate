@@ -10,6 +10,10 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import { getBiz } from "../../actions/crud/bizUser";
+import { getAuth } from "firebase/auth";
+
+const auth = getAuth();
+const user = auth.currentUser;
 
 function TabPanel(props) {
 	const { children, value, index, ...other } = props;
@@ -40,7 +44,13 @@ function a11yProps(index) {
 	};
 }
 
-function DashHeader({ currentPage, subPage, notifications, bizId }) {
+function DashHeader({
+	currentPage,
+	subPage,
+	notifications,
+	notificationsConfirmed,
+	bizId,
+}) {
 	const [showNotifications, setShowNotifications] = useState(false);
 
 	const [value, setValue] = useState(
@@ -52,11 +62,6 @@ function DashHeader({ currentPage, subPage, notifications, bizId }) {
 	const router = useRouter();
 	const uid = router.query.uid;
 
-	useEffect(() => {
-		if (numOrdersUnnoticed > 0 || errorMessage !== "") {
-			setShowNotifications(true);
-		}
-	}, [numOrdersUnnoticed, errorMessage, orderData]);
 	// * ACTIONS --------------------------------------------
 
 	function handleOnClick() {
@@ -118,15 +123,35 @@ function DashHeader({ currentPage, subPage, notifications, bizId }) {
 		);
 	}
 
-	return (
-		<nav className={styles.DashHeader}>
-			<h1>{currentPage}</h1>
-			{currentPage === "Orders" && showOrdersLegendAndNav()}
+	function showNotificationsDisplay() {
+		const auth = getAuth();
+		const user = auth.currentUser;
+		if (!user) {
+			return;
+		}
+
+		const { numOrdersUnnoticed, errorMessage, orderData } = notifications;
+		const {
+			numOrdersConfirmed,
+			ordersConfirmedErrorMessage,
+			ordersConfirmedData,
+		} = notificationsConfirmed;
+		let count = numOrdersConfirmed + numOrdersUnnoticed;
+		let dataArr = [...orderData, ...ordersConfirmedData];
+
+		if (errorMessage) {
+			count++;
+		}
+		if (ordersConfirmedErrorMessage) {
+			count++;
+		}
+
+		return (
 			<ClickAwayListener onClickAway={handleClickAway}>
 				<div className={styles.DashHeader__notificationIcon}>
 					<IconButton onClick={handleOnClick}>
 						<NotificationsNoneIcon sx={{ width: "30px", height: "30px" }} />
-						{numOrdersUnnoticed !== 0 && (
+						{count !== 0 && (
 							<Avatar
 								alt="notifications"
 								sx={{
@@ -139,20 +164,30 @@ function DashHeader({ currentPage, subPage, notifications, bizId }) {
 									left: "25px",
 								}}
 							>
-								{numOrdersUnnoticed}
+								{count}
 							</Avatar>
 						)}
 					</IconButton>
 					{showNotifications && (
 						<NotificationsWeb
+							closeNotifications={handleClickAway}
 							uid={uid}
-							notifications={notifications}
-							orderLength={numOrdersUnnoticed}
-							handleClickAway={handleClickAway}
+							count={count}
+							orderData={dataArr}
+							orderConfirmErrorMessage={ordersConfirmedErrorMessage}
+							orderPendingErrorMessage={errorMessage}
 						/>
 					)}
 				</div>
 			</ClickAwayListener>
+		);
+	}
+
+	return (
+		<nav className={styles.DashHeader}>
+			<h1>{currentPage}</h1>
+			{currentPage === "Orders" && showOrdersLegendAndNav()}
+			{showNotificationsDisplay()}
 		</nav>
 	);
 }

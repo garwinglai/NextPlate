@@ -1,0 +1,37 @@
+.itemGroup {
+	/* display: flex; */
+	/* background-color: red; */
+}
+
+.listPriceRadioGroup {
+	display: flex;
+	margin: 10px 0 20px 0;
+	/* background-color: rebeccapurple; */
+}
+
+.listPriceRadioGroup label {
+	font-size: 16px;
+}
+
+.priceGroup {
+	margin-right: 10px;
+}
+
+.radios {
+	display: none;
+}
+
+.labels {
+	border: 1px solid var(--btn-blue);
+	color: var(--dark-blue);
+	white-space: nowrap;
+	padding: 5px;
+	border-radius: 5px;
+	margin: 5px 10px 5px 0;
+}
+
+.listPriceRadioGroup input[type="radio"]:checked ~ .labelsChecked {
+	background-color: var(--light-btn-blue);
+	color: white;
+	font-weight: 500;
+}

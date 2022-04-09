@@ -19,6 +19,7 @@ import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Collapse from "@mui/material/Collapse";
 import CurrencyInput from "react-currency-input-field";
+import styles from "../../styles/components/auth/biz-info-form.module.css";
 
 export default function BizInfoForm({
 	currentStep,
@@ -35,8 +36,9 @@ export default function BizInfoForm({
 	const [tempLogin, setTempLogin] = useState({ firstName: "" });
 	const [bizValues, setBizValues] = useState({
 		bizName: "",
-		itemName: "Surprise Bag",
-		itemDescription: "",
+		itemName: "Surprise Item",
+		itemDescription:
+			"Let's fight food waste together! Come try our mystery surprise item!",
 		address: {
 			fullAddress: "",
 			address_1: "",
@@ -55,7 +57,7 @@ export default function BizInfoForm({
 			phoneNumber: "",
 			email: "",
 		},
-		pickUpBuffer: 30,
+		pickUpBuffer: 0,
 		keywords: [],
 		filterCategory: [],
 		dietaryDescription: 0,
@@ -169,73 +171,6 @@ export default function BizInfoForm({
 			});
 			setIsOpen(true);
 			return;
-		}
-
-		const allergenArray = allergens.split(" ");
-		let commaCount = 0;
-		let wordCount = 0;
-
-		for (let i = 0; i < allergenArray.length; i++) {
-			const curr = allergenArray[i];
-
-			if (i === allergenArray.length - 1) {
-				if (curr[curr.length - 1] !== ".") {
-					setHandling({
-						message:
-							"Please finish your allergens description with a period under Product details.",
-					});
-					setIsOpen(true);
-					return;
-				}
-			} else if (i === allergenArray.length - 2) {
-				if (curr[curr.length - 1] === "," || curr[curr.length - 1] === ".") {
-					setHandling({
-						message:
-							"Plese check your allergens description to match this format. Ex: Milk, nuts, soybean, and wheat.",
-					});
-					setIsOpen(true);
-					return;
-				}
-				wordCount += 1;
-			} else {
-				if (curr[curr.length - 1] === ",") {
-					commaCount += 1;
-					wordCount += 1;
-				} else {
-					wordCount += 1;
-				}
-			}
-		}
-
-		if (allergenArray.length === 3) {
-			if (commaCount + 2 !== wordCount) {
-				setHandling({
-					message:
-						"Please type your allergens with the correct commas under Product details. Ex: Milk, nuts, soybean, and wheat.",
-				});
-				setIsOpen(true);
-				return;
-			}
-		} else if (allergenArray.length === 1) {
-			if (commaCount !== wordCount) {
-				if (commaCount + 1 !== wordCount) {
-					setHandling({
-						message:
-							"Please type your allergens with the correct commas under Product details. Ex: Milk, nuts, soybean, and wheat.",
-					});
-					setIsOpen(true);
-					return;
-				}
-			}
-		} else {
-			if (commaCount + 1 !== wordCount) {
-				setHandling({
-					message:
-						"Please type your allergens with the correct commas under Product details. Ex: Milk, nuts, soybean, and wheat.",
-				});
-				setIsOpen(true);
-				return;
-			}
 		}
 
 		const ownerNumNoSpaceChar = ownerPhoneNumber.slice(1);
@@ -452,6 +387,14 @@ export default function BizInfoForm({
 		return false;
 	};
 
+	function handleCheckedPrice(price) {
+		if (price === defaultPrice) {
+			return true;
+		}
+
+		return false;
+	}
+
 	return (
 		<React.Fragment>
 			<form onSubmit={(e) => handleNextPage(e, bizValues)}>
@@ -467,7 +410,7 @@ export default function BizInfoForm({
 							id="bizName"
 							name="bizName"
 							value={bizName}
-							placeholder="Business name"
+							placeholder="* Business name"
 							onChange={handleChange}
 							style={{ width: "100%", textIndent: "5px", height: "40px" }}
 						/>
@@ -479,7 +422,7 @@ export default function BizInfoForm({
 							id="address_1"
 							name="address_1"
 							value={address_1}
-							placeholder="Address line 1"
+							placeholder="* Address line 1"
 							autoComplete="shipping address-line1"
 							onChange={handleChange}
 							style={{ width: "100%", textIndent: "5px", height: "40px" }}
@@ -504,7 +447,7 @@ export default function BizInfoForm({
 							id="city"
 							name="city"
 							value={city}
-							placeholder="City"
+							placeholder="* City"
 							autoComplete="shipping address-level2"
 							onChange={handleChange}
 							style={{ width: "100%", textIndent: "5px", height: "40px" }}
@@ -536,7 +479,7 @@ export default function BizInfoForm({
 							id="zip"
 							name="zip"
 							value={zip}
-							placeholder="Zip code"
+							placeholder="* Zip code"
 							autoComplete="shipping postal-code"
 							onChange={handleChange}
 							style={{ width: "100%", textIndent: "5px", height: "40px" }}
@@ -575,7 +518,7 @@ export default function BizInfoForm({
 							name="phoneNumber"
 							country="us"
 							value={phoneNumber}
-							placeholder="Business phone"
+							placeholder="* Business phone"
 							specialLabel=""
 							onChange={(e) => handleChange(e, "phoneNumber")}
 							inputStyle={{ width: "100%", textIndent: "5px", height: "40px" }}
@@ -589,14 +532,13 @@ export default function BizInfoForm({
 							id="email"
 							name="email"
 							value={email}
-							placeholder="Business email"
+							placeholder="* Business email"
 							onChange={handleChange}
 							style={{ width: "100%", textIndent: "5px", height: "40px" }}
 						/>
 					</Grid>
 					<Grid item xs={12}>
 						<input
-							required
 							type="url"
 							id="website"
 							name="website"
@@ -625,7 +567,7 @@ export default function BizInfoForm({
 							country="us"
 							name="ownerPhone"
 							value={ownerPhoneNumber}
-							placeholder="Owner phone"
+							placeholder="* Owner phone"
 							specialLabel=""
 							onChange={(e) => handleChange(e, "ownerPhone")}
 							inputStyle={{
@@ -644,7 +586,7 @@ export default function BizInfoForm({
 							id="ownerEmail"
 							name="ownerEmail"
 							value={ownerEmail}
-							placeholder="Owner email"
+							placeholder="* Owner email"
 							onChange={handleChange}
 							style={{ width: "100%", textIndent: "5px", height: "40px" }}
 						/>
@@ -661,7 +603,7 @@ export default function BizInfoForm({
 							id="itemName"
 							name="itemName"
 							value={itemName}
-							placeholder="Item name"
+							placeholder="* Item name"
 							onChange={handleChange}
 							style={{ width: "100%", textIndent: "5px", height: "40px" }}
 						/>
@@ -677,7 +619,7 @@ export default function BizInfoForm({
 							rows="10"
 							onChange={handleChange}
 							style={{ width: "100%", padding: "5px 0 0 5px" }}
-							placeholder="Item description: Help us fight food waste. Purchase a delicious surprise bag from...!"
+							placeholder="* Item description: Help us fight food waste. Purchase a delicious surprise bag from...!"
 						/>
 						<p
 							style={{
@@ -697,7 +639,7 @@ export default function BizInfoForm({
 						<CurrencyInput
 							id="originalPrice"
 							name="originalPrice"
-							placeholder="Original item price"
+							placeholder="* Original item price"
 							value={originalPrice}
 							prefix="$"
 							required
@@ -715,36 +657,81 @@ export default function BizInfoForm({
 						/>
 					</Grid>
 					<Grid item xs={12}>
-						<label style={{ fontSize: "12px", opacity: "0.6" }}>
-							* This can be changed in your account later.
-						</label>
-						<CurrencyInput
-							id="defaultPrice"
-							name="defaultPrice"
-							placeholder="Default item price"
-							value={defaultPrice}
-							prefix="$"
-							required
-							decimalScale={2}
-							decimalsLimit={2}
-							onValueChange={(value, name) =>
-								setBizValues((prev) => ({ ...prev, [name]: value }))
-							}
-							style={{
-								width: "100%",
-								textIndent: "5px",
-								height: "40px",
-								marginTop: "5px",
-							}}
-						/>
+						<FormLabel component="legend">* Default price</FormLabel>
+						<div className={`${styles.listPriceRadioGroup}`}>
+							<div className={`${styles.priceGroup}`}>
+								<input
+									className={`${styles.radios}`}
+									id="three"
+									checked={handleCheckedPrice("3.99")}
+									type="radio"
+									name="defaultPrice"
+									value="3.99"
+									onChange={(e) => {
+										const { name, value } = e.target;
+										setBizValues((prev) => ({ ...prev, [name]: value }));
+									}}
+								/>
+								<label
+									htmlFor="three"
+									className={`${styles.labels} ${
+										defaultPrice === "3.99" ? styles.labelsChecked : undefined
+									}`}
+								>
+									$3.99
+								</label>
+							</div>
+							<div className={`${styles.priceGroup}`}>
+								<input
+									className={`${styles.radios}`}
+									id="four"
+									checked={handleCheckedPrice("4.99")}
+									type="radio"
+									name="defaultPrice"
+									value="4.99"
+									onChange={(e) => {
+										const { name, value } = e.target;
+										setBizValues((prev) => ({ ...prev, [name]: value }));
+									}}
+								/>
+								<label
+									htmlFor="four"
+									className={`${styles.labels} ${
+										defaultPrice === "4.99" ? styles.labelsChecked : undefined
+									}`}
+								>
+									$4.99
+								</label>
+							</div>
+							<div className={`${styles.priceGroup}`}>
+								<input
+									className={`${styles.radios}`}
+									id="five"
+									checked={handleCheckedPrice("5.99")}
+									type="radio"
+									name="defaultPrice"
+									value="5.99"
+									onChange={(e) => {
+										const { name, value } = e.target;
+										setBizValues((prev) => ({ ...prev, [name]: value }));
+									}}
+								/>
+								<label
+									htmlFor="five"
+									className={`${styles.labels} ${
+										defaultPrice === "5.99" ? styles.labelsChecked : undefined
+									}`}
+								>
+									$5.99
+								</label>
+							</div>
+						</div>
 					</Grid>
 					<Grid item xs={12}>
 						<label style={{ fontSize: "12px", opacity: "0.6" }}>
-							* Separate by comma. Ex: Milk, eggs, nuts, and fish. <br />* If
-							only two: Milk and eggs. <br /> * If none: None.
+							Allergens: Please type it as you would like it to be shown.
 						</label>
 						<textarea
-							required
 							type="textarea"
 							id="allergens"
 							name="allergens"
@@ -757,7 +744,7 @@ export default function BizInfoForm({
 								padding: "5px 0 0 5px",
 								marginTop: "5px",
 							}}
-							placeholder="Allergens: milk, eggs, fish, shellfish, tree nuts, peanuts, wheat, and soybean."
+							placeholder="Ex: Milk, eggs, fish, shellfish, tree nuts, peanuts, wheat, and soybean."
 						/>
 					</Grid>
 					<Grid item xs={12} sm={12}>
@@ -778,15 +765,15 @@ export default function BizInfoForm({
 							onChange={handleChange}
 						>
 							<FormControlLabel
-								value={30}
+								value={0}
 								control={<Radio />}
-								label="30 minutes"
+								label="0 minutes"
 							/>
 
 							<FormControlLabel
-								value={60}
+								value={5}
 								control={<Radio />}
-								label="60 minutes"
+								label="5 minutes"
 							/>
 						</RadioGroup>
 					</Grid>

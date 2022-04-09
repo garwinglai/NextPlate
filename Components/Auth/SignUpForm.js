@@ -92,7 +92,7 @@ export default function SignUpForm({
 						<TextField
 							required
 							id="firstName"
-							label="First name"
+							label="* First name"
 							type="text"
 							name="firstName"
 							value={firstName}
@@ -108,7 +108,7 @@ export default function SignUpForm({
 							name="lastName"
 							value={lastName}
 							type="text"
-							label="Last name"
+							label="* Last name"
 							fullWidth
 							variant="standard"
 							onChange={handleChange}
@@ -118,7 +118,7 @@ export default function SignUpForm({
 						<TextField
 							required
 							id="email"
-							label="Email"
+							label="* Email"
 							type="email"
 							name="email"
 							value={email}
@@ -131,8 +131,8 @@ export default function SignUpForm({
 						<TextField
 							required
 							id="password"
-							label="password (min length 6)"
-							inputProps={{ minLength: 6 }}
+							label="* password (min length 8)"
+							inputProps={{ minLength: 8 }}
 							type="password"
 							name="password"
 							value={password}

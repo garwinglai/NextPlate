@@ -1,26 +1,19 @@
-import Head from "next/head";
-import styles from "../styles/pages/Home.module.css";
-import Layout from "../Components/Layout";
+import React, { useEffect } from "react";
+import { useRouter } from "next/router";
 
-// * Landing Home Page
-
+// * Redirect to Wix home page.
 function Home() {
-	return (
-		<Layout currentPage="public">
-			<Head>
-				<title>Next Plate</title>
-				{/* <link rel="icon" href="/favicon.ico" /> */}
-			</Head>
+	const router = useRouter();
 
-			<main className={styles.main}>
-				<h1>garwing lai</h1>
-			</main>
+	// useEffect(() => {
+	// }, [router]);
+	useEffect(() => {
+		router.push("https://www.home.nextplate.app");
 
-			<footer className={styles.footer}>
-				<h2>footer</h2>
-			</footer>
-		</Layout>
-	);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	return <div style={{ display: "none" }}>hello</div>;
 }
 
 export default Home;

@@ -3,41 +3,50 @@ import styles from "../../../styles/components/dashboard/notifications/notificat
 import NotificationRow from "./NotificationRow";
 
 function NotificationsWeb({
+	closeNotifications,
 	uid,
-	orderLength,
-	handleClickAway,
-	notifications,
+	orderData,
+	count,
+	orderConfirmErrorMessage,
+	orderPendingErrorMessage,
 }) {
-	const [orderCount, setOrderCount] = useState(orderLength);
-	const { numOrdersUnnoticed, errorMessage, orderData } = notifications;
-
+	const [orderCount, setOrderCount] = useState(count);
+	console.log(orderData);
 	function reduceOrder() {
 		setOrderCount((prev) => prev - 1);
 	}
 
 	return (
 		<div className={styles.NotificationsWeb}>
-			{errorMessage ? (
+			{orderConfirmErrorMessage && (
 				<NotificationRow
-					errorMessage={errorMessage}
+					uid={uid}
 					orderCount={orderCount}
 					reduceOrder={reduceOrder}
-					uid={uid}
-					handleClickAway={handleClickAway}
+					closeNotifications={closeNotifications}
+					orderConfirmErrorMessage={orderConfirmErrorMessage}
 				/>
-			) : (
-				orderData.map((order, idx) => (
-					<NotificationRow
-						key={order.orderId}
-						notifications={notifications}
-						orderData={order}
-						orderCount={orderCount}
-						reduceOrder={reduceOrder}
-						uid={uid}
-						handleClickAway={handleClickAway}
-					/>
-				))
 			)}
+			{orderPendingErrorMessage && (
+				<NotificationRow
+					uid={uid}
+					orderCount={orderCount}
+					reduceOrder={reduceOrder}
+					closeNotifications={closeNotifications}
+					orderPendingErrorMessage={orderPendingErrorMessage}
+				/>
+			)}
+
+			{orderData.map((order, idx) => (
+				<NotificationRow
+					key={order.orderId}
+					orderData={order}
+					uid={uid}
+					orderCount={orderCount}
+					reduceOrder={reduceOrder}
+					closeNotifications={closeNotifications}
+				/>
+			))}
 		</div>
 	);
 }

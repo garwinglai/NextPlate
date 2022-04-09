@@ -17,8 +17,15 @@ import {
 	limit,
 	where,
 } from "firebase/firestore";
-import { db, increment, decrement } from "../../firebase/fireConfig";
+import {
+	db,
+	increment,
+	decrement,
+	incrementArgs,
+	decrementArgs,
+} from "../../firebase/fireConfig";
 import _ from "lodash";
+import sendNotification from "../heroku/notifications";
 
 async function createNewSchedule(
 	bizId,
@@ -34,8 +41,10 @@ async function createNewSchedule(
 	const bizDocRef = doc(db, "biz", bizId);
 	const docSnap = await getDoc(bizDocRef);
 
+	const numSchedule = scheduleData.numAvailable;
 	const timeS = hourStart * 60 + minStart;
 	const timeE = hourEnd * 60 + minEnd;
+	const { recurring } = scheduleData;
 
 	const currTimeInHours = new Date().getHours();
 	const currTimeInMinutes = new Date().getMinutes();
@@ -47,16 +56,16 @@ async function createNewSchedule(
 	if (timeS >= timeE) {
 		return {
 			success: false,
-			message: "Please select an appropriate time. (12:00 AM - 11:59 PM)",
+			message: "Please select an appropriate time. (12:00 am - 11:45 pm)",
 		};
 	}
 	if (currShortDate === shortDate) {
-		// * If the endTime is smaller than current time, reutnr error.
-		if (timeE < currTime + 60) {
+		// * If the startTime is smaller than current time, return error.
+		if (timeS < currTime) {
 			return {
 				success: false,
 				message:
-					"The time has passed. Please select an end time at least 1 hour ahead of the current time.",
+					"Please select an appropriate time. Start time has already passed.",
 			};
 		}
 	}
@@ -72,6 +81,9 @@ async function createNewSchedule(
 			where("dayOfWeek", "==", dayOfWeek),
 			where("recurring", "==", true)
 		);
+
+		let scheduledId;
+		scheduleData.notificationSent = false;
 
 		try {
 			const recurringSchedulesArr = [];
@@ -129,6 +141,7 @@ async function createNewSchedule(
 		let newNextScheduledData = scheduleData;
 
 		const docData = docSnap.data();
+		const bizName = docData.name;
 		const batch = writeBatch(db);
 
 		switch (dayOfWeek) {
@@ -157,47 +170,51 @@ async function createNewSchedule(
 				break;
 		}
 
-		// * Check if nextScheduled data exists in biz. If not, add post to openHistory
-		if (!docData.nextScheduled) {
+		// * Check if weeklySchedules data exists in biz. If not, add post to openHistory
+		if (!docData.weeklySchedules) {
 			const res = await addOpenHistory(bizId, openHistory);
 			if (res.success) {
 				const firstPost = res.firstPost;
 
-				const scheduledId = res.id;
+				scheduledId = res.id;
 				newNextScheduledData.id = scheduledId;
 				// delete newNextScheduledData.createdAt;
-				const nextScheduled = {
+				const weeklySchedules = {
 					[dayOfWeekIndex]: { [scheduledId]: newNextScheduledData },
 				};
-				batch.set(bizDocRef, { nextScheduled }, { merge: true });
+				batch.set(bizDocRef, { weeklySchedules }, { merge: true });
 
 				// * Increment numSchedules based on if the post is the first
 				if (firstPost) {
-					batch.set(bizDocRef, { numSchedules: increment }, { merge: true });
+					batch.set(
+						bizDocRef,
+						{ numSchedules: incrementArgs(numSchedule) },
+						{ merge: true }
+					);
 				} else {
-					batch.update(bizDocRef, { numSchedules: increment });
+					batch.update(bizDocRef, { numSchedules: incrementArgs(numSchedule) });
 				}
 			} else {
 				return res;
 			}
 		} else {
-			// * nextSchedule already exists, so check if dayOfWeekIndex key exists in nextSchedule
-			const existingNextSchedule = docData.nextScheduled;
+			// * weeklySchedules already exists, so check if dayOfWeekIndex key exists in nextSchedule
+			const existingNextSchedule = docData.weeklySchedules;
 
 			if (existingNextSchedule.hasOwnProperty(dayOfWeekIndex)) {
-				// * If nextScheduled has dayIndex, check if there is overlapping times. If so, send error
+				// * If weeklySchedules has dayIndex, check if there is overlapping times. If so, send error
 
 				const schedulesPerDay = existingNextSchedule[dayOfWeekIndex];
-				const nextScheduledIndexKeyArray = [];
+				const weeklySchedulesIdxArray = [];
 
 				for (const key in schedulesPerDay) {
 					if (schedulesPerDay[key].status === "Regular") {
-						nextScheduledIndexKeyArray.push(key);
+						weeklySchedulesIdxArray.push(key);
 					}
 				}
 
-				for (let i = 0; i < nextScheduledIndexKeyArray.length; i++) {
-					const key = nextScheduledIndexKeyArray[i];
+				for (let i = 0; i < weeklySchedulesIdxArray.length; i++) {
+					const key = weeklySchedulesIdxArray[i];
 					const currentSchedule = schedulesPerDay[key];
 
 					const hourStartPickUp = currentSchedule.hourStart;
@@ -236,7 +253,7 @@ async function createNewSchedule(
 				const resOpenHistory = await addOpenHistory(bizId, openHistory);
 
 				if (resOpenHistory.success) {
-					const scheduledId = resOpenHistory.id;
+					scheduledId = resOpenHistory.id;
 					newNextScheduledData.id = scheduledId;
 
 					const newScheduleMapUpdated = {
@@ -247,17 +264,17 @@ async function createNewSchedule(
 					existingNextSchedule[dayOfWeekIndex] = newScheduleMapUpdated;
 
 					batch.update(bizDocRef, {
-						nextScheduled: existingNextSchedule,
-						numSchedules: increment,
+						weeklySchedules: existingNextSchedule,
+						numSchedules: incrementArgs(numSchedule),
 					});
 				} else {
 					return resOpenHistory;
 				}
 			} else {
-				// * No dayIndex key in nextScheduled, so add to openHistory and add to nextScheduled
+				// * No dayIndex key in weeklySchedules, so add to openHistory and add to weeklySchedules
 				const resHistory = await addOpenHistory(bizId, openHistory);
 				if (resHistory.success) {
-					const scheduledId = resHistory.id;
+					scheduledId = resHistory.id;
 					newNextScheduledData.id = scheduledId;
 					// delete newNextScheduledData.createdAt;
 
@@ -266,8 +283,8 @@ async function createNewSchedule(
 					};
 
 					batch.update(bizDocRef, {
-						nextScheduled: existingNextSchedule,
-						numSchedules: increment,
+						weeklySchedules: existingNextSchedule,
+						numSchedules: incrementArgs(numSchedule),
 					});
 				} else {
 					return resHistory;
@@ -289,16 +306,94 @@ async function createNewSchedule(
 			}
 		}
 
+		const todayDate = new Date();
+		const todayShort = todayDate.toLocaleDateString();
+		todayDate.setDate(todayDate.getDate() + 1);
+		const tomorrowShort = todayDate.toLocaleDateString();
+
 		// * Batch Commit
 		try {
+			console.log("batch commit");
 			await batch.commit();
-			return { success: true, message: "Schedule created successfully" };
+			// return { success: true, message: "Schedule created successfully" };
+
+			// * Don't send notification if already sent.
+			// * Don't send notification if not live today or tmw.
+			if (
+				(todayShort !== shortDate && tomorrowShort !== shortDate) ||
+				scheduleData.notificationSent
+			) {
+				return { success: true, message: "Schedule created successfully" };
+			}
 		} catch (error) {
 			return {
 				success: false,
 				message: `Error with batch commit. Please try again: ${error} `,
 			};
 		}
+
+		// * Send notification to user if schedule is today or tomorow
+		try {
+			const resNotification = await sendNotification(
+				bizId,
+				bizName,
+				"regular",
+				null,
+				null,
+				null,
+				scheduledId,
+				dayOfWeekIndex,
+				scheduleData.recurring
+			);
+			console.log("send notification after batch");
+
+			return { success: true, message: "Schedule created successfully" };
+		} catch (err) {
+			console.log(err);
+			return {
+				success: true,
+				message: "Schedule created successfully, notification not sent.",
+			};
+		}
+
+		// // * Update biz weeklySchedule notificationSent
+		// try {
+		// 	const bizDocRef = doc(db, "biz", bizId);
+		// 	await updateDoc(
+		// 		bizDocRef,
+		// 		{
+		// 			[`weeklySchedules.${dayOfWeekIndex}.${scheduleId}.notificationSent`]: true,
+		// 		},
+		// 		{ merge: true }
+		// 	);
+		// 	console.log("set notification to true after batch : biz");
+		// } catch (error) {
+		// 	return {
+		// 		success: true,
+		// 		message: "Schedule created, business notification not updated.",
+		// 	};
+		// }
+
+		// // * Send notification to reucrring schedules
+		// try {
+		// 	const openHistoryDocRef = doc(
+		// 		db,
+		// 		"biz",
+		// 		bizId,
+		// 		"openHistory",
+		// 		scheduledId
+		// 	);
+
+		// 	await updateDoc(openHistoryDocRef, { notificationSent: true });
+		// 	console.log("set notification to true after batch : admin");
+		// 	return { success: true, message: "Schedule created successfully" };
+		// } catch (error) {
+		// 	console.log(error);
+		// 	return {
+		// 		success: true,
+		// 		message: "Schedule created, history notification not updated.",
+		// 	};
+		// }
 	} else {
 		return {
 			success: false,
@@ -349,41 +444,51 @@ async function createFlashSchedule(
 	const bizDocRef = doc(db, "biz", bizId);
 	const bizDocSnap = await getDoc(bizDocRef);
 
+	const numSchedule = flashScheduledData.numAvailable;
+
 	if (bizDocSnap.exists()) {
 		const docData = bizDocSnap.data();
-		const existingNextSchedule = docData.nextScheduled;
+		const existingNextSchedule = docData.weeklySchedules;
 		const flashEndTime = docData.flashEnds;
+		const bizName = docData.name;
+		let flashScheduleId;
 
 		flashScheduledData.createdAt = new serverTimestamp();
+		flashScheduledData.notificationSent = false;
 		const batch = writeBatch(db);
 		if (!existingNextSchedule) {
-			// * If no nextScheduled, add to openHistory, then add to nextScheduled
+			// * If no weeklySchedules, add to openHistory, then add to weeklySchedules
 			const resOpenHistory = await addOpenHistory(bizId, flashScheduledData);
 			if (resOpenHistory.success) {
 				const firstPost = resOpenHistory.firstPost;
-				const flashScheduleId = resOpenHistory.id;
+				flashScheduleId = resOpenHistory.id;
 				flashScheduledData.id = flashScheduleId;
 
 				// * Increment numSchedules based on if the post is the first
 				if (firstPost) {
 					batch.set(
 						bizDocRef,
-						{ numSchedules: increment, flashEnds: endTimeEpochMiliSec },
+						{
+							numSchedules: incrementArgs(numSchedule),
+							flashEnds: endTimeEpochMiliSec,
+						},
 						{ merge: true }
 					);
 				} else {
 					if (flashEndTime) {
 						if (endTimeEpochMiliSec > flashEndTime) {
 							batch.update(bizDocRef, {
-								numSchedules: increment,
+								numSchedules: incrementArgs(numSchedule),
 								flashEnds: endTimeEpochMiliSec,
 							});
 						} else {
-							batch.update(bizDocRef, { numSchedules: increment });
+							batch.update(bizDocRef, {
+								numSchedules: incrementArgs(numSchedule),
+							});
 						}
 					} else {
 						batch.update(bizDocRef, {
-							numSchedules: increment,
+							numSchedules: incrementArgs(numSchedule),
 						});
 						batch.set(
 							bizDocRef,
@@ -395,13 +500,13 @@ async function createFlashSchedule(
 					}
 				}
 
-				const nextScheduled = {
+				const weeklySchedules = {
 					[dayIndex]: { [flashScheduleId]: flashScheduledData },
 				};
 
 				batch.set(
 					bizDocRef,
-					{ nextScheduled, flashDay: currShortDate },
+					{ weeklySchedules, flashDay: currShortDate },
 					{ merge: true }
 				);
 			} else {
@@ -412,7 +517,7 @@ async function createFlashSchedule(
 				const resHistory = await addOpenHistory(bizId, flashScheduledData);
 
 				if (resHistory.success) {
-					const flashScheduleId = resHistory.id;
+					flashScheduleId = resHistory.id;
 					flashScheduledData.id = flashScheduleId;
 					const currScheduleAtDayIndex = existingNextSchedule[dayIndex];
 
@@ -426,14 +531,14 @@ async function createFlashSchedule(
 					if (flashEndTime) {
 						if (endTimeEpochMiliSec > flashEndTime) {
 							batch.update(bizDocRef, {
-								nextScheduled: existingNextSchedule,
-								numSchedules: increment,
+								weeklySchedules: existingNextSchedule,
+								numSchedules: incrementArgs(numSchedule),
 								flashEnds: endTimeEpochMiliSec,
 							});
 						} else {
 							batch.update(bizDocRef, {
-								nextScheduled: existingNextSchedule,
-								numSchedules: increment,
+								weeklySchedules: existingNextSchedule,
+								numSchedules: incrementArgs(numSchedule),
 							});
 						}
 
@@ -446,8 +551,8 @@ async function createFlashSchedule(
 						);
 					} else {
 						batch.update(bizDocRef, {
-							nextScheduled: existingNextSchedule,
-							numSchedules: increment,
+							weeklySchedules: existingNextSchedule,
+							numSchedules: incrementArgs(numSchedule),
 							flashDay: currShortDate,
 						});
 						batch.set(
@@ -465,7 +570,7 @@ async function createFlashSchedule(
 			} else {
 				const resHistory = await addOpenHistory(bizId, flashScheduledData);
 				if (resHistory.success) {
-					const flashScheduleId = resHistory.id;
+					flashScheduleId = resHistory.id;
 					flashScheduledData.id = flashScheduleId;
 
 					existingNextSchedule[dayIndex] = {
@@ -475,14 +580,14 @@ async function createFlashSchedule(
 					if (flashEndTime) {
 						if (endTimeEpochMiliSec > flashEndTime) {
 							batch.update(bizDocRef, {
-								nextScheduled: existingNextSchedule,
-								numSchedules: increment,
+								weeklySchedules: existingNextSchedule,
+								numSchedules: incrementArgs(numSchedule),
 								flashEnds: endTimeEpochMiliSec,
 							});
 						} else {
 							batch.update(bizDocRef, {
-								nextScheduled: existingNextSchedule,
-								numSchedules: increment,
+								weeklySchedules: existingNextSchedule,
+								numSchedules: incrementArgs(numSchedule),
 							});
 						}
 						batch.set(
@@ -494,8 +599,8 @@ async function createFlashSchedule(
 						);
 					} else {
 						batch.update(bizDocRef, {
-							nextScheduled: existingNextSchedule,
-							numSchedules: increment,
+							weeklySchedules: existingNextSchedule,
+							numSchedules: incrementArgs(numSchedule),
 						});
 						batch.set(
 							bizDocRef,
@@ -529,11 +634,38 @@ async function createFlashSchedule(
 		// * Batch Commit
 		try {
 			await batch.commit();
-			return { success: true, message: "Schedule created successfully" };
 		} catch (error) {
 			return {
 				success: false,
 				message: `Error with batch commit. Please try again: ${error} `,
+			};
+		}
+
+		// * Send Notifications Flash
+		try {
+			const resNotification = await sendNotification(
+				bizId,
+				bizName,
+				"flash",
+				null,
+				null,
+				null,
+				flashScheduleId,
+				dayIndex,
+				null
+			);
+			if (resNotification.success) {
+				return { success: true, message: "Schedule created successfully" };
+			} else {
+				// * notification error, still send success because flash was created.
+				return { success: true, message: "Schedule created successfully" };
+			}
+		} catch (err) {
+			// * return success true because schedule was posted, just notifications was not sent.
+			console.log(err);
+			return {
+				success: true,
+				message: "Schedule created successfully.",
 			};
 		}
 	} else {
@@ -591,22 +723,55 @@ async function getOpenHistoryLive(bizId, shortDateArr) {
 	}
 }
 
-async function removeSchedule(bizId, scheduleId, dayIndex) {
+async function removeSchedule(bizId, scheduleId, dayIndex, event) {
 	const bizDocRef = doc(db, "biz", bizId);
 	const openHistoryRef = doc(db, "biz", bizId, "openHistory", scheduleId);
-
-	const batch = writeBatch(db);
 
 	const bizDocRefSnap = await getDoc(bizDocRef);
 
 	if (bizDocRefSnap.exists()) {
 		const docData = bizDocRefSnap.data();
 		const dayIdxStr = dayIndex.toString();
-		console.log(dayIdxStr)
-		const currDayIdxObj = docData.nextScheduled[dayIdxStr];
+
+		const weeklySchedules = docData.weeklySchedules;
+		const currDayIdxObj = docData.weeklySchedules[dayIdxStr];
 		const daysPickUpArr = docData.daysWithPickup;
+		const numSchedule =
+			docData.weeklySchedules[dayIndex][scheduleId].numAvailable;
 
 		const arrayOfCurrSchedule = Object.keys(currDayIdxObj);
+
+		if (event === "flash") {
+			let flashCounter = 0;
+			let numSchedule = 0;
+
+			for (const key in weeklySchedules) {
+				const dayIdxObj = weeklySchedules[key];
+				for (const property in dayIdxObj) {
+					const scheduleObj = dayIdxObj[property];
+					const scheduleStatus = scheduleObj.status;
+					numSchedule = scheduleObj.numAvailable;
+					if (scheduleStatus === "Flash") {
+						flashCounter += 1;
+					}
+				}
+			}
+
+			if (flashCounter === 1) {
+				try {
+					await updateDoc(bizDocRef, {
+						flashDay: deleteField(),
+						flashEnds: deleteField(),
+					});
+				} catch (error) {
+					console.log("delete flash error", error);
+					return {
+						success: false,
+						message: `Error deleting flash schedule`,
+					};
+				}
+			}
+		}
 
 		if (arrayOfCurrSchedule.length <= 1) {
 			try {
@@ -614,14 +779,16 @@ async function removeSchedule(bizId, scheduleId, dayIndex) {
 					bizDocRef,
 					{
 						daysWithPickup: daysPickUpArr.filter((day) => day !== dayIndex),
-						[`nextScheduled.${dayIndex}`]: deleteField(),
+						[`weeklySchedules.${dayIndex}`]: deleteField(),
+						numSchedules: decrementArgs(numSchedule),
 					},
 					{ merge: true }
 				);
 			} catch (error) {
+				console.log("delete schedule", error);
 				return {
 					success: false,
-					message: `Error deleting scheduled data. ${error}`,
+					message: `Error deleting scheduled data.`,
 				};
 			}
 		} else {
@@ -629,7 +796,8 @@ async function removeSchedule(bizId, scheduleId, dayIndex) {
 				await updateDoc(
 					bizDocRef,
 					{
-						[`nextScheduled.${dayIndex}.${scheduleId}`]: deleteField(),
+						[`weeklySchedules.${dayIndex}.${scheduleId}`]: deleteField(),
+						numSchedules: decrementArgs(numSchedule),
 					},
 					{ merge: true }
 				);
@@ -642,15 +810,13 @@ async function removeSchedule(bizId, scheduleId, dayIndex) {
 		}
 
 		try {
-			await updateDoc(
-				openHistoryRef,
-				{
-					recurring: false,
-					status: "Removed",
-					statusIndex: 2,
-				},
-				{ merge: true }
-			);
+			await updateDoc(openHistoryRef, {
+				recurring: false,
+				status: "Removed",
+				statusIndex: 2,
+				removedBy: "Biz",
+				removedAt: new serverTimestamp(),
+			});
 			return { success: true, message: "Schedule successfully deleted." };
 		} catch (error) {
 			return {
@@ -663,10 +829,216 @@ async function removeSchedule(bizId, scheduleId, dayIndex) {
 	}
 }
 
+async function updatePastSchedules(bizId) {
+	const bizDocRef = doc(db, "biz", bizId);
+	const bizSnapshot = await getDoc(bizDocRef);
+
+	const batch = writeBatch(db);
+
+	if (bizSnapshot.exists()) {
+		const docData = bizSnapshot.data();
+		const weeklySchedules = docData.weeklySchedules;
+
+		if (!weeklySchedules || Object.keys(weeklySchedules).length === 0) {
+			return { success: true };
+		}
+
+		const date = new Date();
+		const dayNum = date.getDay() + 1;
+		const actualDate = date.toDateString();
+		const startEpochToday = Date.parse(actualDate + " " + "00:00:00");
+		const daysPickUpArr = docData.daysWithPickup;
+		let hasScheduleIdxArr = [];
+
+		for (const dayIdx in weeklySchedules) {
+			const dayIdxObj = weeklySchedules[dayIdx];
+			const weeklySchedulesLen = Object.keys(weeklySchedules).length;
+			let hasRecur = false;
+
+			// * Set hasRecur to true if today exists in weeklySchedules, so it does not remove from daysWithPickup.
+			if (dayNum === dayIdx) {
+				hasRecur = true;
+			}
+
+			if (Object.keys(dayIdxObj).length === 0) {
+				try {
+					await updateDoc(
+						bizDocRef,
+						{
+							[`weeklySchedules.${dayIdx}`]: deleteField(),
+						},
+						{ merge: true }
+					);
+
+					hasRecur = false;
+				} catch (error) {
+					console.log("delete schedule", error);
+					return {
+						success: false,
+						message: `Error deleting empty dayIdxObj.`,
+					};
+				}
+			}
+
+			for (const scheduleId in dayIdxObj) {
+				const openHistoryRef = doc(db, "biz", bizId, "openHistory", scheduleId);
+				const scheduleObj = dayIdxObj[scheduleId];
+				const scheduleStartTime = scheduleObj.startTime;
+				const scheduleEndTime = scheduleObj.endTime;
+				const recurring = scheduleObj.recurring;
+				const scheduleNumAvail = scheduleObj.numAvailable;
+				const scheduleNumAvailStart = scheduleObj.numAvailableStart;
+				const dayIdxObjLen = Object.keys(dayIdxObj).length;
+
+				if (scheduleEndTime < startEpochToday) {
+					if (recurring) {
+						hasRecur = true;
+						const oneWeekMiliSec = 604800000;
+						const nextWeekStartTime = scheduleStartTime + oneWeekMiliSec;
+						const nextWeekEndTime = scheduleEndTime + oneWeekMiliSec;
+
+						if (scheduleNumAvail != scheduleNumAvailStart) {
+							try {
+								await updateDoc(
+									bizDocRef,
+									{
+										[`weeklySchedules.${dayIdx}.${scheduleId}.numAvailable`]:
+											scheduleNumAvailStart,
+									},
+									{ merge: true }
+								);
+							} catch (error) {
+								return {
+									success: false,
+									message: `Recurring updating numAvail weeklySchedules ${error}`,
+								};
+							}
+						}
+
+						// * Update start & endtime for recurring
+						try {
+							await updateDoc(
+								bizDocRef,
+								{
+									[`weeklySchedules.${dayIdx}.${scheduleId}.notificationSent`]: false,
+									[`weeklySchedules.${dayIdx}.${scheduleId}.startTime`]:
+										nextWeekStartTime,
+									[`weeklySchedules.${dayIdx}.${scheduleId}.endTime`]:
+										nextWeekEndTime,
+								},
+								{ merge: true }
+							);
+						} catch (error) {
+							return {
+								success: false,
+								message: `Recurring updating numAvail openHistory ${error}`,
+							};
+						}
+
+						try {
+							await updateDoc(
+								openHistoryRef,
+								{
+									numAvailable: scheduleNumAvailStart,
+									notificationSent: false,
+									startTime: nextWeekStartTime,
+									endTime: nextWeekEndTime,
+								},
+								{ merge: true }
+							);
+						} catch (error) {
+							return {
+								success: false,
+								message: `Error updating recur numAvail openHistory ${error}`,
+							};
+						}
+					} else {
+						if (dayIdxObjLen <= 1) {
+							try {
+								await updateDoc(
+									bizDocRef,
+									{
+										[`weeklySchedules.${dayIdx}`]: deleteField(),
+									},
+									{ merge: true }
+								);
+							} catch (error) {
+								console.log("delete schedule", error);
+								return {
+									success: false,
+									message: `Error deleting scheduled data.`,
+								};
+							}
+						} else {
+							try {
+								await updateDoc(
+									bizDocRef,
+									{
+										[`weeklySchedules.${dayIdx}.${scheduleId}`]: deleteField(),
+									},
+									{ merge: true }
+								);
+
+								dayIdxObjLen -= 1;
+							} catch (error) {
+								console.log("delete schedule", error);
+								return {
+									success: false,
+									message: `Error deleting scheduled data.`,
+								};
+							}
+						}
+
+						try {
+							await updateDoc(openHistoryRef, {
+								removedAt: new serverTimestamp(),
+								removedBy: "Automatic",
+								recurring: false,
+							});
+						} catch (error) {
+							return {
+								success: false,
+								message: "Error deleting schedule/history. Please try again.",
+							};
+						}
+					}
+				} else {
+					// * For all daysIdx in the future, don't delete from daysWithPickup, so hasRecur = true
+					hasRecur = true;
+				}
+			}
+
+			if (!hasRecur) {
+				const filter = daysPickUpArr.filter((day) => {
+					const dayIdxNum = parseInt(dayIdx);
+					return day !== dayIdxNum;
+				});
+				try {
+					await updateDoc(bizDocRef, {
+						daysWithPickup: filter,
+					});
+				} catch (error) {
+					return {
+						success: false,
+						message: `Error deleting days with pickup: ${error}`,
+					};
+				}
+			}
+		}
+		return {
+			success: true,
+			message: "Schedule successfully deleted.",
+		};
+	} else {
+		return { success: false, message: `User does not exists. Cannot delete.` };
+	}
+}
+
 export {
 	createNewSchedule,
 	getNextSchedule,
 	getOpenHistoryLive,
 	removeSchedule,
 	createFlashSchedule,
+	updatePastSchedules,
 };

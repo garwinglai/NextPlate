@@ -12,74 +12,82 @@
 .Schedule__header {
 	display: flex;
 }
-
 .ScheduleModal__container {
-	display: flex;
-	flex-direction: column;
-	gap: 40px;
-	justify-content: space-between;
-	align-items: flex-start;
+	gap: 30px;
+	width: 350px;
 }
 
-.Schedule__meals {
-	display: flex;
+.hourTitleGroup {
 	align-items: center;
-	justify-content: flex-start;
 	gap: 20px;
 }
 
-.Schedule__scheduleModal {
-	display: flex;
-	align-items: flex-start;
-	justify-content: center;
-	gap: 20px;
+.Description {
+	font-size: 12px;
+	color: var(--gray);
 }
 
-.Schedule__meals > input {
-	height: 30px;
-	width: 40px;
-	text-indent: 5px;
-	outline: none;
+.titleGap {
+	margin-bottom: 10px;
+}
+
+.mealLabels {
 	border: 1px solid var(--btn-blue);
+	color: var(--dark-blue);
+	white-space: nowrap;
+	font-size: 14px;
 	border-radius: 5px;
+	display: inline-block;
+	width: 45px;
+	text-align: center;
+	padding: 5px 0;
+	margin: 5px 10px 5px 10px;
 }
 
-.Schedule__meals > input:focus {
-	outline: none;
-	border: 2px solid var(--btn-blue);
+.radios {
+	display: none;
+}
+
+.itemGroup {
+	/* flex-wrap: wrap; */
+	overflow-x: scroll;
+}
+
+.labels {
+	border: 1px solid var(--btn-blue);
+	color: var(--dark-blue);
+	white-space: nowrap;
+	font-size: 14px;
+	padding: 10px;
 	border-radius: 5px;
+	margin: 5px 10px 5px 10px;
 }
 
-.Schedule__meals > input::-webkit-outer-spin-button,
-.Schedule__meals > input::-webkit-inner-spin-button {
-	-webkit-appearance: none;
-	margin: 0;
+.ScheduleModal__container input[type="radio"]:checked ~ .labelsChecked {
+	background-color: var(--light-btn-blue);
+	color: white;
+	font-weight: 500;
 }
 
-/* Firefox */
-.Schedule__meals input[type="number"] {
-	-moz-appearance: textfield;
-}
-
-.Schedule__scheduleModal input[name="numHours"] {
-	accent-color: var(--btn-blue);
-}
-
-.RadioGroup {
+.flexCol {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
 }
 
-.Radio {
+.flexRow {
 	display: flex;
-	align-items: center;
-	gap: 10px;
 }
 
 .ScheduleModal__container > button {
-	height: 30px;
+	height: 35px;
+	width: 100%;
 	margin: 0 auto;
+}
+
+.hourDisabled {
+	background-color: var(--light-gray);
+	border: none;
+	color: var(--dark-gray);
 }
 
 @media screen and (min-width: 769px) {
@@ -100,6 +108,7 @@
 		align-items: center;
 	}
 
+	/* Titles and hour radio font */
 	.Schedule__container {
 		width: 100%;
 		/* background-color: red; */
@@ -107,6 +116,17 @@
 		justify-content: center;
 		gap: 40px;
 		flex-wrap: wrap;
+		font-size: 14px;
+	}
+
+	/* Quantity font size */
+	.CreateSchedule__currentInput {
+		font-size: 14px;
+	}
+
+	/* light gray description font size */
+	.Description {
+		font-size: 12px;
 	}
 }
 
@@ -130,6 +150,38 @@
 		width: auto;
 		justify-content: center;
 	}
+
+	/* Titles and hour radio font */
+	.ScheduleModal__container {
+		width: 450px;
+		gap: 50px;
+	}
+
+	.ScheduleModal__container h3 {
+		font-size: 25px;
+	}
+
+	.titleGap {
+		margin-bottom: 15px;
+	}
+
+	.mealLabels {
+		font-size: 30px;
+		width: 70px;
+		margin: 10px;
+	}
+
+	.labels {
+		font-size: 30px;
+		margin: 10px;
+	}
+
+	.ScheduleModal__container > button {
+		height: 50px;
+		width: 100%;
+		font-size: 20px;
+		margin: 0 auto;
+	}
 }
 
 @media screen and (max-width: 480px) {
@@ -151,5 +203,26 @@
 	.DashHeader__schedulePage {
 		width: auto;
 		justify-content: center;
+	}
+
+	/* Titles and hour radio font */
+	.ScheduleModal__container {
+		width: 290px;
+		gap: 20px;
+	}
+
+	.ScheduleModal__container h3 {
+		font-size: 20px;
+	}
+
+	.mealLabels {
+		font-size: 18px;
+		width: 40px;
+		margin: 10px;
+	}
+
+	.labels {
+		font-size: 18px;
+		margin: 5px 10px;
 	}
 }

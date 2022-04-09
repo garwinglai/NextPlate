@@ -6,6 +6,12 @@
 	padding: 45px;
 }
 
+.scheduleNumItemsLeft {
+	font-size: 18px;
+	color: white;
+	width: max-content;
+}
+
 .IncomingOrders__container > button {
 	margin-left: auto;
 	font-size: 16px;
@@ -39,73 +45,83 @@
 	top: -5%;
 	left: 87%;
 }
+
 .ScheduleModal__container {
-	display: flex;
-	flex-direction: column;
-	gap: 40px;
-	justify-content: space-between;
-	align-items: flex-start;
+	gap: 30px;
+	width: 350px;
 }
 
-.Schedule__meals {
-	display: flex;
+.hourTitleGroup {
 	align-items: center;
-	justify-content: flex-start;
 	gap: 20px;
 }
 
-.Schedule__scheduleModal {
-	display: flex;
-	align-items: flex-start;
-	justify-content: center;
-	gap: 20px;
+.Description {
+	font-size: 12px;
+	color: var(--gray);
 }
 
-.Schedule__meals > input {
-	height: 30px;
-	width: 40px;
-	text-indent: 5px;
-	outline: none;
+.titleGap {
+	margin-bottom: 10px;
+}
+
+.mealLabels {
 	border: 1px solid var(--btn-blue);
+	color: var(--dark-blue);
+	white-space: nowrap;
+	font-size: 16px;
 	border-radius: 5px;
+	display: inline-block;
+	width: 45px;
+	text-align: center;
+	padding: 5px 0;
+	margin: 5px 10px 5px 10px;
 }
 
-.Schedule__meals > input:focus {
-	outline: none;
-	border: 2px solid var(--btn-blue);
+.radios {
+	display: none;
+}
+
+.itemGroup {
+	/* flex-wrap: wrap; */
+	overflow-x: scroll;
+}
+
+.labels {
+	border: 1px solid var(--btn-blue);
+	color: var(--dark-blue);
+	white-space: nowrap;
+	font-size: 16px;
+	padding: 10px;
 	border-radius: 5px;
+	margin: 5px 10px 5px 10px;
 }
 
-.Schedule__meals > input::-webkit-outer-spin-button,
-.Schedule__meals > input::-webkit-inner-spin-button {
-	-webkit-appearance: none;
-	margin: 0;
+.ScheduleModal__container input[type="radio"]:checked ~ .labelsChecked {
+	background-color: var(--light-btn-blue);
+	color: white;
+	font-weight: 500;
 }
 
-/* Firefox */
-.Schedule__meals input[type="number"] {
-	-moz-appearance: textfield;
-}
-
-.Schedule__scheduleModal input[name="numHours"] {
-	accent-color: var(--btn-blue);
-}
-
-.RadioGroup {
+.flexCol {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
 }
 
-.Radio {
+.flexRow {
 	display: flex;
-	align-items: center;
-	gap: 10px;
 }
 
 .ScheduleModal__container > button {
-	height: 30px;
+	height: 35px;
+	width: 100%;
 	margin: 0 auto;
+}
+
+.hourDisabled {
+	background-color: var(--light-gray);
+	border: none;
+	color: var(--dark-gray);
 }
 
 @media screen and (max-width: 768px) {
@@ -114,13 +130,22 @@
 		height: auto;
 		margin: 0 auto;
 		overflow-y: scroll;
-		padding: 20px 5px 0 5px;
+		padding: 10px 5px 0 5px;
+	}
+
+	.scheduleNumItemsLeft {
+		margin: 20px auto 0;
+		padding: 5px 10px;
+	}
+
+	.scheduleNumItemsLeft > button {
+		font-size: 18px;
 	}
 
 	.IncomingOrders__container > button {
 		font-size: 30px;
 		/* margin: 35px 0 60px auto; */
-		margin: 80px auto 100px;
+		margin: 40px auto;
 		width: 90%;
 		height: 60px;
 	}
@@ -141,25 +166,66 @@
 
 	.pendingCount {
 		top: -23%;
-		left: 11%;
+		left: 14%;
 		font-size: 26px;
 		padding: 5px 13px;
 	}
 
 	.confirmedCount {
 		top: -23%;
-		left: 55%;
+		left: 57%;
 		font-size: 26px;
 		padding: 5px 13px;
+	}
+
+	/* Titles and hour radio font */
+	.ScheduleModal__container {
+		width: 450px;
+		gap: 50px;
+	}
+
+	.ScheduleModal__container h3 {
+		font-size: 25px;
+	}
+
+	.titleGap {
+		margin-bottom: 15px;
+	}
+
+	.mealLabels {
+		font-size: 30px;
+		width: 70px;
+		margin: 10px;
+	}
+
+	.labels {
+		font-size: 30px;
+		margin: 10px;
+	}
+
+	.ScheduleModal__container > button {
+		height: 50px;
+		width: 100%;
+		font-size: 20px;
+		margin: 0 auto;
 	}
 }
 
 @media screen and (max-width: 480px) {
+	.scheduleNumItemsLeft {
+		margin: 20px auto 0;
+	}
+
+	.scheduleNumItemsLeft > button {
+		font-size: 15px;
+	}
+
 	.IncomingOrders__container > button {
 		font-size: 18px;
 		width: 90%;
-		height: 40px;
+		height: 50px;
 		margin: 40px auto 50px;
+		/* padding: 10px 0; */
 	}
 
 	.tab {
@@ -167,16 +233,36 @@
 	}
 
 	.pendingCount {
-		top: -23%;
-		left: 10%;
+		top: -18%;
+		left: 12%;
 		font-size: 16px;
 		padding: 5px 10px;
 	}
 
 	.confirmedCount {
-		top: -23%;
+		top: -18%;
 		left: 57%;
 		font-size: 16px;
 		padding: 5px 10px;
+	}
+
+	.ScheduleModal__container {
+		width: 290px;
+		gap: 20px;
+	}
+
+	.ScheduleModal__container h3 {
+		font-size: 20px;
+	}
+
+	.mealLabels {
+		font-size: 18px;
+		width: 40px;
+		margin: 10px;
+	}
+
+	.labels {
+		font-size: 18px;
+		margin: 5px 10px;
 	}
 }

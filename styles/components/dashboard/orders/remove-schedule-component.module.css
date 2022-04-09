@@ -1,0 +1,28 @@
+.BoxHeight {
+	height: 55vh;
+	overflow-y: scroll;
+}
+
+.PickupTime {
+	margin: 20px 0 10px 0;
+}
+
+.RemoveSchedule {
+	margin-bottom: 20px;
+}
+
+@media screen and (max-width: 768px) {
+	.RemoveSchedule {
+		margin-bottom: 30px;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.RemoveSchedule {
+		width: 290px;
+	}
+
+	.RemoveSchedule {
+		margin-bottom: 10px;
+	}
+}

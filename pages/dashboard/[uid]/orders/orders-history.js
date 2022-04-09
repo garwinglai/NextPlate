@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, forwardRef } from "react";
 import Layout from "../../../../Components/Layout";
 import {
 	getOrderHistory,
@@ -6,13 +6,15 @@ import {
 } from "../../../../actions/dashboard/ordersCrud";
 import { useRouter } from "next/router";
 import styles from "../../../../styles/pages/dashboard/orders/orders-history.module.css";
-import OrderHistoryTabComponent from "../../../../Components/Dashboard/Orders/OrderHistoryTabComponent";
+import OrderHistoryTabComponent from "../../../../Components/Dashboard/Orders/history/OrderHistoryTabComponent";
 import { IconButton } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { CircularProgress } from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { getLocalStorage } from "../../../../actions/auth/auth";
 import { Button } from "@mui/material";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 function HistoryOrders() {
 	const [isSearchData, setIsSearchData] = useState(false);
@@ -23,7 +25,10 @@ function HistoryOrders() {
 	const [nextDisabled, setNextDisabled] = useState(false);
 	const [lastPage, setLastPage] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [statusQuery, setStatusQuery] = useState([]);
+	const [selectedDates, setSelectedDates] = useState({
+		startDate: null,
+		endDate: new Date(),
+	});
 	const [loadOrder, setLoadOrder] = useState({
 		loading: false,
 		message: "",
@@ -41,13 +46,31 @@ function HistoryOrders() {
 		total: "asc",
 		status: "asc",
 	});
-
+	const { startDate, endDate } = selectedDates;
 	const { storedUser, bizId } = user;
 	const { loading, message } = loadOrder;
 	const { orderId, date, custName, itemName, quantity, total, status } = sort;
 
 	const router = useRouter();
 	const uid = router.query.uid;
+
+	// eslint-disable-next-line react/display-name
+	const ExampleCustomInput = forwardRef(({ value, onClick }, ref) => (
+		<Button
+			variant="contained"
+			size="small"
+			sx={{
+				backgroundColor: "var(--light-btn-blue)",
+				width: "fit-content",
+				fontSize: " 14px",
+			}}
+			// className={styles.DateButton}
+			onClick={onClick}
+			ref={ref}
+		>
+			{value}
+		</Button>
+	));
 
 	useEffect(() => {
 		const storedUser = JSON.parse(getLocalStorage("user"));
@@ -87,130 +110,6 @@ function HistoryOrders() {
 	}
 
 	// * Actions ----------------------------------------------
-
-	async function handleSearchClick(e) {
-		setLoadOrder({ loading: true, message: "" });
-
-		const lowerCaseSearch = _.toLower(searchQuery);
-
-		if (!searchQuery && statusQuery.length === 0) {
-			loadOrders(bizId);
-			setIsSearchData(false);
-			return;
-		} else {
-			setIsSearchData(true);
-		}
-
-		// * Search order keywords only
-		if (searchQuery && statusQuery.length === 0) {
-			const resSearch = await getSearchOrderHistory(
-				bizId,
-				lowerCaseSearch,
-				null,
-				"first",
-				null
-			);
-
-			if (resSearch.success) {
-				if (
-					!resSearch.sortedOrdersArr ||
-					resSearch.sortedOrdersArr.length === 0
-				) {
-					setLoadOrder({ loading: false, message: "" });
-				} else {
-					const last = resSearch.lastDocu;
-					setOrders(resSearch.sortedOrdersArr);
-					setLoadOrder({ loading: false, message: "" });
-					setLastDoc(last);
-				}
-			} else {
-				setLoadOrder({ loading: false, message: resSearch.message });
-			}
-		}
-
-		// * Search order status only
-		if (!searchQuery && statusQuery.length !== 0) {
-			const resSearch = await getSearchOrderHistory(
-				bizId,
-				null,
-				statusQuery,
-				"first",
-				null
-			);
-
-			if (resSearch.success) {
-				if (
-					!resSearch.sortedOrdersArr ||
-					resSearch.sortedOrdersArr.length === 0
-				) {
-					setLoadOrder({ loading: false, message: "" });
-				} else {
-					const last = resSearch.lastDocu;
-					setOrders(resSearch.sortedOrdersArr);
-					setLoadOrder({ loading: false, message: "" });
-					setLastDoc(last);
-				}
-			} else {
-				setLoadOrder({ loading: false, message: resSearch.message });
-			}
-		}
-
-		// * Search order keywords & Status
-		if (searchQuery && statusQuery.length !== 0) {
-			const resSearch = await getSearchOrderHistory(
-				bizId,
-				lowerCaseSearch,
-				statusQuery,
-				"first",
-				null
-			);
-
-			if (resSearch.success) {
-				if (
-					!resSearch.sortedOrdersArr ||
-					resSearch.sortedOrdersArr.length === 0
-				) {
-					setOrders([]);
-					setLoadOrder({ loading: false, message: "" });
-				} else {
-					const last = resSearch.lastDocu;
-					setOrders(resSearch.sortedOrdersArr);
-					setLoadOrder({ loading: false, message: "" });
-					setLastDoc(last);
-				}
-			} else {
-				setLoadOrder({ loading: false, message: resSearch.message });
-			}
-		}
-	}
-
-	function handleChange(e) {
-		const { target } = e;
-		const name = target.name;
-		const value = target.value;
-		const isChecked = target.checked;
-
-		if (name === "search") {
-			setSearchQuery(value);
-		} else {
-			if (statusQuery.length === 0) {
-				if (isChecked) {
-					setStatusQuery((prev) => [...prev, name]);
-				}
-			} else {
-				const containsStatus = statusQuery.includes(name);
-				if (isChecked) {
-					if (!containsStatus) {
-						setStatusQuery((prev) => [...prev, name]);
-					}
-				} else {
-					if (containsStatus) {
-						setStatusQuery((prev) => prev.filter((index) => index !== name));
-					}
-				}
-			}
-		}
-	}
 
 	function handleSort(name) {
 		if (name === "status") {
@@ -258,6 +157,9 @@ function HistoryOrders() {
 		setLoadOrder({ loading: true, message: "" });
 
 		const { name } = e.target;
+		const startDateEpoch = Date.parse(startDate);
+		endDate.setHours(23, 59, 59, 999);
+		const endDateEpoch = Date.parse(endDate);
 
 		if (name === "prev") {
 			if (isSearchData) {
@@ -268,18 +170,18 @@ function HistoryOrders() {
 				if (lastPage) {
 					resOrders = await getSearchOrderHistory(
 						bizId,
-						searchQuery,
-						statusQuery,
 						"last",
-						prevDoc
+						lastDoc,
+						startDateEpoch,
+						endDateEpoch
 					);
 				} else {
 					resOrders = await getSearchOrderHistory(
 						bizId,
-						searchQuery,
-						statusQuery,
 						name,
-						prevDoc
+						prevDoc,
+						startDateEpoch,
+						endDateEpoch
 					);
 				}
 
@@ -301,7 +203,7 @@ function HistoryOrders() {
 				let resOrders;
 
 				if (lastPage) {
-					resOrders = await getOrderHistory(bizId, "last", prevDoc);
+					resOrders = await getOrderHistory(bizId, "last", lastDoc);
 				} else {
 					resOrders = await getOrderHistory(bizId, name, prevDoc);
 				}
@@ -325,15 +227,16 @@ function HistoryOrders() {
 			if (isSearchData) {
 				const resOrders = await getSearchOrderHistory(
 					bizId,
-					searchQuery,
-					statusQuery,
 					name,
-					lastDoc
+					lastDoc,
+					startDateEpoch,
+					endDateEpoch
 				);
 				if (resOrders.success) {
-					const last = resOrders.lastDocu;
-					const prev = resOrders.prevDocu;
-					if (resOrders.sortedOrdersArr.length !== 0) {
+					const resOrderLen = resOrders.sortedOrdersArr.length;
+					if (resOrderLen !== 0) {
+						const last = resOrders.lastDocu;
+						const prev = resOrders.prevDocu;
 						setOrders(resOrders.sortedOrdersArr);
 						setLoadOrder({ loading: false, message: "" });
 						setLastDoc(last);
@@ -343,7 +246,6 @@ function HistoryOrders() {
 						setLoadOrder({ loading: false, message: "No more orders." });
 						setNextDisabled(true);
 						setPageCount((prev) => prev + 1);
-						setPrevDoc(last);
 						setLastPage(true);
 					}
 				} else {
@@ -352,7 +254,8 @@ function HistoryOrders() {
 			} else {
 				const resOrders = await getOrderHistory(bizId, name, lastDoc);
 				if (resOrders.success) {
-					if (resOrders.ordersArr.length !== 0) {
+					const resOrdLen = resOrders.ordersArr.length;
+					if (resOrdLen !== 0) {
 						const prev = resOrders.prevDocu;
 						const last = resOrders.lastDocu;
 
@@ -365,7 +268,6 @@ function HistoryOrders() {
 						setLoadOrder({ loading: false, message: "No more orders." });
 						setNextDisabled(true);
 						setPageCount((prev) => prev + 1);
-						setPrevDoc(lastDoc);
 						setLastPage(true);
 					}
 				} else {
@@ -375,159 +277,155 @@ function HistoryOrders() {
 		}
 	}
 
+	async function handleSearchClick(e) {
+		setLoadOrder({ loading: true, message: "" });
+		const startDateEpoch = Date.parse(startDate);
+		endDate.setHours(23, 59, 59, 999);
+		const endDateEpoch = Date.parse(endDate);
+
+		if (!startDate || !endDate) {
+			// TODO: handle error, must have a date selected
+			return;
+		}
+
+		if (startDate > endDate) {
+			// TODO: handle error, please select startdate before x, or enddate after y.
+			return;
+		}
+
+		let resOrders = await getSearchOrderHistory(
+			bizId,
+			"first",
+			null,
+			startDateEpoch,
+			endDateEpoch
+		);
+
+		if (resOrders.success) {
+			const ordersLen = resOrders.sortedOrdersArr.length;
+
+			if (ordersLen !== 0) {
+				const last = resOrders.lastDocu;
+
+				setOrders(resOrders.sortedOrdersArr);
+				setLastDoc(last);
+				setIsSearchData(true);
+				setLoadOrder({ loading: false, message: "" });
+			} else {
+				// TODO: handle error, could not fetch results
+				setLoadOrder({ loading: false, message: resOrders.message });
+			}
+		}
+	}
+
 	return (
 		<Layout uid={uid} currentPage="Orders" subPage="orders-history">
 			<div className={styles.HistoryOrders}>
-				<div className={styles.HistoryOrders__statusQuery}>
-					<div className={styles.Orders__filtersItemContainer}>
-						<h3>Status:</h3>
-						<div>
-							<div>
-								<input
-									type="checkbox"
-									id="reserved"
-									name="Reserved"
-									onChange={handleChange}
+				<div className={styles.HistoryOrders__main}>
+					<div className={styles.SearchGroup}>
+						<div className={styles.DatePickerContainer}>
+							<div className={styles.DateGroup}>
+								<p>From:</p>
+								<DatePicker
+									selected={startDate}
+									onChange={(date) =>
+										setSelectedDates((prev) => ({ ...prev, startDate: date }))
+									}
+									customInput={<ExampleCustomInput />}
 								/>
-								<label htmlFor="reserved">Reserved</label>
 							</div>
-							<div>
-								<input
-									type="checkbox"
-									id="confirmed"
-									name="Confirmed"
-									onChange={handleChange}
+							<div className={styles.DateGroup}>
+								<p>To:</p>
+								<DatePicker
+									selected={endDate}
+									onChange={(date) =>
+										setSelectedDates((prev) => ({ ...prev, endDate: date }))
+									}
+									customInput={<ExampleCustomInput />}
 								/>
-								<label htmlFor="confirmed">Confirmed</label>
-							</div>
-							<div>
-								<input
-									type="checkbox"
-									id="completed"
-									name="Completed"
-									onChange={handleChange}
-								/>
-								<label htmlFor="completed">Completed</label>
-							</div>
-							<div>
-								<input
-									type="checkbox"
-									id="declined"
-									name="Declined"
-									onChange={handleChange}
-								/>
-								<label htmlFor="declined">Declined</label>
-							</div>
-							<div>
-								<input
-									type="checkbox"
-									id="cancelled"
-									name="Cancelled"
-									onChange={handleChange}
-								/>
-								<label htmlFor="cancelled">Cancelled</label>
-							</div>
-							<div>
-								<input
-									type="checkbox"
-									id="no-show"
-									name="No Show"
-									onChange={handleChange}
-								/>
-								<label htmlFor="no-show">No Show</label>
 							</div>
 						</div>
-					</div>
-				</div>
-				<div className={styles.HistoryOrders__main}>
-					<div className={styles.HistoryOrders__searchBar}>
-						<input
-							type="text"
-							placeholder="Search"
-							name="search"
-							value={searchQuery}
-							onChange={handleChange}
-						/>
-						<IconButton
-							className={styles.HistoryOrders__searchBarIcon}
+
+						<Button
+							variant="contained"
+							size="small"
+							sx={{
+								backgroundColor: "var(--btn-blue)",
+								height: "fit-content",
+								fontSize: "14px",
+							}}
 							onClick={handleSearchClick}
 						>
-							<SearchIcon />
-						</IconButton>
+							Search
+						</Button>
 					</div>
-					<div className={styles.scrollHoriztonal}>
-						<div className={styles.HistoryOrders__orderHeader}>
-							<div className={styles.justifyEndItem}>
-								<h5>#ID</h5>
-							</div>
-							<div className={styles.justifyStartItem}>
-								<h5>Date</h5>
-							</div>
-							<div>
-								<h5>Name</h5>
-							</div>
-							<di>
-								<h5>Item</h5>
-							</di>
-							<div className={styles.justifyEndItem}>
-								<h5>Quantity</h5>
-							</div>
-							<div className={styles.justifyStartItem}>
-								<h5>Total</h5>
-							</div>
-							<div className={`${styles.flex} ${styles.justifyStartItem}`}>
-								<h5>Status</h5>
-								<IconButton onClick={() => handleSort("status")}>
-									<ArrowDropDownIcon />
-								</IconButton>
-							</div>
+
+					<div className={styles.HistoryOrders__orderHeader}>
+						<div className={`${styles.justifyStartItem} ${styles.paddingLeft}`}>
+							<h5>#ID</h5>
 						</div>
-						<div className={styles.HistoryOrders__orderBody}>
-							{loading ? (
-								<CircularProgress />
-							) : message ? (
-								<p style={{ textAlign: "center", margin: "0 auto" }}>
-									{message}
-								</p>
-							) : orders.length === 0 ? (
-								<p
-									style={{
-										textAlign: "center",
-										margin: "40px auto",
-										color: "var(--gray)",
-										fontSize: "12px",
-									}}
-								>
-									No order history
-								</p>
-							) : (
-								orders.map((order, index) => {
-									return (
-										<OrderHistoryTabComponent
-											key={order.orderId}
-											order={order}
-										/>
-									);
-								})
-							)}
-							<div className={styles.HistoryOrders__paginationButton}>
-								<Button
-									name="prev"
-									onClick={handlePaginationClick}
-									disabled={pageCount === 1}
-								>
-									prev
-								</Button>
-								<Button
-									name="next"
-									onClick={handlePaginationClick}
-									disabled={
-										nextDisabled ? true : orders.length === 10 ? false : true
-									}
-								>
-									next
-								</Button>
-							</div>
+						<div className={styles.justifyEndItem}>
+							<h5>Date</h5>
+						</div>
+						<div className={styles.justifyStartItem}>
+							<h5>Name</h5>
+						</div>
+						<div>
+							<h5>Item</h5>
+						</div>
+						<div className={styles.justifyEndItem}>
+							<h5>Quantity</h5>
+						</div>
+						<div className={styles.justifyStartItem}>
+							<h5>Total</h5>
+						</div>
+						<div className={`${styles.flex} ${styles.justifyCenter}`}>
+							<h5>Status</h5>
+							<IconButton onClick={() => handleSort("status")}>
+								<ArrowDropDownIcon />
+							</IconButton>
+						</div>
+					</div>
+					<div className={styles.HistoryOrders__orderBody}>
+						{loading ? (
+							<CircularProgress />
+						) : message ? (
+							<p style={{ textAlign: "center", margin: "0 auto" }}>{message}</p>
+						) : orders.length === 0 ? (
+							<p
+								style={{
+									textAlign: "center",
+									margin: "40px auto",
+									color: "var(--gray)",
+									fontSize: "12px",
+								}}
+							>
+								No order history
+							</p>
+						) : (
+							orders.map((order, index) => {
+								return (
+									<OrderHistoryTabComponent key={order.orderId} order={order} />
+								);
+							})
+						)}
+						<div className={styles.HistoryOrders__paginationButton}>
+							<Button
+								name="prev"
+								onClick={handlePaginationClick}
+								disabled={pageCount === 1}
+							>
+								prev
+							</Button>
+							<Button
+								name="next"
+								onClick={handlePaginationClick}
+								disabled={
+									nextDisabled ? true : orders.length === 10 ? false : true
+								}
+							>
+								next
+							</Button>
 						</div>
 					</div>
 				</div>

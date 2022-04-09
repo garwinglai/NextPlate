@@ -4,36 +4,34 @@ import Link from "next/link";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Collapse from "@mui/material/Collapse";
+import { Button } from "@mui/material";
+import { useRouter } from "next/router";
 
 function NotificationRow({
 	uid,
-	notifications,
-	errorMessage,
 	orderData,
 	orderCount,
 	closeNotifications,
 	reduceOrder,
-	handleClickAway,
+	orderConfirmErrorMessage,
+	orderPendingErrorMessage,
 }) {
 	const [open, setOpen] = useState(true);
 
-	// const { numOrdersUnnoticed, errorMessage, orderData } = notifications;
+	const router = useRouter();
 
 	function handleClose() {
 		setOpen(false);
-
 		reduceOrder();
+
 		if (orderCount && orderCount === 1) {
-			handleClickAway();
-			if (closeNotifications) {
-				closeNotifications();
-			}
+			closeNotifications();
 		}
 	}
 
 	return (
 		<div className={styles.NotificationRow}>
-			{errorMessage ? (
+			{orderConfirmErrorMessage && (
 				<Collapse in={open}>
 					<Alert
 						severity="error"
@@ -41,24 +39,69 @@ function NotificationRow({
 						style={{ borderBottom: "3px solid var(--light-red)" }}
 					>
 						<AlertTitle>Error</AlertTitle>
-						{errorMessage}
+						{orderConfirmErrorMessage}
 					</Alert>
 				</Collapse>
-			) : (
+			)}
+			{orderPendingErrorMessage && (
 				<Collapse in={open}>
+					<Alert
+						severity="error"
+						onClose={handleClose}
+						style={{ borderBottom: "3px solid var(--light-red)" }}
+					>
+						<AlertTitle>Error</AlertTitle>
+						{orderPendingErrorMessage}
+					</Alert>
+				</Collapse>
+			)}
+			{orderData && orderData.status === "Reserved" && (
+				<Collapse
+					in={open}
+					className={styles.Collapse}
+					onClick={() => {
+						closeNotifications();
+						router.push(`/dashboard/${uid}/orders/incoming-orders`);
+					}}
+				>
+					<Alert
+						severity="warning"
+						onClose={handleClose}
+						style={{ borderBottom: "2px solid var(--green)" }}
+						className={styles.AlertPending}
+					>
+						<AlertTitle className={styles.AlertTitle}>Pending order</AlertTitle>
+						<p className={styles.AlertParagraph}>
+							View order for{" "}
+							<b>
+								<u>{orderData.customerName}</u>
+							</b>
+						</p>
+					</Alert>
+				</Collapse>
+			)}
+			{orderData && orderData.status === "Confirmed" && (
+				<Collapse
+					in={open}
+					className={styles.Collapse}
+					onClick={() => {
+						closeNotifications();
+						router.push(`/dashboard/${uid}/orders/incoming-orders`);
+					}}
+				>
 					<Alert
 						severity="success"
 						onClose={handleClose}
-						style={{ borderBottom: "3px solid var(--green)" }}
+						style={{ borderBottom: "2px solid var(--green)" }}
+						className={styles.AlertConfirmed}
 					>
-						<Link href={`/dashboard/${uid}/orders/incoming-orders`}>
-							<a>
-								<AlertTitle>Order </AlertTitle>
-								<p style={{ fontSize: "14px" }}>
-									View order from <b>{orderData.customerName}</b>.
-								</p>
-							</a>
-						</Link>
+						<AlertTitle className={styles.AlertTitle}>Pickup order</AlertTitle>
+						<p className={styles.AlertParagraph}>
+							{orderData.pickupWindow}{" "}
+							<b>
+								<u>{orderData.customerName}</u>
+							</b>
+						</p>
 					</Alert>
 				</Collapse>
 			)}
