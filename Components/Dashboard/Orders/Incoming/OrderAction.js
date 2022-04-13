@@ -54,6 +54,7 @@ function OrderAction({
 		pickupWindowId,
 		customerId,
 		chargeId,
+		endTime,
 	} = orderDetails;
 
 	const router = useRouter();
@@ -165,7 +166,8 @@ function OrderAction({
 				pickupWindowId,
 				bizTotalPriceDouble,
 				chargeId,
-				payMethod
+				payMethod,
+				endTime
 			);
 			if (resUpdate.success) {
 				// if (pendingCount == 0) {
@@ -193,6 +195,7 @@ function OrderAction({
 				null,
 				null,
 				pickupWindowId,
+				null,
 				null,
 				null,
 				null

@@ -30,7 +30,8 @@ async function sendNotification(
 	reasonsDeclineCancel,
 	scheduleId,
 	dayOfWeekIdx,
-	recurring
+	recurring,
+	endTime
 	// isNotificationSent
 ) {
 	// console.log("isNotificationSent", isNotificationSent);
@@ -153,10 +154,17 @@ async function sendNotification(
 
 		// * Push notification for confirming order
 		if (action === "Confirmed") {
+			const pickupByTime = new Date(endTime).toLocaleTimeString("en-US", {
+				hour: "2-digit",
+				minute: "2-digit",
+			});
+
+			console.log(pickupByTime);
+
 			data = {
 				tokens: userTokens,
 				title: "NextPlate",
-				msg: `${bizName} has confirmed your order.`,
+				msg: `${bizName} has confirmed your order. Please pick up your order before ${pickupByTime} or your order may be canceled without a refund.`,
 				senderName: bizName,
 				senderId: bizId,
 				dataType: event,
@@ -168,7 +176,7 @@ async function sendNotification(
 			data = {
 				tokens: userTokens,
 				title: "NextPlate",
-				msg: `${bizName} has declined your order. (${reasonsDeclineCancel})`,
+				msg: `${bizName} has declined your order. You have not been charged for this order. (${reasonsDeclineCancel})`,
 				senderName: bizName,
 				senderId: bizId,
 				dataType: event,
@@ -180,7 +188,7 @@ async function sendNotification(
 			data = {
 				tokens: userTokens,
 				title: "NextPlate",
-				msg: `${bizName} has canceled your order. (${reasonsDeclineCancel})`,
+				msg: `${bizName} has canceled your order because you missed the pickup window. This order will not be refunded.`,
 				senderName: bizName,
 				senderId: bizId,
 				dataType: event,
@@ -196,6 +204,7 @@ async function sendNotification(
 			body: JSON.stringify(data),
 		})
 			.then((data) => {
+				console.log("notification", data);
 				const status = data.status;
 				if (status === 200) {
 					return { success: true, status };

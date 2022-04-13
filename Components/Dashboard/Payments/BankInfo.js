@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "../../../styles/components/dashboard/payments/bankinfo.module.css";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
@@ -7,8 +7,20 @@ import { Button, Grid } from "@mui/material";
 import { CircularProgress } from "@mui/material";
 import { connectStripeAccount } from "../../../actions/heroku/stripeAccount";
 import { useRouter } from "next/router";
+import {
+	collection,
+	doc,
+	getDocs,
+	getDoc,
+	query,
+	where,
+	limit,
+	orderBy,
+} from "firebase/firestore";
+import { db } from "../../../firebase/fireConfig";
 
-function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid }) {
+function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
+	const [profit, setProfit] = useState("0");
 	const [isSuccessAlertOpen, setIsSuccessAlertOpen] =
 		useState(detailsSubmitted);
 	const [isErrorAlertOpen, setIsErrorAlertOpen] = useState(
@@ -25,9 +37,110 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid }) {
 
 	const router = useRouter();
 
+	useEffect(() => {
+		getProfits(bizId);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	const getProfits = async (bizId) => {
+		const { bizFeesDouble, lastPayoutDate } = await getBizFeesAndDates(bizId);
+		const { numOrders, totalSales } = await getTotalRevenueAndNumOrders(
+			bizId,
+			lastPayoutDate
+		);
+		const calculatedProfit = (totalSales - numOrders * bizFeesDouble).toFixed(
+			2
+		);
+
+		const calcProfitString = `$${calculatedProfit.toString()}`;
+		console.log(bizFeesDouble, numOrders, totalSales);
+
+		setProfit(calcProfitString);
+	};
+
+	const getBizFeesAndDates = async (bizId) => {
+		const bizDocRef = doc(db, "biz", bizId);
+		try {
+			const lastPayout = await getPayouts(bizId);
+
+			let lastPayoutDate;
+			let bizFeesDouble;
+
+			if (!lastPayout) {
+				// * If no payouts yet, use createdAt biz as a standard for payout dates
+				const bizSnapshot = await getDoc(bizDocRef);
+				const bizData = bizSnapshot.data();
+				const { bizFees, createdAt } = bizData;
+				const { feesAsDouble } = bizFees;
+				const { seconds, nanoseconds } = createdAt;
+				const createdAtEpoch = (seconds + nanoseconds * 0.000000001) * 1000;
+
+				lastPayoutDate = createdAtEpoch;
+				bizFeesDouble = feesAsDouble;
+			} else {
+				// * If has payouts before, use the last payout time
+				const { endDateEpoch, bizFeesDouble } = lastPayout;
+
+				lastPayoutDate = endDateEpoch;
+				bizFeesDouble = bizFeesDouble;
+			}
+
+			return { bizFeesDouble, lastPayoutDate };
+		} catch (error) {
+			console.log("bizFees error", error);
+			// TODO: handle error
+		}
+	};
+
+	const getPayouts = async (bizId) => {
+		const payoutsDocRef = collection(db, "biz", bizId, "payouts");
+		const q = query(payoutsDocRef, orderBy("createdAt", "desc"), limit(1));
+
+		const payoutsSnapshot = await getDocs(q);
+
+		if (payoutsSnapshot.size > 0) {
+			const payoutData = payoutsSnapshot.data();
+			return payoutData;
+		} else {
+			console.log("payouts does not exists");
+			return null;
+		}
+	};
+
+	const getTotalRevenueAndNumOrders = async (bizId, lastPayoutDate) => {
+		console.log(lastPayoutDate);
+		const ordersDocRef = collection(db, "biz", bizId, "orders");
+		const q = query(ordersDocRef, where("endTime", ">", lastPayoutDate));
+		try {
+			const ordersSnapshot = await getDocs(q);
+			let salesPerOrderArr = [];
+			let numOrders = 0;
+			let totalSales = 0;
+
+			ordersSnapshot.forEach((doc) => {
+				const ordersData = doc.data();
+				const totalPerOrder = ordersData.bizTotalPriceDouble;
+
+				salesPerOrderArr.push(totalPerOrder);
+			});
+
+			const salesArrLength = salesPerOrderArr.length;
+
+			if (salesArrLength > 0) {
+				numOrders = salesArrLength;
+				totalSales = salesPerOrderArr.reduce((sum, val) => (sum += val));
+			}
+			console.log(salesPerOrderArr);
+			return { numOrders, totalSales };
+		} catch (error) {
+			console.log("error", error);
+			// TODO: handle error
+		}
+	};
+
 	// * ACTIONS -----------------------------------------------------------------
 
-	async function handleConnectStripe(e, stripeAccId) {
+	const handleConnectStripe = async (e, stripeAccId) => {
 		setResponseHandle((prev) => ({ ...prev, loading: true }));
 		const refreshUrl = `https://next-plate.web.app/dashboard/${uid}/payments`;
 		const returnUrl = `https://next-plate.web.app/dashboard/${uid}/payments`;
@@ -48,7 +161,7 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid }) {
 				errorMessage: resConnectStripe.message,
 			}));
 		}
-	}
+	};
 
 	async function handleClickPayout() {
 		// TODO: handle cash out
@@ -59,8 +172,8 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid }) {
 		<div className={`${styles.BankInfo} ${styles.flexCol}`}>
 			<div className={`${styles.BankInfo__header} ${styles.flexRow}`}>
 				<div className={`${styles.BankInfo__BoxHeader} ${styles.Box} `}>
-					<h5>Balance</h5>
-					<h1>$0.00</h1>
+					<h5>Payout Balance</h5>
+					<h1>{profit}</h1>
 				</div>
 
 				{successMessage && (

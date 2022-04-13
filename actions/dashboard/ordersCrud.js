@@ -408,7 +408,8 @@ async function updateOrder(
 	pickupWindowId,
 	bizTotalPriceDouble,
 	chargeId,
-	payMethod
+	payMethod,
+	endTime
 ) {
 	const adminUid = "6IUWvD23ayVkRlxaO2wtSM2faNB3";
 
@@ -509,7 +510,8 @@ async function updateOrder(
 				null,
 				null,
 				null,
-				null
+				null,
+				endTime
 			);
 			if (resNotification.success) {
 				return { success: true, paymentMessage };
@@ -583,6 +585,7 @@ async function updateOrder(
 				getStatus,
 				orderId,
 				reason,
+				null,
 				null,
 				null,
 				null
@@ -679,6 +682,7 @@ async function updateOrder(
 				getStatus,
 				orderId,
 				reason,
+				null,
 				null,
 				null,
 				null

@@ -3,7 +3,14 @@ import Layout from "../../../../Components/Layout";
 import { useRouter } from "next/router";
 import styles from "../../../../styles/pages/dashboard/orders/incoming-orders.module.css";
 import OrdersComponent from "../../../../Components/Dashboard/Orders/Incoming/OrdersComponent";
-import { collection, query, where, onSnapshot, doc } from "firebase/firestore";
+import {
+	collection,
+	query,
+	where,
+	onSnapshot,
+	doc,
+	getDocs,
+} from "firebase/firestore";
 import { db } from "../../../../firebase/fireConfig";
 import { updatePastOrders } from "../../../../actions/dashboard/ordersCrud";
 import {
@@ -328,7 +335,6 @@ function IncomingOrders() {
 
 				const newDate = new Date();
 				const currEpochTime = Date.parse(newDate);
-				console.log(currEpochTime);
 
 				// * Count today's schedules
 				for (const scheduleId in todaySchedules) {

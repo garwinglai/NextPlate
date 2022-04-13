@@ -117,9 +117,13 @@ export default function Payments() {
 				</Box>
 				<TabPanel value={tabValue} index={0}>
 					{loading ? (
-						<CircularProgress />
+						<>
+							<CircularProgress />
+							<p>Fetching bank information...</p>
+						</>
 					) : (
 						<BankInfo
+							bizId={bizId}
 							stripeAccId={stripeAccId}
 							detailsSubmitted={detailsSubmitted}
 							errMsg={errMsg}

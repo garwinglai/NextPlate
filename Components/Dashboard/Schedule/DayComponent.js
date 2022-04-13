@@ -241,7 +241,9 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 						hasPostFlash = true;
 					} else {
 						if (scheduleRecur) {
-							if (!tempTimeDisplayArrRecur.includes(scheduleIdObj.timeDisplay)) {
+							if (
+								!tempTimeDisplayArrRecur.includes(scheduleIdObj.timeDisplay)
+							) {
 								timeDisplayArrRecur.push(timeObj);
 								tempTimeDisplayArrRecur.push(scheduleIdObj.timeDisplay);
 							}
@@ -797,7 +799,9 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 															<div className={styles.bodyDetailTrue__item}>
 																<p>{schedule.numAvailable}x</p>
 
-																<p>{schedule.itemName}</p>
+																<p className={styles.bodyDetailTrue__itemName}>
+																	{schedule.itemName}
+																</p>
 															</div>
 															{schedule.recurring ? (
 																<p

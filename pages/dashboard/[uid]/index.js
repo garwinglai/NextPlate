@@ -347,7 +347,7 @@ function Dashboard() {
 							}
 						}
 						setIsOpen(true);
-						setPickupWindowArr({ pickupToday: pickup });
+						setPickupWindowArr((prev) => ({ ...prev, pickupToday: pickup }));
 						setLoadOrders((prev) => ({
 							...prev,
 							loadingOrders: false,
@@ -377,7 +377,7 @@ function Dashboard() {
 								pickup.push(curr);
 							}
 						}
-						setPickupWindowArr({ pickupTomorrow: pickup });
+						setPickupWindowArr((prev) => ({ ...prev, pickupTomorrow: pickup }));
 						setLoadOrders((prev) => ({
 							...prev,
 							loadingOrders: false,
@@ -980,7 +980,9 @@ function Dashboard() {
 																	<p className={styles.Dashboard__orderCount}>
 																		{order.items[0].quantity}x
 																	</p>
-																	<p>{order.items[0].itemName}</p>
+																	<p className={styles.Dashboard__orderName}>
+																		{order.items[0].itemName}
+																	</p>
 																</div>
 															);
 														}
@@ -1031,20 +1033,19 @@ function Dashboard() {
 																	}
 																	style={statusBordersOrders(order.status)}
 																>
-																	<p>{order.pickupWindow}</p>
-
-																	<p>{order.customerName}</p>
-
 																	<p style={statusStyle(order.status)}>
 																		{order.status === "Reserved"
 																			? "Pending"
 																			: order.status}
 																	</p>
+																	<p>{order.customerName}</p>
 
 																	<p className={styles.Dashboard__orderCount}>
 																		{order.items[0].quantity}x
 																	</p>
-																	<p>{order.items[0].itemName}</p>
+																	<p className={styles.Dashboard__orderName}>
+																		{order.items[0].itemName}
+																	</p>
 																</div>
 															);
 														}
@@ -1375,7 +1376,7 @@ function Dashboard() {
 																						? "Live"
 																						: "Sold out"}
 																				</p>
-																				<p>{post.timeDisplay}</p>
+
 																				<div
 																					style={{
 																						display: "flex",
