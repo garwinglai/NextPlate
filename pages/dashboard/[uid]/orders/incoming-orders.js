@@ -194,7 +194,19 @@ function IncomingOrders() {
 		hasConfirmedTomorrow,
 		confirmedCount,
 	} = ordersConfirmedValues;
-	const arrayOfTwenty = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+	const arrayOfTwenty = [
+		"1",
+		"2",
+		"3",
+		"4",
+		"5",
+		"6",
+		"7",
+		"8",
+		"9",
+		"10",
+		"20",
+	];
 
 	const router = useRouter();
 	const uid = router.query.uid;
@@ -614,8 +626,17 @@ function IncomingOrders() {
 	// * Actions ---------------------------------------------------------------
 	async function handleCreateNow(e) {
 		setFlashScheduleLoading(true);
+
+		// * If numAvail === 20, make it back to 10 because 10 is max
+		let resetNumTo10;
+		if (numAvailable === "20") {
+			resetNumTo10 = "10";
+		} else {
+			resetNumTo10 = numAvailable;
+		}
+
 		const numHoursInt = parseInt(numMins);
-		const numAvailInt = parseInt(numAvailable);
+		const numAvailInt = parseInt(resetNumTo10);
 		let product = products.filter((item) => item.itemName === itemName).pop();
 		const { itemDescription, defaultPrice, originalPrice, allergens } = product;
 
@@ -848,7 +869,9 @@ function IncomingOrders() {
 			dayIndex,
 			flashScheduledData,
 			endTimeEpochMiliSec,
-			currShortDate
+			currShortDate,
+			defaultPrice,
+			itemName
 		);
 
 		if (resFlashSchedule.success) {

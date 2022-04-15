@@ -11,14 +11,24 @@
 	margin-bottom: 20px;
 }
 
+.NoPosts {
+	width: 100%;
+	text-align: center;
+	margin-top: 20px;
+}
+
 @media screen and (max-width: 768px) {
+	.RemoveSchedule__Container {
+		width: 450px;
+	}
+
 	.RemoveSchedule {
 		margin-bottom: 30px;
 	}
 }
 
 @media screen and (max-width: 480px) {
-	.RemoveSchedule {
+	.RemoveSchedule__Container {
 		width: 290px;
 	}
 

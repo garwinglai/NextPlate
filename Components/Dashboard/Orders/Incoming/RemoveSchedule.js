@@ -10,8 +10,8 @@ const style = {
 	position: "absolute",
 	top: "50%",
 	left: "50%",
-	transform: "translate(-50%, -50%)",
 	width: "max-content",
+	transform: "translate(-50%, -50%)",
 	bgcolor: "background.paper",
 	border: "2px solid var(--gray)",
 	boxShadow: 24,
@@ -22,29 +22,31 @@ const style = {
 function RemoveSchedule({ bizId, open, close, schedules, timeDisplay }) {
 	console.log(schedules, timeDisplay);
 	return (
-		<div className={`${styles.RemoveSchedule__Container}`}>
-			<Modal
-				open={open}
-				onClose={close}
-				aria-labelledby="modal-modal-title"
-				aria-describedby="modal-modal-description"
-			>
-				<Box sx={style}>
-					<div className={`${styles.marginBottom} ${styles.BoxHeight}`}>
-						<h1>Current schedules</h1>
-						{timeDisplay
-							.sort((a, b) => {
-								if (a.hourStart === b.hourStart) {
-									return a.minStart - b.minStart;
-								} else {
-									return a.hourStart - b.hourStart;
-								}
-							})
-							.map((time, i) => {
-								return (
-									<div className={`${styles.RemoveSchedule}`} key={i}>
-										<p className={`${styles.PickupTime}`}>{time.timeDisplay}</p>
-										{schedules.map((schedule) => {
+		<Modal
+			open={open}
+			onClose={close}
+			aria-labelledby="modal-modal-title"
+			aria-describedby="modal-modal-description"
+		>
+			<Box sx={style}>
+				<div
+					className={`${styles.marginBottom} ${styles.BoxHeight} ${styles.RemoveSchedule__Container}`}
+				>
+					<h1>Current schedules</h1>
+					{timeDisplay
+						.sort((a, b) => {
+							if (a.hourStart === b.hourStart) {
+								return a.minStart - b.minStart;
+							} else {
+								return a.hourStart - b.hourStart;
+							}
+						})
+						.map((time, i) => {
+							return (
+								<div className={`${styles.RemoveSchedule}`} key={i}>
+									<p className={`${styles.PickupTime}`}>{time.timeDisplay}</p>
+									{schedules.length !== 0 ? (
+										schedules.map((schedule) => {
 											if (schedule.timeDisplay === time.timeDisplay) {
 												return (
 													<RemoveScheduleTab
@@ -54,14 +56,16 @@ function RemoveSchedule({ bizId, open, close, schedules, timeDisplay }) {
 													/>
 												);
 											}
-										})}
-									</div>
-								);
-							})}
-					</div>
-				</Box>
-			</Modal>
-		</div>
+										})
+									) : (
+										<p className={`${styles.NoPosts}`}>No posts.</p>
+									)}
+								</div>
+							);
+						})}
+				</div>
+			</Box>
+		</Modal>
 	);
 }
 
