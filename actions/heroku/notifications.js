@@ -31,7 +31,9 @@ async function sendNotification(
 	scheduleId,
 	dayOfWeekIdx,
 	recurring,
-	endTime
+	endTime,
+	defaultPrice,
+	itemName
 	// isNotificationSent
 ) {
 	// console.log("isNotificationSent", isNotificationSent);
@@ -72,10 +74,17 @@ async function sendNotification(
 
 		// * Data for push notifications
 		if (event === "flash") {
+			const pickupByTime = new Date(endTime).toLocaleTimeString("en-US", {
+				hour: "2-digit",
+				minute: "2-digit",
+			});
+
+			var removeLeadingZeroTime = pickupByTime.replace(/^0(?:0:0?)?/, "");
+
 			data = {
 				tokens: usersTokenArr,
 				title: "NextPlate",
-				msg: `⚡️ ${bizName} has a new flash sale. Get it before it's gone!`,
+				msg: `⚡️ ${bizName} has a ${itemName} for only ${defaultPrice}! Offer available until ${removeLeadingZeroTime}. Grab it before it's gone!`,
 				senderName: bizName,
 				senderId: bizId,
 				dataType: event,
@@ -83,12 +92,11 @@ async function sendNotification(
 		}
 
 		if (event === "regular") {
-			console.log("hi");
 			if (recurring) {
 				data = {
 					tokens: usersTokenArr,
 					title: "NextPlate",
-					msg: `${bizName} has a new weekly sale. Get it before it's gone!`,
+					msg: `${bizName} has a ${itemName} for only ${defaultPrice}! Grab it before it's gone!`,
 					senderName: bizName,
 					senderId: bizId,
 					dataType: "flash",
@@ -97,7 +105,7 @@ async function sendNotification(
 				data = {
 					tokens: usersTokenArr,
 					title: "NextPlate",
-					msg: `${bizName} has a new sale. Get it before it's gone!`,
+					msg: `${bizName} has a ${itemName} for only ${defaultPrice}! Grab it before it's gone!`,
 					senderName: bizName,
 					senderId: bizId,
 					dataType: "flash",
@@ -159,12 +167,12 @@ async function sendNotification(
 				minute: "2-digit",
 			});
 
-			console.log(pickupByTime);
+			var removeLeadingZeroTime = pickupByTime.replace(/^0(?:0:0?)?/, "");
 
 			data = {
 				tokens: userTokens,
 				title: "NextPlate",
-				msg: `${bizName} has confirmed your order. Please pick up your order before ${pickupByTime} or your order may be canceled without a refund.`,
+				msg: `${bizName} has confirmed your order. Please pick up your order before ${removeLeadingZeroTime}. Your order may be canceled without a refund if the pickup time is missed.`,
 				senderName: bizName,
 				senderId: bizId,
 				dataType: event,
@@ -176,7 +184,7 @@ async function sendNotification(
 			data = {
 				tokens: userTokens,
 				title: "NextPlate",
-				msg: `${bizName} has declined your order. You have not been charged for this order. (${reasonsDeclineCancel})`,
+				msg: `${bizName} has declined your order. (${reasonsDeclineCancel})`,
 				senderName: bizName,
 				senderId: bizId,
 				dataType: event,
@@ -188,7 +196,7 @@ async function sendNotification(
 			data = {
 				tokens: userTokens,
 				title: "NextPlate",
-				msg: `${bizName} has canceled your order because you missed the pickup window. This order will not be refunded.`,
+				msg: `${bizName} has canceled your order. The pickup window has passed and this order will not be refunded.`,
 				senderName: bizName,
 				senderId: bizId,
 				dataType: event,
