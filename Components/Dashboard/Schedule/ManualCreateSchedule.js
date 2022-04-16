@@ -202,7 +202,9 @@ function ManualCreateSchedule({ open, close, uid, date, bizId, userData }) {
 			hourEnd,
 			minEnd,
 			actualDate,
-			date.shortDate
+			date.shortDate,
+			defaultPrice,
+			itemName
 		);
 
 		if (success) {

@@ -211,6 +211,7 @@ export default function SignIn() {
 							/>
 							<div
 								style={{ display: "flex", alignItems: "center", gap: "10px" }}
+								className={`${styles.Remember__Me}`}
 							>
 								<input
 									onChange={handleChangeForm}
@@ -260,6 +261,7 @@ export default function SignIn() {
 									fullWidth
 									variant="contained"
 									sx={{ mt: 3, mb: 2 }}
+									size="large"
 								>
 									Sign In
 								</Button>

@@ -511,7 +511,9 @@ async function updateOrder(
 				null,
 				null,
 				null,
-				endTime
+				endTime,
+				null,
+				null
 			);
 			if (resNotification.success) {
 				return { success: true, paymentMessage };
@@ -585,6 +587,10 @@ async function updateOrder(
 				getStatus,
 				orderId,
 				reason,
+				null,
+				null,
+				null,
+				null,
 				null,
 				null,
 				null,

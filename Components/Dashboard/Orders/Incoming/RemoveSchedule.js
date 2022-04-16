@@ -22,7 +22,7 @@ const style = {
 function RemoveSchedule({ bizId, open, close, schedules, timeDisplay }) {
 	console.log(schedules, timeDisplay);
 	return (
-		<div className={`${styles.RemoveSchedule__Container}`}>
+		<div>
 			<Modal
 				open={open}
 				onClose={close}
@@ -30,7 +30,9 @@ function RemoveSchedule({ bizId, open, close, schedules, timeDisplay }) {
 				aria-describedby="modal-modal-description"
 			>
 				<Box sx={style}>
-					<div className={`${styles.marginBottom} ${styles.BoxHeight}`}>
+					<div
+						className={`${styles.marginBottom} ${styles.BoxHeight} ${styles.RemoveSchedule__Container}`}
+					>
 						<h1>Current schedules</h1>
 						{timeDisplay
 							.sort((a, b) => {

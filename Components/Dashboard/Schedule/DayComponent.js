@@ -521,7 +521,7 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 							<h4>Today </h4>
 						</div>
 					)}
-					<div>
+					<div className={`${styles.ManualCreateBtn__Container}`}>
 						<Button
 							onClick={handleCreateClick}
 							variant="contained"

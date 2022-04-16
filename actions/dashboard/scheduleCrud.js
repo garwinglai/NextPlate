@@ -36,7 +36,9 @@ async function createNewSchedule(
 	hourEnd,
 	minEnd,
 	actualDate,
-	shortDate
+	shortDate,
+	defaultPrice,
+	itemName
 ) {
 	const bizDocRef = doc(db, "biz", bizId);
 	const docSnap = await getDoc(bizDocRef);
@@ -343,7 +345,10 @@ async function createNewSchedule(
 				null,
 				scheduledId,
 				dayOfWeekIndex,
-				scheduleData.recurring
+				scheduleData.recurring,
+				null,
+				defaultPrice,
+				itemName
 			);
 			console.log("send notification after batch");
 
@@ -439,7 +444,9 @@ async function createFlashSchedule(
 	dayIndex,
 	flashScheduledData,
 	endTimeEpochMiliSec,
-	currShortDate
+	currShortDate,
+	defaultPrice,
+	itemName
 ) {
 	const bizDocRef = doc(db, "biz", bizId);
 	const bizDocSnap = await getDoc(bizDocRef);
@@ -652,7 +659,10 @@ async function createFlashSchedule(
 				null,
 				flashScheduleId,
 				dayIndex,
-				null
+				null,
+				endTimeEpochMiliSec,
+				defaultPrice,
+				itemName
 			);
 			if (resNotification.success) {
 				return { success: true, message: "Schedule created successfully" };
