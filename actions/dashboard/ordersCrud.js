@@ -592,8 +592,6 @@ async function updateOrder(
 				null,
 				null,
 				null,
-				null,
-				null,
 				null
 			);
 			if (resNotification.success) {
@@ -688,6 +686,8 @@ async function updateOrder(
 				getStatus,
 				orderId,
 				reason,
+				null,
+				null,
 				null,
 				null,
 				null,

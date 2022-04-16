@@ -627,6 +627,7 @@ function IncomingOrders() {
 	async function handleCreateNow(e) {
 		setFlashScheduleLoading(true);
 
+		// * If numAvail === 20, make it back to 10 because 10 is max
 		let resetNumTo10;
 		if (numAvailable === "20") {
 			resetNumTo10 = "10";
