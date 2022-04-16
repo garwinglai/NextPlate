@@ -45,17 +45,21 @@ function RemoveSchedule({ bizId, open, close, schedules, timeDisplay }) {
 							return (
 								<div className={`${styles.RemoveSchedule}`} key={i}>
 									<p className={`${styles.PickupTime}`}>{time.timeDisplay}</p>
-									{schedules.map((schedule) => {
-										if (schedule.timeDisplay === time.timeDisplay) {
-											return (
-												<RemoveScheduleTab
-													bizId={bizId}
-													schedule={schedule}
-													key={schedule.id}
-												/>
-											);
-										}
-									})}
+									{schedules.length !== 0 ? (
+										schedules.map((schedule) => {
+											if (schedule.timeDisplay === time.timeDisplay) {
+												return (
+													<RemoveScheduleTab
+														bizId={bizId}
+														schedule={schedule}
+														key={schedule.id}
+													/>
+												);
+											}
+										})
+									) : (
+										<p className={`${styles.NoPosts}`}>No posts.</p>
+									)}
 								</div>
 							);
 						})}
