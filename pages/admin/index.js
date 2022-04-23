@@ -28,6 +28,9 @@ function AdminDashboard() {
 						<Link href="/admin/signup">
 							<a>Admin sign up</a>
 						</Link>
+						<Link href="/admin/payouts">
+							<a>Payout</a>
+						</Link>
 					</menu>
 				</fieldset>
 			</div>

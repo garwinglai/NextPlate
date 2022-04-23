@@ -13,8 +13,12 @@
 
 @media screen and (max-width: 768px) {
 	.Signin__Input {
-		height: 70px;
+		height: 60px;
 		font-size: 18px;
+	}
+
+	.SignIn__Button > button {
+		height: 60px;
 	}
 
 	.Remember__Me label {
@@ -30,6 +34,10 @@
 	.Signin__Input {
 		height: 40px;
 		font-size: 16px;
+	}
+
+	.SignIn__Button > button {
+		height: 40px;
 	}
 
 	.links {

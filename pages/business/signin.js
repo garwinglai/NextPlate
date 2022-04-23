@@ -256,15 +256,16 @@ export default function SignIn() {
 							{signInLoading ? (
 								<CircularProgress />
 							) : (
-								<Button
-									type="submit"
-									fullWidth
-									variant="contained"
-									sx={{ mt: 3, mb: 2 }}
-									size="large"
-								>
-									Sign In
-								</Button>
+								<div className={`${styles.SignIn__Button}`}>
+									<Button
+										type="submit"
+										fullWidth
+										variant="contained"
+										sx={{ mt: 3, mb: 2 }}
+									>
+										Sign In
+									</Button>
+								</div>
 							)}
 							<Grid container display="flex" alignItems="center">
 								<Grid item xs>

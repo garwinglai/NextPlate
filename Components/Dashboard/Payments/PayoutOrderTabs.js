@@ -1,7 +1,10 @@
 import React from "react";
 import styles from "../../../styles/components/dashboard/payments/payout-order-tabs.module.css";
 
-function PayoutOrderTabs() {
+function PayoutOrderTabs({ order, bizFeesStr }) {
+	const { id, createdAt, items, bizTotalPrice } = order;
+	const [itemName, itemPrice, quantity] = items;
+
 	return (
 		<div className={`${styles.gridSix} ${styles.payoutOrderTabs}`}>
 			<p className={`${styles.gridItem}`}>#jb2313</p>
