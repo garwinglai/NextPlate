@@ -123,6 +123,7 @@ function Layout({ children, currentPage, subPage, uid }) {
 	// Check if any schedules by interval. Shut down screen if no schedules
 	async function checkInterval(bizId) {
 		const bizDocRef = doc(db, "biz", bizId);
+		console.log("hi");
 
 		try {
 			const scheduleSnapshot = await getDoc(bizDocRef);
@@ -134,6 +135,7 @@ function Layout({ children, currentPage, subPage, uid }) {
 			const dayOne = date.getDay() + 1;
 			date.setDate(date.getDate() + 1);
 			const dayTwo = date.getDay() + 1;
+			const midNight = date.setHours(0, 0, 0, 0);
 
 			let posts = 0;
 
@@ -147,19 +149,27 @@ function Layout({ children, currentPage, subPage, uid }) {
 				posts += numAvail;
 			}
 
-			for (const scheduleId in tomorrowSchedules) {
-				const currSchedule = tomorrowSchedules[scheduleId];
-				const numAvail = currSchedule.numAvailable;
+			// * Counting tomorrow's orders
+			// for (const scheduleId in tomorrowSchedules) {
+			// 	const currSchedule = tomorrowSchedules[scheduleId];
+			// 	const numAvail = currSchedule.numAvailable;
 
-				posts += numAvail;
-			}
+			// 	posts += numAvail;
+			// }
 
 			if (posts > 0) {
 				console.log("has orders");
 				return;
 			} else {
+				const newDate = new Date();
+				const currTime = Date.parse(newDate);
+
 				console.log("has no orders");
-				releaseWakeLock();
+				console.log("currTime", currTime);
+				console.log("midNight", midNight);
+				if (currTime > midNight) {
+					releaseWakeLock();
+				}
 			}
 		} catch (error) {
 			console.log(error);

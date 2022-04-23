@@ -132,7 +132,7 @@ export default function Payments() {
 					)}
 				</TabPanel>
 				<TabPanel value={tabValue} index={1}>
-					<PaymentHistory />
+					<PaymentHistory bizId={bizId} />
 				</TabPanel>
 			</Box>
 		</Layout>

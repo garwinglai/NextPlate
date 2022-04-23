@@ -1,6 +1,8 @@
 .container {
 	gap: 20px;
 	width: 600px;
+	max-height: 85vh;
+	overflow-y: scroll;
 }
 
 .container h6 {

@@ -1,10 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
 import styles from "../../../styles/components/dashboard/payments/payout-modal.module.css";
 import PayoutOrderTabs from "./PayoutOrderTabs";
+import {
+	collection,
+	doc,
+	getDocs,
+	getDoc,
+	query,
+	where,
+	limit,
+	orderBy,
+} from "firebase/firestore";
+import { db } from "../../../firebase/fireConfig";
 
 const style = {
 	position: "absolute",
@@ -19,13 +30,53 @@ const style = {
 	borderRadius: "5px",
 };
 
-function PayoutModal({ open, close }) {
+function PayoutModal({ open, close, item, bizId }) {
 	const [openModal, setOpenModal] = useState(true);
+	const [orders, setOrders] = useState([]);
 
-	function handleClose() {
-		close();
-		setOpenModal(false);
-	}
+	const {
+		bizFeesStr,
+		startDate,
+		endDate,
+		id,
+		payoutDate,
+		clientName,
+		fullAddress,
+		address_1,
+		address_2,
+		city,
+		state,
+		zip,
+		paymentTo,
+		payoutAmt,
+		totalTaxAndFees,
+		totalSales,
+	} = item;
+
+	useEffect(() => {
+		getOrders(bizId);
+	}, []);
+
+	const getOrders = async (bizId) => {
+		const ordersDocRef = collection(db, "biz", bizId, "orders");
+		const query = q(
+			ordersDocRef,
+			where("createdAt", ">", startDate),
+			where("createdAt", "<=", endDate)
+		);
+		try {
+			const ordersSnapshot = await getDocs(query);
+			const ordersArr = [];
+			ordersSnapshot.forEach((doc) => {
+				const data = doc.data();
+				ordersArr.push(data);
+			});
+
+			setOrders(ordersArr);
+		} catch (error) {
+			// TODO: handle error
+		}
+	};
 
 	return (
 		<React.Fragment>
@@ -38,7 +89,7 @@ function PayoutModal({ open, close }) {
 				<Box sx={style}>
 					<div className={`${styles.flexCol} ${styles.container}`}>
 						<div className={`${styles.flexRow} ${styles.justifySpaceBetween}`}>
-							<Button color="error" size="small">
+							<Button color="error" size="small" onClick={() => close()}>
 								Close
 							</Button>
 
@@ -83,7 +134,17 @@ function PayoutModal({ open, close }) {
 							<h5 className={`${styles.gridItem}`}>Tax & Fees</h5>
 							<h5 className={`${styles.gridItem}`}>Total</h5>
 						</div>
-						<PayoutOrderTabs />
+
+						{orders.map((order) => {
+							return (
+								<PayoutOrderTabs
+									key={order.id}
+									order={order}
+									bizFeesStr={bizFeesStr}
+								/>
+							);
+						})}
+
 						<div
 							className={`${styles.flexRow} ${styles.justifyEnd} ${styles.totalPayoutAndFees}`}
 						>

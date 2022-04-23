@@ -1,17 +1,50 @@
-import React, { useState, forwardRef } from "react";
+import React, { useState, forwardRef, useEffect } from "react";
 import styles from "../../../styles/components/dashboard/payments/payment-history.module.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Button } from "@mui/material";
 import PaymentHistoryTab from "./PaymentHistoryTab";
+import {
+	collection,
+	doc,
+	getDocs,
+	getDoc,
+	query,
+	where,
+	limit,
+	orderBy,
+} from "firebase/firestore";
+import { db } from "../../../firebase/fireConfig";
 
-function PaymentHistory() {
+function PaymentHistory({ bizId }) {
 	const [selectedDates, setSelectedDates] = useState({
 		startDate: new Date(),
 		endDate: new Date(),
 	});
+	const [payouts, setPayouts] = useState([]);
 
 	const { startDate, endDate } = selectedDates;
+
+	useEffect(() => {
+		getPayouts(bizId);
+	}, []);
+
+	const getPayouts = async (bizId) => {
+		const payoutDocRef = collection(db, "biz", bizId, "payouts");
+		try {
+			const payoutSnapshot = await getDocs(payoutDocRef);
+			let payoutArr = [];
+
+			payoutSnapshot.forEach((doc) => {
+				const data = doc.data();
+				payoutArr.push(data);
+			});
+
+			setPayouts(payoutArr);
+		} catch (error) {
+			// TODO: Handle Error
+		}
+	};
 
 	// eslint-disable-next-line react/display-name
 	const ExampleCustomInput = forwardRef(({ value, onClick }, ref) => (
@@ -89,29 +122,37 @@ function PaymentHistory() {
 						<h5>#ID</h5>
 					</div>
 					<div className={`${styles.justifyCenter}`}>
-						<h5>Date</h5>
+						<h5>Date paid</h5>
 					</div>
 					<div className={`${styles.justifyCenter}`}>
 						<h5>Total sales</h5>
 					</div>
 					<div>
-						<h5>Tax & Fees</h5>
+						<h5>Tax & fees</h5>
 					</div>
 					<div className={`${styles.justifyCenter}`}>
 						<h5>Payout</h5>
 					</div>
 				</div>
-				{/* <PaymentHistoryTab /> */}
-				<p
-					style={{
-						color: "var(--light-gray)",
-						textAlign: "center",
-						fontSize: "14px",
-						marginTop: "20px",
-					}}
-				>
-					No payments
-				</p>
+
+				{payouts.length > 0 ? (
+					payouts.map((item) => {
+						return (
+							<PaymentHistoryTab key={item.id} item={item} bizId={bizId} />
+						);
+					})
+				) : (
+					<p
+						style={{
+							color: "var(--light-gray)",
+							textAlign: "center",
+							fontSize: "14px",
+							marginTop: "20px",
+						}}
+					>
+						No payments
+					</p>
+				)}
 			</div>
 		</div>
 	);

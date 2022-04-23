@@ -59,7 +59,6 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 	};
 
 	const getBizFeesAndDates = async (bizId) => {
-		const bizDocRef = doc(db, "biz", bizId);
 		try {
 			const lastPayout = await getPayouts(bizId);
 
@@ -67,6 +66,7 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 			let bizFeesDouble;
 
 			if (!lastPayout) {
+				const bizDocRef = doc(db, "biz", bizId);
 				// * If no payouts yet, use createdAt biz as a standard for payout dates
 				const bizSnapshot = await getDoc(bizDocRef);
 				const bizData = bizSnapshot.data();
@@ -177,7 +177,7 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 				</div>
 
 				{successMessage && (
-					<Grid item xs={12} md={12} mt={2}>
+					<Grid item xs={12} md={12}>
 						<Collapse in={isSuccessAlertOpen}>
 							<Alert
 								severity="success"
@@ -193,7 +193,7 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 					</Grid>
 				)}
 				{errorMessage && (
-					<Grid item xs={12} md={12} mt={2}>
+					<Grid item xs={12} md={12}>
 						<Collapse in={isErrorAlertOpen}>
 							<Alert
 								severity="error"
@@ -209,7 +209,7 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 					</Grid>
 				)}
 				{!detailsSubmitted && (
-					<Grid item xs={12} md={12} mt={2}>
+					<Grid item xs={12} md={12}>
 						<Collapse in={isAlertOpen}>
 							<Alert severity="info" className={styles.Alert}>
 								<AlertTitle className={styles.AlertTitle}>
@@ -221,25 +221,26 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 						</Collapse>
 					</Grid>
 				)}
+
+				{loading ? (
+					<CircularProgress />
+				) : (
+					<div className={styles.paymentButton}>
+						<Button
+							variant="contained"
+							size="large"
+							fullWidth
+							onClick={
+								!detailsSubmitted
+									? (e) => handleConnectStripe(e, stripeAccId)
+									: handleClickPayout
+							}
+						>
+							{!detailsSubmitted ? "+ Connect Bank" : "Payout"}
+						</Button>
+					</div>
+				)}
 			</div>
-			{loading ? (
-				<CircularProgress />
-			) : (
-				<div className={styles.paymentButton}>
-					<Button
-						variant="contained"
-						size="large"
-						fullWidth
-						onClick={
-							!detailsSubmitted
-								? (e) => handleConnectStripe(e, stripeAccId)
-								: handleClickPayout
-						}
-					>
-						{!detailsSubmitted ? "+ Connect Bank" : "Payout"}
-					</Button>
-				</div>
-			)}
 		</div>
 	);
 }
