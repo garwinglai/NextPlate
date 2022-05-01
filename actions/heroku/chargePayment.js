@@ -38,6 +38,7 @@ async function chargePayment(getStatus, chargeId, payMethod) {
 				}
 			})
 			.catch((error) => {
+				console.log("error data", error.response.data);
 				return { success: false, error };
 			});
 	}

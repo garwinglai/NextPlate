@@ -33,7 +33,8 @@ async function sendNotification(
 	recurring,
 	endTime,
 	defaultPrice,
-	itemName
+	itemName,
+	emoji
 	// isNotificationSent
 ) {
 	// console.log("isNotificationSent", isNotificationSent);
@@ -84,7 +85,7 @@ async function sendNotification(
 			data = {
 				tokens: usersTokenArr,
 				title: "NextPlate",
-				msg: `⚡️ ${bizName} has a ${itemName} for only ${defaultPrice}! Offer available until ${removeLeadingZeroTime}. Grab it before it's gone!`,
+				msg: `${emoji} ${bizName} has a ${itemName} for only ${defaultPrice}! Offer available until ${removeLeadingZeroTime}. Grab it before it's gone!`,
 				senderName: bizName,
 				senderId: bizId,
 				dataType: event,
@@ -171,7 +172,7 @@ async function sendNotification(
 
 			data = {
 				tokens: userTokens,
-				title: "NextPlate",
+				title: "NextPlate order Confirmed",
 				msg: `${bizName} has confirmed your order. Please pick up your order before ${removeLeadingZeroTime}. Your order may be canceled without a refund if the pickup time is missed.`,
 				senderName: bizName,
 				senderId: bizId,
@@ -183,8 +184,8 @@ async function sendNotification(
 		if (action === "Declined") {
 			data = {
 				tokens: userTokens,
-				title: "NextPlate",
-				msg: `${bizName} has declined your order. (${reasonsDeclineCancel})`,
+				title: "NextPlate order Declined",
+				msg: `${bizName} has declined your order. You were not charged for this order. Reason for decline: (${reasonsDeclineCancel})`,
 				senderName: bizName,
 				senderId: bizId,
 				dataType: event,
@@ -195,7 +196,7 @@ async function sendNotification(
 		if (action === "Canceled") {
 			data = {
 				tokens: userTokens,
-				title: "NextPlate",
+				title: "NextPlate order Canceled",
 				msg: `${bizName} has canceled your order. The pickup window has passed and this order will not be refunded.`,
 				senderName: bizName,
 				senderId: bizId,
@@ -212,8 +213,8 @@ async function sendNotification(
 			body: JSON.stringify(data),
 		})
 			.then((data) => {
-				console.log("notification", data);
 				const status = data.status;
+				console.log("order action status", status);
 				if (status === 200) {
 					return { success: true, status };
 				} else {

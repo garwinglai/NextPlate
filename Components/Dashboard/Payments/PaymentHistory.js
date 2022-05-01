@@ -4,16 +4,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Button } from "@mui/material";
 import PaymentHistoryTab from "./PaymentHistoryTab";
-import {
-	collection,
-	doc,
-	getDocs,
-	getDoc,
-	query,
-	where,
-	limit,
-	orderBy,
-} from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../../firebase/fireConfig";
 
 function PaymentHistory({ bizId }) {
@@ -22,26 +13,34 @@ function PaymentHistory({ bizId }) {
 		endDate: new Date(),
 	});
 	const [payouts, setPayouts] = useState([]);
+	const [payoutAmount, setPayoutAmount] = useState(0);
 
 	const { startDate, endDate } = selectedDates;
 
 	useEffect(() => {
 		getPayouts(bizId);
-	}, []);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [bizId]);
 
 	const getPayouts = async (bizId) => {
 		const payoutDocRef = collection(db, "biz", bizId, "payouts");
 		try {
 			const payoutSnapshot = await getDocs(payoutDocRef);
 			let payoutArr = [];
+			let totalPayout = 0;
 
 			payoutSnapshot.forEach((doc) => {
 				const data = doc.data();
+				const payoutAmt = data.payoutAmtDouble;
+
+				totalPayout += payoutAmt;
 				payoutArr.push(data);
 			});
 
+			setPayoutAmount(totalPayout);
 			setPayouts(payoutArr);
 		} catch (error) {
+			console.log("getPayouts", error);
 			// TODO: Handle Error
 		}
 	};
@@ -64,11 +63,49 @@ function PaymentHistory({ bizId }) {
 		</Button>
 	));
 
-	const handleSearchClick = () => {
+	const handleSearchClick = async () => {
 		// TODO: handle search click
 		// * Calculate total payout during period
 		// * Get All payouts during period
-		console.log(selectedDates);
+
+		const { endDate, startDate } = selectedDates;
+		const correctedStartDate = new Date(startDate).setHours(0, 0, 0, 0);
+		const correctedEndDate = new Date(endDate).setHours(23, 59, 59, 999);
+
+		await getPayoutsInPeriod(bizId, correctedStartDate, correctedEndDate);
+	};
+
+	const getPayoutsInPeriod = async (
+		bizId,
+		correctedStartDate,
+		correctedEndDate
+	) => {
+		console.log(correctedStartDate, correctedEndDate);
+		const payoutsDocRef = collection(db, "biz", bizId, "payouts");
+		const q = query(
+			payoutsDocRef,
+			where("endDateEpoch", ">=", correctedStartDate),
+			where("endDateEpoch", "<=", correctedEndDate)
+		);
+
+		try {
+			const payoutsSnapshot = await getDocs(q);
+			let totalPayout = 0;
+			let payoutsArr = [];
+
+			payoutsSnapshot.forEach((doc) => {
+				const data = doc.data();
+				const payoutAmt = data.payoutAmtDouble;
+
+				totalPayout += payoutAmt;
+				payoutsArr.push(data);
+			});
+
+			setPayoutAmount(totalPayout);
+			setPayouts(payoutsArr);
+		} catch (error) {
+			console.log(error);
+		}
 	};
 
 	return (
@@ -76,7 +113,7 @@ function PaymentHistory({ bizId }) {
 			<div className={`${styles.flexRow} ${styles.header}`}>
 				<div className={`${styles.flexCol}`}>
 					<h5>Total payout</h5>
-					<h1>$0.00</h1>
+					<h1>${payoutAmount}</h1>
 				</div>
 				<div className={`${styles.flexRow} ${styles.dateGroup}`}>
 					<div className={`${styles.flexRow} ${styles.datePair}`}>
@@ -119,7 +156,13 @@ function PaymentHistory({ bizId }) {
 			<div className={`${styles.flexCol}`}>
 				<div className={`${styles.flexRow} ${styles.gridHeader}`}>
 					<div className={`${styles.justifyCenter}`}>
-						<h5>#ID</h5>
+						<h5>#Id</h5>
+					</div>
+					<div className={`${styles.justifyCenter}`}>
+						<h5>From</h5>
+					</div>
+					<div className={`${styles.justifyCenter}`}>
+						<h5>To</h5>
 					</div>
 					<div className={`${styles.justifyCenter}`}>
 						<h5>Date paid</h5>
@@ -136,9 +179,13 @@ function PaymentHistory({ bizId }) {
 				</div>
 
 				{payouts.length > 0 ? (
-					payouts.map((item) => {
+					payouts.map((payout) => {
 						return (
-							<PaymentHistoryTab key={item.id} item={item} bizId={bizId} />
+							<PaymentHistoryTab
+								key={payout.id}
+								payout={payout}
+								bizId={bizId}
+							/>
 						);
 					})
 				) : (

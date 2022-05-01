@@ -30,50 +30,61 @@ const style = {
 	borderRadius: "5px",
 };
 
-function PayoutModal({ open, close, item, bizId }) {
+function PayoutModal({ open, close, payout, bizId }) {
 	const [openModal, setOpenModal] = useState(true);
 	const [orders, setOrders] = useState([]);
 
 	const {
-		bizFeesStr,
-		startDate,
-		endDate,
 		id,
-		payoutDate,
+		createdAt,
+		startDateEpoch,
+		endDateEpoch,
+		startDateShort,
+		endDateShort,
+		totalSalesStr,
+		totalSalesDouble,
+		bizFeesStr,
+		bizFeesDouble,
+		totalBizFeesStr,
+		totalBizFeesDouble,
+		payoutAmtStr,
+		payoutAmtDouble,
+		paymentDateEpoch,
+		paymentDateShort,
+		paidToName,
 		clientName,
-		fullAddress,
-		address_1,
-		address_2,
-		city,
-		state,
-		zip,
-		paymentTo,
-		payoutAmt,
-		totalTaxAndFees,
-		totalSales,
-	} = item;
+		address,
+		stripeId,
+		numOrders,
+	} = payout;
+
+	const { address_1, address_2, city, state, zip } = address;
 
 	useEffect(() => {
 		getOrders(bizId);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	const getOrders = async (bizId) => {
 		const ordersDocRef = collection(db, "biz", bizId, "orders");
-		const query = q(
+		const q = query(
 			ordersDocRef,
-			where("createdAt", ">", startDate),
-			where("createdAt", "<=", endDate)
+			where("createdAt", ">", startDateEpoch),
+			where("createdAt", "<=", endDateEpoch),
+			orderBy("createdAt", "asc")
 		);
 		try {
-			const ordersSnapshot = await getDocs(query);
+			const ordersSnapshot = await getDocs(q);
 			const ordersArr = [];
 			ordersSnapshot.forEach((doc) => {
 				const data = doc.data();
+				data.id = doc.id;
 				ordersArr.push(data);
 			});
 
 			setOrders(ordersArr);
 		} catch (error) {
+			console.log("getOrders error", error);
 			// TODO: handle error
 		}
 	};
@@ -97,7 +108,9 @@ function PayoutModal({ open, close, item, bizId }) {
 								className={`${styles.flexCol} ${styles.alignEnd} ${styles.fromToDate}`}
 							>
 								<h6 className={`${styles.titleGap}`}>Payment period</h6>
-								<p>1/1/2022 - 1/31/2022</p>
+								<p>
+									{startDateShort} - {endDateShort}
+								</p>
 							</div>
 						</div>
 						<div
@@ -105,11 +118,11 @@ function PayoutModal({ open, close, item, bizId }) {
 						>
 							<div className={`${styles.flexCol}`}>
 								<h6 className={`${styles.titleGap}`}>Payment no.</h6>
-								<p>391400123210</p>
+								<p>{id}</p>
 							</div>
 							<div className={`${styles.flexCol} ${styles.alignEnd}`}>
 								<h6 className={`${styles.titleGap}`}>Payment date</h6>
-								<p>Feb 2, 2022</p>
+								<p>{paymentDateShort}</p>
 							</div>
 						</div>
 						<div
@@ -117,21 +130,25 @@ function PayoutModal({ open, close, item, bizId }) {
 						>
 							<div className={`${styles.flexCol}`}>
 								<h6 className={`${styles.titleGap}`}>Client information</h6>
-								<p>John Doe</p>
-								<p>123 addy st.</p>
-								<p>city state zip</p>
+								<p>{clientName}</p>
+								<p>{address_1}</p>
+								<p>{address_2}</p>
+								<p>
+									{city} {state} {zip}
+								</p>
 							</div>
 							<div className={`${styles.flexCol} ${styles.alignEnd}`}>
 								<h6 className={`${styles.titleGap}`}>Payment to</h6>
-								<p>Restaurant LLC</p>
+								<p>{paidToName}</p>
 							</div>
 						</div>
 						<div className={`${styles.gridSix} ${styles.gridBorder}`}>
 							<h5 className={`${styles.gridItem}`}>#Id</h5>
 							<h5 className={`${styles.gridItem}`}>Date</h5>
 							<h5 className={`${styles.gridItem}`}>Item</h5>
+							<h5 className={`${styles.gridItem}`}>Item price</h5>
 							<h5 className={`${styles.gridItem}`}>Qty</h5>
-							<h5 className={`${styles.gridItem}`}>Tax & Fees</h5>
+							<h5 className={`${styles.gridItem}`}>Tax & fees</h5>
 							<h5 className={`${styles.gridItem}`}>Total</h5>
 						</div>
 
@@ -156,9 +173,9 @@ function PayoutModal({ open, close, item, bizId }) {
 							<div
 								className={`${styles.flexCol} ${styles.alignEnd} ${styles.subtotalGap}`}
 							>
-								<p>$12.99</p>
-								<p>$1.00</p>
-								<p>$1.99</p>
+								<p>{totalSalesStr}</p>
+								<p>{totalBizFeesStr}</p>
+								<p>{payoutAmtStr}</p>
 							</div>
 						</div>
 						<p>NextPlate</p>

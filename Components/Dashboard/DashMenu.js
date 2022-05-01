@@ -77,7 +77,7 @@ function DashMenu({ currentPage }) {
 					ref={loadingBarRef}
 					shadow={true}
 				/>
-				<div
+				{/* <div
 					style={
 						currentPage === "Dashboard"
 							? {
@@ -103,7 +103,7 @@ function DashMenu({ currentPage }) {
 							Dashboard
 						</a>
 					</Link>
-				</div>
+				</div> */}
 				<div
 					style={
 						currentPage === "Schedule"

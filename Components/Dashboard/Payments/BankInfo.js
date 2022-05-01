@@ -29,7 +29,9 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 	const [isAlertOpen, setIsAlertOpen] = useState(true);
 	const [responseHandle, setResponseHandle] = useState({
 		loading: false,
-		successMessage: detailsSubmitted ? "Bank account connected." : "",
+		successMessage: detailsSubmitted
+			? "Payouts on the first of the Month."
+			: "",
 		errorMessage: errMsg,
 	});
 
@@ -48,12 +50,12 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 			bizId,
 			lastPayoutDate
 		);
+
 		const calculatedProfit = (totalSales - numOrders * bizFeesDouble).toFixed(
 			2
 		);
 
 		const calcProfitString = `$${calculatedProfit.toString()}`;
-		console.log(bizFeesDouble, numOrders, totalSales);
 
 		setProfit(calcProfitString);
 	};
@@ -79,10 +81,10 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 				bizFeesDouble = feesAsDouble;
 			} else {
 				// * If has payouts before, use the last payout time
-				const { endDateEpoch, bizFeesDouble } = lastPayout;
+				const { endDateEpoch, bizFeesDouble: feesDouble } = lastPayout;
 
 				lastPayoutDate = endDateEpoch;
-				bizFeesDouble = bizFeesDouble;
+				bizFeesDouble = feesDouble;
 			}
 
 			return { bizFeesDouble, lastPayoutDate };
@@ -99,18 +101,28 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 		const payoutsSnapshot = await getDocs(q);
 
 		if (payoutsSnapshot.size > 0) {
-			const payoutData = payoutsSnapshot.data();
+			let payoutData;
+
+			payoutsSnapshot.forEach((doc) => {
+				const data = doc.data();
+				payoutData = data;
+			});
+
 			return payoutData;
 		} else {
-			console.log("payouts does not exists");
+			// * New business, so no payouts. Return Null so that we can grab biz start date as initial date of payment.
 			return null;
 		}
 	};
 
 	const getTotalRevenueAndNumOrders = async (bizId, lastPayoutDate) => {
-		console.log(lastPayoutDate);
 		const ordersDocRef = collection(db, "biz", bizId, "orders");
-		const q = query(ordersDocRef, where("endTime", ">", lastPayoutDate));
+		const q = query(
+			ordersDocRef,
+			where("createdAt", ">", lastPayoutDate),
+			where("status", "==", "Completed")
+		);
+
 		try {
 			const ordersSnapshot = await getDocs(q);
 			let salesPerOrderArr = [];
@@ -130,7 +142,7 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 				numOrders = salesArrLength;
 				totalSales = salesPerOrderArr.reduce((sum, val) => (sum += val));
 			}
-			console.log(salesPerOrderArr);
+
 			return { numOrders, totalSales };
 		} catch (error) {
 			console.log("error", error);
@@ -142,8 +154,8 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 
 	const handleConnectStripe = async (e, stripeAccId) => {
 		setResponseHandle((prev) => ({ ...prev, loading: true }));
-		const refreshUrl = `https://next-plate.web.app/dashboard/${uid}/payments`;
-		const returnUrl = `https://next-plate.web.app/dashboard/${uid}/payments`;
+		const refreshUrl = `https://nextplate.app/dashboard/${uid}/payments`;
+		const returnUrl = `https://nextplate.app/dashboard/${uid}/payments`;
 
 		let resConnectStripe = await connectStripeAccount(
 			stripeAccId,
@@ -163,11 +175,6 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 		}
 	};
 
-	async function handleClickPayout() {
-		// TODO: handle cash out
-		window.alert("payout");
-	}
-
 	return (
 		<div className={`${styles.BankInfo} ${styles.flexCol}`}>
 			<div className={`${styles.BankInfo__header} ${styles.flexRow}`}>
@@ -186,7 +193,9 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 									setIsSuccessAlertOpen(false);
 								}}
 							>
-								<AlertTitle className={styles.AlertTitle}>Success</AlertTitle>
+								<AlertTitle className={styles.AlertTitle}>
+									Bank account connected.{" "}
+								</AlertTitle>
 								{successMessage}
 							</Alert>
 						</Collapse>
@@ -230,13 +239,10 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 							variant="contained"
 							size="large"
 							fullWidth
-							onClick={
-								!detailsSubmitted
-									? (e) => handleConnectStripe(e, stripeAccId)
-									: handleClickPayout
-							}
+							onClick={(e) => handleConnectStripe(e, stripeAccId)}
+							sx={{ display: !detailsSubmitted ? undefined : "none" }}
 						>
-							{!detailsSubmitted ? "+ Connect Bank" : "Payout"}
+							+ Connect Bank
 						</Button>
 					</div>
 				)}

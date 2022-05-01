@@ -394,7 +394,9 @@ export default function Review({
 							<Grid item xs={12} md={12}>
 								<Collapse in={true}>
 									<Alert severity="info">
-										<p>Don&apos;t press back while loading.</p>
+										<p>
+											Don&apos;t press back while loading. May take 30 seconds.
+										</p>
 									</Alert>
 								</Collapse>
 							</Grid>

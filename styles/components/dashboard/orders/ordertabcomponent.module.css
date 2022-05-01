@@ -15,7 +15,7 @@
 }
 
 .flexCol > p:nth-child(2) {
-	font-size: 12px;
+	font-size: 16px;
 	margin-top: 5px;
 }
 
@@ -43,6 +43,10 @@
 	animation-duration: 1s;
 	animation-iteration-count: infinite;
 	animation-direction: alternate;
+}
+
+.item p {
+	font-size: 16px;
 }
 
 @keyframes pulse {
@@ -113,11 +117,19 @@
 @media screen and (max-width: 768px) {
 	.OrderTabComponent {
 		width: 95%;
-		font-size: 16px;
+		/* font-size: 16px; */
 	}
 
 	.flexCol > p:first-child {
 		font-size: 22px;
+	}
+
+	.flexCol > p:nth-child(2) {
+		font-size: 18px;
+	}
+
+	.item p {
+		font-size: 18px;
 	}
 }
 
@@ -129,5 +141,13 @@
 
 	.flexCol > p:first-child {
 		font-size: 14px;
+	}
+
+	.flexCol > p:nth-child(2) {
+		font-size: 10px;
+	}
+
+	.item p {
+		font-size: 10px;
 	}
 }

@@ -119,7 +119,7 @@ export default function Payments() {
 					{loading ? (
 						<>
 							<CircularProgress />
-							<p>Fetching bank information...</p>
+							<p>Fetching bank information, (10 seconds)...</p>
 						</>
 					) : (
 						<BankInfo

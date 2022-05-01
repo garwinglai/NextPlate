@@ -17,6 +17,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
 import { removeSchedule } from "../../../actions/dashboard/scheduleCrud";
+import { updateOrder } from "../../../actions/dashboard/ordersCrud";
 import Alert from "@mui/material/Alert";
 import Collapse from "@mui/material/Collapse";
 import SuccessError from "../Orders/SuccessError";
@@ -29,7 +30,7 @@ const style = {
 	top: "50%",
 	left: "50%",
 	transform: "translate(-50%, -50%)",
-	width: 400,
+	width: "max-content",
 	bgcolor: "background.paper",
 	border: "2px solid #000",
 	boxShadow: 24,
@@ -60,6 +61,8 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 		showRemoveMessage: false,
 		removeScheduleId: "",
 		canRemove: false,
+		numberOfOrdersRegular: 0,
+		orderDataArr: [],
 	});
 	const [isScheduleFlashRemoved, setIsScheduleFlashRemoved] = useState({
 		flashRemoveMessage: "",
@@ -67,6 +70,7 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 		showFlashRemoveMessage: false,
 		removeFlashId: "",
 		canRemoveFlash: false,
+		numberOfOrdersFlash: 0,
 	});
 
 	const [showRemoveModalFlash, setShowRemoveModalFlash] = useState(false);
@@ -100,13 +104,14 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 	const [hoverState, setHoverState] = useState(true);
 	const [errorLoadingPosts, setErrorLoadingPosts] = useState("");
 
-	const { canRemoveFlash } = isScheduleFlashRemoved;
 	const {
 		removeMessage,
 		removeSuccess,
 		showRemoveMessage,
 		removeScheduleId,
 		canRemove,
+		numberOfOrdersRegular,
+		orderDataArr,
 	} = isScheduledRemoved;
 	const { errorMessage, successMessage, isOpen } = handleScheduleUpdates;
 	const {
@@ -114,6 +119,8 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 		flashRemoveSuccess,
 		showFlashRemoveMessage,
 		removeFlashId,
+		canRemoveFlash,
+		numberOfOrdersFlash,
 	} = isScheduleFlashRemoved;
 	const { pendingCount, incOrderErrorMessage } = incOrders;
 	const { monthDay, dayOfWeek, dayOfWkIdx, actualDate, shortDate } = date;
@@ -388,6 +395,49 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 	}
 
 	async function handleRemoveSchedule(e, scheduleId, dayIndex) {
+		if (orderDataArr.length > 0) {
+			let success = true;
+			let message;
+
+			for (let i = 0; i < orderDataArr.length; i++) {
+				const currOrder = orderDataArr[i];
+				const { customerId, orderId } = currOrder;
+				console.log(customerId, orderId);
+				const reason = "Offer removed";
+
+				const resUpdateOrder = await updateOrder(
+					customerId,
+					orderId,
+					bizId,
+					"Declined",
+					2,
+					reason,
+					null,
+					null,
+					null,
+					null,
+					null,
+					null
+				);
+
+				if (!resUpdateOrder.success) {
+					success = false;
+					message = resUpdateOrder.message;
+				}
+			}
+
+			if (success) {
+				await removeScheduleRegular(scheduleId, dayIndex);
+			} else {
+				console.log(`Tomorrows removed order was not updated: ${message}`);
+				return;
+			}
+		} else {
+			await removeScheduleRegular(scheduleId, dayIndex);
+		}
+	}
+
+	const removeScheduleRegular = async (scheduleId, dayIndex) => {
 		const { success, message } = await removeSchedule(
 			bizId,
 			scheduleId,
@@ -410,7 +460,7 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 				removeMessage: message,
 			});
 		}
-	}
+	};
 
 	async function handleRemoveScheduleFlash(e, scheduleId, dayIndex) {
 		const event = "flash";
@@ -430,13 +480,95 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 			});
 		} else {
 			setShowRemoveModalFlash(false);
-			setIsScheduledRemoved({
+			setIsScheduleFlashRemoved({
 				flashRemoveSuccess: false,
 				showFlashRemoveMessage: true,
 				flashRemoveMessage: message,
 			});
 		}
 	}
+
+	const handleRemoveClick = async (eventType, event) => {
+		if (eventType === "flash") {
+			const flash = event;
+			const currDate = new Date();
+			const currEpoch = Date.parse(currDate);
+
+			if (currEpoch > event.endTime) {
+				setShowRemoveModalFlash(true);
+				setIsScheduleFlashRemoved((prev) => ({
+					...prev,
+					canRemoveFlash: false,
+				}));
+			} else {
+				setShowRemoveModalFlash(true);
+				setIsScheduleFlashRemoved((prev) => ({
+					...prev,
+					removeFlashId: flash.id,
+					canRemoveFlash: true,
+				}));
+			}
+		}
+
+		if (eventType === "regular") {
+			const schedule = event;
+			const currDate = new Date();
+			const currEpoch = Date.parse(currDate);
+
+			if (currEpoch > schedule.endTime) {
+				setShowRemoveModal(true);
+				setIsScheduledRemoved((prev) => ({
+					...prev,
+					canRemove: false,
+					orderDataArr: [],
+				}));
+			} else {
+				const scheduleId = schedule.id;
+				const { numOrders, ordersData } = await getOrders(scheduleId);
+
+				setShowRemoveModal(true);
+				setIsScheduledRemoved((prev) => ({
+					...prev,
+					removeScheduleId: schedule.id,
+					canRemove: true,
+					numberOfOrdersRegular: numOrders,
+					orderDataArr: ordersData,
+				}));
+			}
+		}
+	};
+
+	const getOrders = async (scheduleId) => {
+		const ordersDocRef = collection(db, "biz", bizId, "orders");
+		const queryOrders = query(
+			ordersDocRef,
+			where("pickupWindowId", "==", scheduleId)
+		);
+
+		try {
+			const ordersSnapshot = await getDocs(queryOrders);
+			const numOrders = ordersSnapshot.size;
+			const ordersData = [];
+
+			ordersSnapshot.forEach((doc) => {
+				const data = doc.data();
+				const customerId = data.customerId;
+				const orderId = doc.id;
+
+				const orderDataObj = {
+					customerId,
+					orderId,
+				};
+
+				ordersData.push(orderDataObj);
+			});
+
+			return { numOrders, ordersData };
+		} catch (error) {
+			console.log("Error getting orders", error);
+			return;
+		}
+	};
 
 	return (
 		<div className={styles.DayComponent__container}>
@@ -645,25 +777,9 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 																	// 		? true
 																	// 		: false
 																	// }
-																	onClick={() => {
-																		const currDate = new Date();
-																		const currEpoch = Date.parse(currDate);
-
-																		if (currEpoch > flash.endTime) {
-																			setShowRemoveModalFlash(true);
-																			setIsScheduleFlashRemoved((prev) => ({
-																				...prev,
-																				canRemoveFlash: false,
-																			}));
-																		} else {
-																			setShowRemoveModalFlash(true);
-																			setIsScheduleFlashRemoved((prev) => ({
-																				...prev,
-																				removeFlashId: flash.id,
-																				canRemoveFlash: true,
-																			}));
-																		}
-																	}}
+																	onClick={() =>
+																		handleRemoveClick("flash", flash)
+																	}
 																>
 																	remove
 																</Button>
@@ -689,8 +805,8 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 																			sx={{ mt: 2, mb: 2 }}
 																		>
 																			{canRemoveFlash
-																				? "Are you sure you want to remove the schedule?"
-																				: "Cannot remove during pickup time, or time passed."}
+																				? "Are you sure you want to remove this post?"
+																				: "Cannot remove during pickup time, or if time has passed."}
 																		</Typography>
 																		<div>
 																			{canRemoveFlash && (
@@ -830,25 +946,9 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 																// 		? true
 																// 		: false
 																// }
-																onClick={() => {
-																	const currDate = new Date();
-																	const currEpoch = Date.parse(currDate);
-
-																	if (currEpoch > schedule.endTime) {
-																		setShowRemoveModal(true);
-																		setIsScheduledRemoved((prev) => ({
-																			...prev,
-																			canRemove: false,
-																		}));
-																	} else {
-																		setShowRemoveModal(true);
-																		setIsScheduledRemoved((prev) => ({
-																			...prev,
-																			removeScheduleId: schedule.id,
-																			canRemove: true,
-																		}));
-																	}
-																}}
+																onClick={() =>
+																	handleRemoveClick("regular", schedule)
+																}
 															>
 																remove
 															</Button>
@@ -868,14 +968,49 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 																			? "Removing set schedule"
 																			: "Can't remove"}
 																	</Typography>
-																	<Typography
-																		id="modal-modal-description"
-																		sx={{ mt: 2, mb: 2 }}
-																	>
-																		{canRemove
-																			? "Are you sure you want to remove the schedule?"
-																			: "Cannot remove posts during pickup time."}
-																	</Typography>
+
+																	{canRemove ? (
+																		numberOfOrdersRegular > 0 ? (
+																			<div className={`${styles.RemovePost}`}>
+																				<p
+																					className={`${styles.RemovePost__numReservered}`}
+																				>
+																					🛑{" "}
+																					<b>
+																						{" "}
+																						{numberOfOrdersRegular}{" "}
+																						reserveration(s)
+																					</b>
+																				</p>
+																				<p
+																					className={`${styles.RemovePost__description}`}
+																				>
+																					Removing this post will decline all
+																					reservations.
+																				</p>
+
+																				<p
+																					className={`${styles.RemovePost__note}`}
+																				>
+																					Note: customers can pre-reserve orders
+																					for the next day.
+																				</p>
+																			</div>
+																		) : (
+																			<p
+																				className={`${styles.RemovePost__noOrders}`}
+																			>
+																				Are you sure you want to remove the
+																				schedule?
+																			</p>
+																		)
+																	) : (
+																		<p>
+																			Cannot remove during pickup time, or if
+																			time has passed.
+																		</p>
+																	)}
+
 																	<div>
 																		{canRemove && (
 																			<Button
@@ -917,7 +1052,7 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 						)}
 					</div>
 				</div>
-				{(isToday || isTomorrow) && (
+				{/* {(isToday || isTomorrow) && (
 					<div className={styles.DayComponent__postHeaderFooter}>
 						<div className={styles.DayComponent__titles}>
 							<h4 className={styles.DayComponent__bodyTitle}>Orders:</h4>
@@ -947,7 +1082,7 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 							</a>
 						</Link>
 					</div>
-				)}
+				)} */}
 			</div>
 		</div>
 	);

@@ -7,12 +7,13 @@ function PayoutOrderTabs({ order, bizFeesStr }) {
 
 	return (
 		<div className={`${styles.gridSix} ${styles.payoutOrderTabs}`}>
-			<p className={`${styles.gridItem}`}>#jb2313</p>
-			<p className={`${styles.gridItem}`}>1/05/2022</p>
-			<p className={`${styles.gridItem}`}>Milk Tea</p>
-			<p className={`${styles.gridItem}`}>1</p>
-			<p className={`${styles.gridItem}`}>-$1.00</p>
-			<p className={`${styles.gridItem}`}>$2.99</p>
+			<p className={`${styles.gridItem}`}>{id.slice(0, 5)}</p>
+			<p className={`${styles.gridItem}`}>{createdAt}</p>
+			<p className={`${styles.gridItem}`}>{itemName}</p>
+			<p className={`${styles.gridItem}`}>{itemPrice}</p>
+			<p className={`${styles.gridItem}`}>{quantity}</p>
+			<p className={`${styles.gridItem}`}>{bizFeesStr}</p>
+			<p className={`${styles.gridItem}`}>{bizTotalPrice}</p>
 		</div>
 	);
 }

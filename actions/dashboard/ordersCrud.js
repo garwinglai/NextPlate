@@ -43,6 +43,8 @@ async function updatePastOrders(bizId) {
 	const ordersCollectionRef = collection(db, "biz", bizId, "orders");
 	const adminOrders = collection(db, "admin", adminUid, "orders");
 
+	// TODO: update purchases from customer
+
 	// * Update previous dates to completed ------------------------
 	const date = new Date();
 	const actualDate = date.toDateString();
@@ -138,25 +140,41 @@ async function updatePastOrders(bizId) {
 
 		const pastConfirmedUidArr = [];
 		const pastReservedUidArr = [];
+		const uidConfirmed = [];
+		const uidReserved = [];
 
 		pastConfirmedOrdersSnapShot.forEach((doc) => {
 			const data = doc.data();
 			const id = doc.id;
-			const bizTotalPriceNum = data.bizTotalPriceDouble;
-			const dataSet = { id, bizTotalPriceNum };
+			const customerId = data.customerId;
+			const dataSet = { id, customerId };
 			pastConfirmedUidArr.push(dataSet);
+			uidConfirmed.push(customerId);
 		});
 
 		pastReservedOrdersSnapShot.forEach((doc) => {
+			const data = doc.data();
+			const customerId = data.customerId;
 			const id = doc.id;
-			pastReservedUidArr.push(id);
+			const bizName = data.bizName;
+			const dataSet = { id, customerId, bizName };
+			pastReservedUidArr.push(dataSet);
+			uidReserved.push(customerId);
 		});
 
 		// * Biz Orders, looping UID to update
 		for (let i = 0; i < pastConfirmedUidArr.length; i++) {
-			const currorderId = pastConfirmedUidArr[i].id;
-			// const bizTotalNum = pastConfirmedUidArr[i].bizTotalPriceNum;
-			const orderRef = doc(db, "biz", bizId, "orders", currorderId);
+			const currOrderId = pastConfirmedUidArr[i].id;
+			const customerUid = pastConfirmedUidArr[i].customerId;
+			const orderRef = doc(db, "biz", bizId, "orders", currOrderId);
+			const customerPurchase = doc(
+				db,
+				"users",
+				customerUid,
+				"purchases",
+				currOrderId
+			);
+
 			batch.update(
 				orderRef,
 				{
@@ -166,22 +184,54 @@ async function updatePastOrders(bizId) {
 				},
 				{ merge: true }
 			);
+
+			batch.update(
+				customerPurchase,
+				{
+					status: "Complete",
+					statusIndex: 3,
+					statusArr: arrayUnion("Completed"),
+				},
+				{ merge: true }
+			);
 		}
 
 		for (let j = 0; j < pastReservedUidArr.length; j++) {
-			const currorderId = pastReservedUidArr[j];
-			const orderRef = doc(db, "biz", bizId, "orders", currorderId);
+			const currOrderId = pastReservedUidArr[j].id;
+			const customerUid = pastReservedUidArr[j].customerId;
+			const bizName = pastReservedUidArr[j].bizName;
+			const orderRef = doc(db, "biz", bizId, "orders", currOrderId);
+			const customerPurchase = doc(
+				db,
+				"users",
+				customerUid,
+				"purchases",
+				currOrderId
+			);
+
 			batch.update(
 				orderRef,
 				{
 					status: "Declined",
 					statusIndex: 2,
 					statusArr: arrayUnion("Declined"),
-					reasonDeclineOrCancel: "Business did not accept in time",
+					reasonDeclineOrCancel: `${bizName} did not accept your order.`,
+				},
+				{ merge: true }
+			);
+
+			batch.update(
+				customerPurchase,
+				{
+					status: "Declined",
+					statusIndex: 2,
+					statusArr: arrayUnion("Declined"),
+					reasonDeclineOrCancel: `${bizName} did not accept your order.`,
 				},
 				{ merge: true }
 			);
 		}
+
 		await batch.commit();
 		return { success: true };
 	} catch (error) {
@@ -213,7 +263,7 @@ async function getOrderHistory(bizId, round, prevEndTime) {
 			orderCollectionRef,
 			where("endTime", "<", todayStartEpoch),
 			orderBy("endTime", "desc"),
-			endBefore(prevEndTime),
+			endAt(prevEndTime),
 			limitToLast(10)
 		);
 	} else if (round === "next") {
@@ -278,7 +328,7 @@ async function getSearchOrderHistory(
 			orderBy("startTime", "desc"),
 			where("startTime", ">=", startDate),
 			where("startTime", "<=", endDate),
-			endBefore(prevDoc),
+			endAt(prevDoc),
 			limitToLast(10)
 		);
 	} else if (round === "next") {
@@ -412,7 +462,7 @@ async function updateOrder(
 	endTime
 ) {
 	const adminUid = "6IUWvD23ayVkRlxaO2wtSM2faNB3";
-
+	console.log(bizId, orderId);
 	// * Order doc ref
 	const bizOrderDocRef = doc(db, "biz", bizId, "orders", orderId);
 	// * Order doc ref Admin
@@ -448,7 +498,7 @@ async function updateOrder(
 			if (resPaymentCharge.status) {
 				return {
 					success: false,
-					message: `Could not charge payment. Status${resPaymentCharge.status}`,
+					message: `Could not charge payment. Status: ${resPaymentCharge.status}`,
 				};
 			} else {
 				return {
@@ -918,7 +968,7 @@ async function getAdminOrdersPaginate(round, lastDoc, adminUid) {
 		queryRound = query(
 			adminOrdersRef,
 			orderBy("createdAt", "desc"),
-			endBefore(lastDoc),
+			endAt(lastDoc),
 			limitToLast(10)
 		);
 	} else if (round === "next") {

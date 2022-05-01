@@ -26,6 +26,7 @@ import {
 } from "../../firebase/fireConfig";
 import _ from "lodash";
 import sendNotification from "../heroku/notifications";
+import { updateOrder } from "./ordersCrud";
 
 async function createNewSchedule(
 	bizId,
@@ -446,7 +447,8 @@ async function createFlashSchedule(
 	endTimeEpochMiliSec,
 	currShortDate,
 	defaultPrice,
-	itemName
+	itemName,
+	emoji
 ) {
 	const bizDocRef = doc(db, "biz", bizId);
 	const bizDocSnap = await getDoc(bizDocRef);
@@ -662,7 +664,8 @@ async function createFlashSchedule(
 				null,
 				endTimeEpochMiliSec,
 				defaultPrice,
-				itemName
+				itemName,
+				emoji
 			);
 			if (resNotification.success) {
 				return { success: true, message: "Schedule created successfully" };

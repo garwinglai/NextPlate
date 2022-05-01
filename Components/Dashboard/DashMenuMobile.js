@@ -43,7 +43,7 @@ function DashMenuMobile({ currentPage, closeMenu }) {
 	function showMenu() {
 		return (
 			<menu className={styles.DashMenuMobile_Menu}>
-				<div
+				{/* <div
 					style={
 						currentPage === "Dashboard"
 							? {
@@ -63,7 +63,7 @@ function DashMenuMobile({ currentPage, closeMenu }) {
 					<Link href={`/dashboard/${routerUid}`}>
 						<a className={styles.DashMenuMobile_MenuItems}>Dashboard</a>
 					</Link>
-				</div>
+				</div> */}
 				<div
 					style={
 						currentPage === "Schedule"

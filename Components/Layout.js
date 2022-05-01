@@ -116,14 +116,13 @@ function Layout({ children, currentPage, subPage, uid }) {
 		const { success, message } = resUpdatePastSchedule;
 
 		if (!success) {
-			console.log("update past schedule", message);
+			console.log("update past schedule error", message);
 		}
 	}
 
 	// Check if any schedules by interval. Shut down screen if no schedules
 	async function checkInterval(bizId) {
 		const bizDocRef = doc(db, "biz", bizId);
-		console.log("hi");
 
 		try {
 			const scheduleSnapshot = await getDoc(bizDocRef);
@@ -165,8 +164,8 @@ function Layout({ children, currentPage, subPage, uid }) {
 				const currTime = Date.parse(newDate);
 
 				console.log("has no orders");
-				console.log("currTime", currTime);
-				console.log("midNight", midNight);
+				// console.log("currTime", currTime);
+				// console.log("midNight", midNight);
 				if (currTime > midNight) {
 					releaseWakeLock();
 				}

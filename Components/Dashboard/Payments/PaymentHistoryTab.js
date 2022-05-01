@@ -2,10 +2,32 @@ import React, { useState } from "react";
 import styles from "../../../styles/components/dashboard/payments/payment-history-tab.module.css";
 import PayoutModal from "./PayoutModal";
 
-function PaymentHistoryTab({ item, bizId }) {
+function PaymentHistoryTab({ payout, bizId }) {
 	const [showPayoutModal, setShowPayoutModal] = useState(false);
 
-	const { id, payoutDate, totalSales, totalTaxAndFees, payoutAmt } = item;
+	const {
+		id,
+		createdAt,
+		startDateEpoch,
+		endDateEpoch,
+		startDateShort,
+		endDateShort,
+		totalSalesStr,
+		totalSalesDouble,
+		bizFeesStr,
+		bizFeesDouble,
+		totalBizFeesStr,
+		totalBizFeesDouble,
+		payoutAmtStr,
+		payoutAmtDouble,
+		paymentDateEpoch,
+		paymentDateShort,
+		paidToName,
+		clientName,
+		address,
+		stripeId,
+		numOrders,
+	} = payout;
 
 	function handleClick() {
 		setShowPayoutModal((prev) => !prev);
@@ -21,7 +43,7 @@ function PaymentHistoryTab({ item, bizId }) {
 				<PayoutModal
 					open={showPayoutModal}
 					close={handleClick}
-					item={item}
+					payout={payout}
 					bizId={bizId}
 				/>
 			)}
@@ -30,19 +52,25 @@ function PaymentHistoryTab({ item, bizId }) {
 				className={`${styles.flexRow} ${styles.gridHeader} ${styles.paymentHistoryTab}`}
 			>
 				<div className={`${styles.justifyCenter}`}>
-					<p>#jBPq1</p>
+					<p>#{id.slice(0, 5)}</p>
 				</div>
 				<div className={`${styles.justifyCenter}`}>
-					<p>1/31/2022</p>
+					<p>{startDateShort}</p>
 				</div>
 				<div className={`${styles.justifyCenter}`}>
-					<p>$500.99</p>
+					<p>{endDateShort}</p>
+				</div>
+				<div className={`${styles.justifyCenter}`}>
+					<p>{paymentDateShort}</p>
+				</div>
+				<div className={`${styles.justifyCenter}`}>
+					<p>{totalSalesStr}</p>
 				</div>
 				<div>
-					<p>-$50.00</p>
+					<p>{totalBizFeesStr}</p>
 				</div>
 				<div className={`${styles.justifyCenter}`}>
-					<p>$450.99</p>
+					<p>{payoutAmtStr}</p>
 				</div>
 			</div>
 		</React.Fragment>

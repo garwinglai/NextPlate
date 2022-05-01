@@ -81,6 +81,7 @@ function Schedule() {
 		userData: [],
 		message: "",
 		ordersDataArr: [],
+		emoji,
 	});
 
 	const { errorMessage, successMessage, isOpen } = handleScheduleUpdates;
@@ -102,7 +103,7 @@ function Schedule() {
 		itemName,
 	} = scheduleNowValues;
 	const { month, actualDate, shortDate, dayOfWeek, dayOfWkIdx } = sevenDays;
-	const { loading, userData, message, ordersDataArr } = userDataValues;
+	const { loading, userData, message, ordersDataArr, emoji } = userDataValues;
 	const { storedUser, bizId } = user;
 	const arrayOfTwenty = [
 		"1",
@@ -201,6 +202,7 @@ function Schedule() {
 		const resUser = await getBiz(bizIdTemp, dateArr);
 		if (resUser.success) {
 			const resUserData = resUser.docData;
+			const emoji = resUserData.emoji;
 			const ordersArr = resUser.ordersArr;
 
 			setUserDataValues((prev) => ({
@@ -209,6 +211,7 @@ function Schedule() {
 				loading: false,
 				message: "",
 				ordersDataArr: ordersArr,
+				emoji: emoji,
 			}));
 		} else {
 			setUserDataValues((prev) => ({
@@ -218,7 +221,7 @@ function Schedule() {
 			}));
 		}
 	}
-
+	console.log("emoji", emoji);
 	// console.log(sevenDays);
 	function loadDates() {
 		const datesArray = [];
@@ -590,7 +593,8 @@ function Schedule() {
 			endTimeEpochMiliSec,
 			currShortDate,
 			defaultPrice,
-			itemName
+			itemName,
+			emoji
 		);
 
 		if (resFlashSchedule.success) {

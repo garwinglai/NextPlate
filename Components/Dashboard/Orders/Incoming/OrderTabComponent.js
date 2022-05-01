@@ -125,7 +125,7 @@ export default function OrderTabComponent({
 					<p>{customerName}</p>
 					<p>{customerPhoneDisplay}</p>
 				</div>
-				<div className={`${styles.flexRow}`}>
+				<div className={`${styles.flexRow} ${styles.item}`}>
 					<p className={`${styles.orderCount}`}>{quantity}x</p>
 					<p>{itemName}</p>
 				</div>

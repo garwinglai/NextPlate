@@ -110,6 +110,7 @@ function IncomingOrders() {
 		userData: [],
 		message: "",
 		ordersDataArr: [],
+		emoji,
 	});
 	const [ordersPendingValues, setOrdersPendingValues] = useState({
 		ordersPendingLoading: false,
@@ -158,7 +159,7 @@ function IncomingOrders() {
 		timeDisplay,
 	} = scheduleValues;
 	const { errorMessage, successMessage, isOpen } = handleScheduleUpdates;
-	const { loading, userData, message, ordersDataArr } = userDataValues;
+	const { loading, userData, message, ordersDataArr, emoji } = userDataValues;
 	const {
 		postsFlash,
 		timeDisplaysFlash,
@@ -305,6 +306,7 @@ function IncomingOrders() {
 		const resUser = await getBiz(bizIdTemp, dateArr);
 		if (resUser.success) {
 			const resUserData = resUser.docData;
+			const emoji = resUserData.emoji;
 			const ordersArr = resUser.ordersArr;
 
 			setUserDataValues((prev) => ({
@@ -313,6 +315,7 @@ function IncomingOrders() {
 				loading: false,
 				message: "",
 				ordersDataArr: ordersArr,
+				emoji: emoji,
 			}));
 		} else {
 			setUserDataValues((prev) => ({
@@ -871,7 +874,8 @@ function IncomingOrders() {
 			endTimeEpochMiliSec,
 			currShortDate,
 			defaultPrice,
-			itemName
+			itemName,
+			emoji
 		);
 
 		if (resFlashSchedule.success) {

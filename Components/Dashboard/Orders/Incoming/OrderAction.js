@@ -185,7 +185,6 @@ function OrderAction({
 				});
 			}
 		} else if (name === "complete") {
-			console.log(name);
 			const resUpdate = await updateOrder(
 				customerId,
 				orderId,
