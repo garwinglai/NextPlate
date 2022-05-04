@@ -30,7 +30,15 @@ const style = {
 	borderRadius: "5px",
 };
 
-function ManualCreateSchedule({ open, close, uid, date, bizId, userData }) {
+function ManualCreateSchedule({
+	open,
+	close,
+	uid,
+	date,
+	bizId,
+	userData,
+	emoji,
+}) {
 	const [values, setValues] = useState({
 		itemName: "",
 		numAvailable: "1",
@@ -204,7 +212,8 @@ function ManualCreateSchedule({ open, close, uid, date, bizId, userData }) {
 			actualDate,
 			date.shortDate,
 			defaultPrice,
-			itemName
+			itemName,
+			emoji
 		);
 
 		if (success) {

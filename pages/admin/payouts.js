@@ -96,9 +96,14 @@ function Payouts() {
 
 			// * Admin test restuarnats, remove from list of paid restaurants
 			const blackListRestaurants = [
+				// Rabalais santa paula
 				"7C2CJXCuRohmhJYVpoGq",
+				// Chef david santa paula
 				"WKNB1Q0i8UlgTeROMBbi",
+				// Enzo italian santa paula
 				"uia4uiMuWEiifsnNHz8k",
+				// Hozy's grill santa Paula
+				"WWoXmkpJ4vVykvutaEyS",
 				// Insomnia Cookies
 				"bmILh3RBrTj6cpn41fSx",
 				// Dulce

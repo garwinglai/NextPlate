@@ -97,7 +97,7 @@ async function sendNotification(
 				data = {
 					tokens: usersTokenArr,
 					title: "NextPlate",
-					msg: `${bizName} has a ${itemName} for only ${defaultPrice}! Grab it before it's gone!`,
+					msg: `${emoji} ${bizName} has a ${itemName} for only ${defaultPrice}! Grab it before it's gone!`,
 					senderName: bizName,
 					senderId: bizId,
 					dataType: "flash",
@@ -106,7 +106,7 @@ async function sendNotification(
 				data = {
 					tokens: usersTokenArr,
 					title: "NextPlate",
-					msg: `${bizName} has a ${itemName} for only ${defaultPrice}! Grab it before it's gone!`,
+					msg: `${emoji} ${bizName} has a ${itemName} for only ${defaultPrice}! Grab it before it's gone!`,
 					senderName: bizName,
 					senderId: bizId,
 					dataType: "flash",
@@ -222,6 +222,7 @@ async function sendNotification(
 				}
 			})
 			.catch((error) => {
+				console.log("notification response to order error", error);
 				return { success: false, error };
 			});
 	}

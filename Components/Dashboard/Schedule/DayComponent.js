@@ -47,7 +47,15 @@ const styleAlert = {
 	border: "2px solid #000",
 };
 
-function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
+function DayComponent({
+	date,
+	bizId,
+	bizName,
+	uid,
+	userData,
+	ordersDataArr,
+	emoji,
+}) {
 	const [isNotificationSent, setIsNotificationSent] = useState(false);
 	const [disableCreateButton, setDisableCreateButton] = useState(false);
 	const [handleScheduleUpdates, setHandleScheduleUpdates] = useState({
@@ -670,6 +678,7 @@ function DayComponent({ date, bizId, bizName, uid, userData, ordersDataArr }) {
 						bizId={bizId}
 						userData={userData}
 						shortDate={shortDate}
+						emoji={emoji}
 					/>
 				</div>
 				<div

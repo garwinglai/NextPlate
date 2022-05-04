@@ -110,7 +110,7 @@ function IncomingOrders() {
 		userData: [],
 		message: "",
 		ordersDataArr: [],
-		emoji,
+		emoji: "🍽",
 	});
 	const [ordersPendingValues, setOrdersPendingValues] = useState({
 		ordersPendingLoading: false,
@@ -306,7 +306,7 @@ function IncomingOrders() {
 		const resUser = await getBiz(bizIdTemp, dateArr);
 		if (resUser.success) {
 			const resUserData = resUser.docData;
-			const emoji = resUserData.emoji;
+			const emojiBiz = resUserData.emoji;
 			const ordersArr = resUser.ordersArr;
 
 			setUserDataValues((prev) => ({
@@ -315,7 +315,7 @@ function IncomingOrders() {
 				loading: false,
 				message: "",
 				ordersDataArr: ordersArr,
-				emoji: emoji,
+				emoji: emojiBiz,
 			}));
 		} else {
 			setUserDataValues((prev) => ({

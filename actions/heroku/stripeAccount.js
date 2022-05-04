@@ -40,7 +40,7 @@ async function fetchStripeAccount(stripeAccId) {
 	const testRetrieveStripeEndPoint = "testRetrieveAccountNP";
 	const data = { account: stripeAccId };
 
-	console.log("data", data);
+	// console.log("data", data);
 	// * Fetch Stripe Account
 	baseUrl = baseUrl.concat(retrieveStripeEndPoint);
 
@@ -62,7 +62,7 @@ async function fetchStripeAccount(stripeAccId) {
 		const requirementErrorsArr = resJson.requirements.errors;
 
 		if (status === 200) {
-			console.log(status);
+			// console.log(status);
 			return { success: true, detailsSubmitted, requirementErrorsArr };
 		} else {
 			return { success: false, message: "Unable to get Stripe account." };

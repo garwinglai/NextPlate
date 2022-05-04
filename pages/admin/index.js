@@ -31,6 +31,9 @@ function AdminDashboard() {
 						<Link href="/admin/payouts">
 							<a>Payout</a>
 						</Link>
+						<Link href="/admin/stripe">
+							<a>Stripe</a>
+						</Link>
 					</menu>
 				</fieldset>
 			</div>

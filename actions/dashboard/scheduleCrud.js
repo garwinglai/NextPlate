@@ -39,7 +39,8 @@ async function createNewSchedule(
 	actualDate,
 	shortDate,
 	defaultPrice,
-	itemName
+	itemName,
+	emoji
 ) {
 	const bizDocRef = doc(db, "biz", bizId);
 	const docSnap = await getDoc(bizDocRef);
@@ -318,26 +319,8 @@ async function createNewSchedule(
 		try {
 			console.log("batch commit");
 			await batch.commit();
-			// return { success: true, message: "Schedule created successfully" };
 
-			// * Don't send notification if already sent.
-			// * Don't send notification if not live today or tmw.
-			if (
-				(todayShort !== shortDate && tomorrowShort !== shortDate) ||
-				scheduleData.notificationSent
-			) {
-				return { success: true, message: "Schedule created successfully" };
-			}
-		} catch (error) {
-			return {
-				success: false,
-				message: `Error with batch commit. Please try again: ${error} `,
-			};
-		}
-
-		// * Send notification to user if schedule is today or tomorow
-		try {
-			const resNotification = await sendNotification(
+			sendNotification(
 				bizId,
 				bizName,
 				"regular",
@@ -349,57 +332,19 @@ async function createNewSchedule(
 				scheduleData.recurring,
 				null,
 				defaultPrice,
-				itemName
+				itemName,
+				emoji
 			);
 			console.log("send notification after batch");
 
 			return { success: true, message: "Schedule created successfully" };
-		} catch (err) {
-			console.log(err);
+		} catch (error) {
+			console.log("error commiting regular schedule batch", error);
 			return {
-				success: true,
-				message: "Schedule created successfully, notification not sent.",
+				success: false,
+				message: `Error with batch commit. Please try again: ${error} `,
 			};
 		}
-
-		// // * Update biz weeklySchedule notificationSent
-		// try {
-		// 	const bizDocRef = doc(db, "biz", bizId);
-		// 	await updateDoc(
-		// 		bizDocRef,
-		// 		{
-		// 			[`weeklySchedules.${dayOfWeekIndex}.${scheduleId}.notificationSent`]: true,
-		// 		},
-		// 		{ merge: true }
-		// 	);
-		// 	console.log("set notification to true after batch : biz");
-		// } catch (error) {
-		// 	return {
-		// 		success: true,
-		// 		message: "Schedule created, business notification not updated.",
-		// 	};
-		// }
-
-		// // * Send notification to reucrring schedules
-		// try {
-		// 	const openHistoryDocRef = doc(
-		// 		db,
-		// 		"biz",
-		// 		bizId,
-		// 		"openHistory",
-		// 		scheduledId
-		// 	);
-
-		// 	await updateDoc(openHistoryDocRef, { notificationSent: true });
-		// 	console.log("set notification to true after batch : admin");
-		// 	return { success: true, message: "Schedule created successfully" };
-		// } catch (error) {
-		// 	console.log(error);
-		// 	return {
-		// 		success: true,
-		// 		message: "Schedule created, history notification not updated.",
-		// 	};
-		// }
 	} else {
 		return {
 			success: false,
@@ -643,16 +588,7 @@ async function createFlashSchedule(
 		// * Batch Commit
 		try {
 			await batch.commit();
-		} catch (error) {
-			return {
-				success: false,
-				message: `Error with batch commit. Please try again: ${error} `,
-			};
-		}
-
-		// * Send Notifications Flash
-		try {
-			const resNotification = await sendNotification(
+			sendNotification(
 				bizId,
 				bizName,
 				"flash",
@@ -667,18 +603,12 @@ async function createFlashSchedule(
 				itemName,
 				emoji
 			);
-			if (resNotification.success) {
-				return { success: true, message: "Schedule created successfully" };
-			} else {
-				// * notification error, still send success because flash was created.
-				return { success: true, message: "Schedule created successfully" };
-			}
-		} catch (err) {
-			// * return success true because schedule was posted, just notifications was not sent.
-			console.log(err);
+
+			return { success: true, message: "Schedule created successfully" };
+		} catch (error) {
 			return {
-				success: true,
-				message: "Schedule created successfully.",
+				success: false,
+				message: `Error with batch commit. Please try again: ${error} `,
 			};
 		}
 	} else {

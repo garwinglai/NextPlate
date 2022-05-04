@@ -81,7 +81,7 @@ function Schedule() {
 		userData: [],
 		message: "",
 		ordersDataArr: [],
-		emoji,
+		emoji: "🍽",
 	});
 
 	const { errorMessage, successMessage, isOpen } = handleScheduleUpdates;
@@ -202,7 +202,7 @@ function Schedule() {
 		const resUser = await getBiz(bizIdTemp, dateArr);
 		if (resUser.success) {
 			const resUserData = resUser.docData;
-			const emoji = resUserData.emoji;
+			const emojiBiz = resUserData.emoji;
 			const ordersArr = resUser.ordersArr;
 
 			setUserDataValues((prev) => ({
@@ -211,7 +211,7 @@ function Schedule() {
 				loading: false,
 				message: "",
 				ordersDataArr: ordersArr,
-				emoji: emoji,
+				emoji: emojiBiz,
 			}));
 		} else {
 			setUserDataValues((prev) => ({
@@ -221,7 +221,7 @@ function Schedule() {
 			}));
 		}
 	}
-	console.log("emoji", emoji);
+
 	// console.log(sevenDays);
 	function loadDates() {
 		const datesArray = [];
@@ -936,6 +936,7 @@ function Schedule() {
 							key={i}
 							userData={userData}
 							ordersDataArr={ordersDataArr}
+							emoji={emoji}
 						/>
 					))}
 				</div>
