@@ -67,7 +67,7 @@ function Stripe() {
 				const detailsSubmitted = stripeRes.detailsSubmitted;
 				const errorsArr = stripeRes.requirementErrorsArr;
 
-				const stripeData = { bizName, detailsSubmitted };
+				const stripeData = { bizName, detailsSubmitted, bizId };
 
 				stripeAccArr.push(stripeData);
 
@@ -111,7 +111,7 @@ function Stripe() {
 			<button onClick={handleFetchStripe}>Fetch stripe accounts</button>
 			{stripeAcc.map((biz) => {
 				return (
-					<div>
+					<div key={biz.bizId}>
 						<p>Biz name: {biz.bizName}</p>
 						<p>Details submitted: {JSON.stringify(biz.detailsSubmitted)}</p>
 					</div>
