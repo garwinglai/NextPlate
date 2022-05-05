@@ -35,7 +35,7 @@ function OrderAction({
 		errMessage: "",
 		successMessage: "",
 	});
-	console.log(orderDetails);
+
 	const { loading, success, errMessage, successMessage } = onUpdateResponse;
 	const {
 		customerName,

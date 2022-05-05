@@ -199,6 +199,7 @@ function DeclineCancelModal({
 		<React.Fragment>
 			<Button
 				color="error"
+				variant="contained"
 				name={
 					status === "Confirmed"
 						? timeEpoch > endTimeEpoch

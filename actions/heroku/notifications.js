@@ -126,7 +126,6 @@ async function sendNotification(
 			})
 				.then((data) => {
 					const status = data.status;
-					console.log("data", data);
 					return { success: true };
 				})
 				// .then((status) => {
@@ -214,7 +213,6 @@ async function sendNotification(
 		})
 			.then((data) => {
 				const status = data.status;
-				console.log("order action status", status);
 				if (status === 200) {
 					return { success: true, status };
 				} else {

@@ -25,7 +25,6 @@ import { getLocalStorage, setLocalStorage } from "../auth/auth";
 
 async function getAllUsers() {
 	const userDocRef = collection(db, "users");
-	console.log("hi");
 	try {
 		const userSnapshot = await getDocs(userDocRef);
 		const userArray = [];
@@ -35,7 +34,7 @@ async function getAllUsers() {
 
 			userArray.push(data);
 		});
-		console.log(userArray);
+
 		return { success: true, users: userArray.length };
 	} catch (error) {
 		console.log("error getting all users", error);

@@ -182,7 +182,6 @@ async function updateBizDataUser(
 	oldLoginEmail,
 	storedUser
 ) {
-	console.log(oldLoginEmail);
 	const bizDataDocRef = doc(db, "biz", bizId);
 	const userRef = doc(db, "bizAccount", uid);
 

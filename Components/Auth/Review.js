@@ -175,9 +175,6 @@ export default function Review({
 			createdAt: new serverTimestamp(),
 		};
 
-		console.log(defaultProduct);
-		console.log(businessInfo);
-
 		// * Uncomment when testing to stop loading
 		// setCreateBizResponse({
 		// 	loading: false,

@@ -114,7 +114,6 @@ async function signInAdmin({ email, password }) {
 async function timeOutReauthenticate(password) {
 	const auth = getAuth();
 	const user = auth.currentUser;
-	console.log(user);
 
 	if (user) {
 		// TODO(you): prompt the user to re-provide their sign-in credentials
@@ -122,7 +121,6 @@ async function timeOutReauthenticate(password) {
 
 		return reauthenticateWithCredential(user, credential)
 			.then(() => {
-				console.log("worked");
 				return { success: true };
 			})
 			.catch((error) => {
@@ -239,7 +237,6 @@ async function updateSignInEmail(updatedEmail) {
 	return updateEmail(auth.currentUser, updatedEmail)
 		.then((user) => {
 			// Email updated!
-			console.log(`Update login email: ${user.uid}`);
 			return { success: true };
 		})
 		.catch((error) => {

@@ -462,7 +462,7 @@ async function updateOrder(
 	endTime
 ) {
 	const adminUid = "6IUWvD23ayVkRlxaO2wtSM2faNB3";
-	console.log(bizId, orderId);
+
 	// * Order doc ref
 	const bizOrderDocRef = doc(db, "biz", bizId, "orders", orderId);
 	// * Order doc ref Admin

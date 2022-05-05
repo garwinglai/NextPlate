@@ -317,7 +317,6 @@ async function createNewSchedule(
 
 		// * Batch Commit
 		try {
-			console.log("batch commit");
 			await batch.commit();
 
 			sendNotification(
@@ -335,7 +334,6 @@ async function createNewSchedule(
 				itemName,
 				emoji
 			);
-			console.log("send notification after batch");
 
 			return { success: true, message: "Schedule created successfully" };
 		} catch (error) {

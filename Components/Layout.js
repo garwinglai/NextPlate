@@ -157,13 +157,11 @@ function Layout({ children, currentPage, subPage, uid }) {
 			// }
 
 			if (posts > 0) {
-				console.log("has orders");
 				return;
 			} else {
 				const newDate = new Date();
 				const currTime = Date.parse(newDate);
 
-				console.log("has no orders");
 				// console.log("currTime", currTime);
 				// console.log("midNight", midNight);
 				if (currTime > midNight) {

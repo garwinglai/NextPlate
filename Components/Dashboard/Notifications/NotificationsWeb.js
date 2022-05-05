@@ -11,7 +11,6 @@ function NotificationsWeb({
 	orderPendingErrorMessage,
 }) {
 	const [orderCount, setOrderCount] = useState(count);
-	console.log(orderData);
 	function reduceOrder() {
 		setOrderCount((prev) => prev - 1);
 	}

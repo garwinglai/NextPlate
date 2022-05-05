@@ -99,7 +99,6 @@ function ModalAccount({
 				// * If password, set is Verified true, then update modal to new pw input.
 				// * New input will trigger outter else statement.
 				if (modalName === "password") {
-					console.log("here");
 					setHandleResponse({ loading: false, message: "", isVerified: true });
 					setLoginInfo((prev) => ({ ...prev, password: "" }));
 				}

@@ -20,7 +20,6 @@ const style = {
 };
 
 function RemoveSchedule({ bizId, open, close, schedules, timeDisplay }) {
-	console.log(schedules, timeDisplay);
 	return (
 		<Modal
 			open={open}

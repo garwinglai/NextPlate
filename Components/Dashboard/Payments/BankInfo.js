@@ -116,10 +116,11 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 	};
 
 	const getTotalRevenueAndNumOrders = async (bizId, lastPayoutDate) => {
+		const lastDatePaid = new Date(lastPayoutDate);
 		const ordersDocRef = collection(db, "biz", bizId, "orders");
 		const q = query(
 			ordersDocRef,
-			where("createdAt", ">", lastPayoutDate),
+			where("createdAt", ">", lastDatePaid),
 			where("status", "==", "Completed")
 		);
 

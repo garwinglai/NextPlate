@@ -40,7 +40,6 @@ async function fetchStripeAccount(stripeAccId) {
 	const testRetrieveStripeEndPoint = "testRetrieveAccountNP";
 	const data = { account: stripeAccId };
 
-	// console.log("data", data);
 	// * Fetch Stripe Account
 	baseUrl = baseUrl.concat(retrieveStripeEndPoint);
 
@@ -56,7 +55,6 @@ async function fetchStripeAccount(stripeAccId) {
 
 		const resText = await res.text();
 		const resJson = JSON.parse(resText);
-		// console.log("resText", resText);
 		const status = res.status;
 		const detailsSubmitted = resJson.details_submitted;
 		const requirementErrorsArr = resJson.requirements.errors;
@@ -100,7 +98,6 @@ async function connectStripeAccount(stripeAccId, refreshUrl, returnUrl) {
 		const resJson = JSON.parse(resText);
 		const { created, expires_at, object, url } = resJson;
 		const status = res.status;
-		console.log("status connect stripe acc", res);
 
 		if (status === 200) {
 			return { success: true, url };
@@ -123,7 +120,6 @@ const payoutStripe = async (amount, account) => {
 		account,
 	};
 
-	console.log("data", data);
 	// * Payout Stripe Accounts
 	baseUrl = baseUrl.concat(transferPayoutEndPoint);
 

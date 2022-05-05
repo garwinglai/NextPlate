@@ -107,7 +107,6 @@ export default function OrderTabComponent({
 	function handleViewOrderClick() {
 		setPopUpValues({ isShow: true });
 	}
-	console.log(status);
 	function closePopUp() {
 		setPopUpValues({ isShow: false, popUpName: "" });
 	}
