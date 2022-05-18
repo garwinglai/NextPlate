@@ -44,7 +44,8 @@ function ManualCreateSchedule({
 		numAvailable: "1",
 		startTime: new Date(),
 		endTime: new Date(),
-		recurring: false,
+		recurringWeekly: false,
+		recurringDaily: false,
 		scheduledDate: date.actualDate,
 		scheduledDateShort: date.shortDate,
 		products: [],
@@ -59,7 +60,8 @@ function ManualCreateSchedule({
 		numAvailable,
 		startTime,
 		endTime,
-		recurring,
+		recurringWeekly,
+		recurringDaily,
 		scheduledDate,
 		scheduledDateShort,
 		products,
@@ -167,6 +169,8 @@ function ManualCreateSchedule({
 			return;
 		}
 
+		const recurring = recurringWeekly ? true : recurringDaily ? true : false;
+
 		const timeDisplay = startTimeString + " - " + endTimeString;
 		const hourStart = parseInt(timeStart.split("").slice(0, 2).join(""));
 		const minStart = parseInt(timeStart.split("").slice(3, 5).join(""));
@@ -190,6 +194,7 @@ function ManualCreateSchedule({
 			hourEnd,
 			minEnd,
 			recurring,
+			recurringDaily,
 			scheduledDate,
 			scheduledDateShort,
 			dayOfWeek,
@@ -248,7 +253,8 @@ function ManualCreateSchedule({
 						endTime: new Date(),
 						itemName: defaultItemName,
 						numAvailable: "1",
-						recurring: false,
+						recurringWeekly: false,
+						recurringDaily: false,
 						errorMessage: "",
 						openAlert: false,
 					}));
@@ -359,19 +365,43 @@ function ManualCreateSchedule({
 							</div>
 						</div>
 
-						<div className={`${styles.Form__bottomCheckbox} ${styles.flexRow}`}>
-							<input
-								type="checkbox"
-								id="recurring"
-								name="recurring"
-								value={recurring}
-								onChange={handleScheduleChange}
-							/>
-							<label htmlFor="recurring" className={`${styles.recurringLabel}`}>
-								Reoccur weekly
-							</label>
-						</div>
+						<div className={`${styles.flexRow} ${styles.CheckBox__container}`}>
+							<div
+								className={`${styles.Form__bottomCheckbox} ${styles.flexRow}`}
+							>
+								<input
+									type="checkbox"
+									id="recurringWeekly"
+									name="recurringWeekly"
+									value={recurringWeekly}
+									onChange={handleScheduleChange}
+								/>
+								<label
+									htmlFor="recurringWeekly"
+									className={`${styles.recurringLabel}`}
+								>
+									Weekly
+								</label>
+							</div>
 
+							{/* <div
+								className={`${styles.Form__bottomCheckbox} ${styles.flexRow}`}
+							>
+								<input
+									type="checkbox"
+									id="recurringDaily"
+									name="recurringDaily"
+									value={recurringDaily}
+									onChange={handleScheduleChange}
+								/>
+								<label
+									htmlFor="recurringDaily"
+									className={`${styles.recurringLabel}`}
+								>
+									Daily
+								</label>
+							</div> */}
+						</div>
 						{loading ? (
 							<CircularProgress />
 						) : (

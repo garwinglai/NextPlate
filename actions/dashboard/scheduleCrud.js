@@ -48,7 +48,7 @@ async function createNewSchedule(
 	const numSchedule = scheduleData.numAvailable;
 	const timeS = hourStart * 60 + minStart;
 	const timeE = hourEnd * 60 + minEnd;
-	const { recurring } = scheduleData;
+	const { recurringDaily } = scheduleData;
 
 	const currTimeInHours = new Date().getHours();
 	const currTimeInMinutes = new Date().getMinutes();
@@ -63,16 +63,16 @@ async function createNewSchedule(
 			message: "Please select an appropriate time. (12:00 am - 11:45 pm)",
 		};
 	}
-	if (currShortDate === shortDate) {
-		// * If the startTime is smaller than current time, return error.
-		if (timeS < currTime) {
-			return {
-				success: false,
-				message:
-					"Please select an appropriate time. Start time has already passed.",
-			};
-		}
-	}
+	// if (currShortDate === shortDate) {
+	// 	// * If the startTime is smaller than current time, return error.
+	// 	if (timeS < currTime) {
+	// 		return {
+	// 			success: false,
+	// 			message:
+	// 				"Please select an appropriate time. Start time has already passed.",
+	// 		};
+	// 	}
+	// }
 
 	if (docSnap.exists()) {
 		// * 1) Query for current dayOfWeek, where recurring is true in openHistory collection
@@ -176,17 +176,36 @@ async function createNewSchedule(
 		}
 
 		// * Check if weeklySchedules data exists in biz. If not, add post to openHistory
-		if (!docData.weeklySchedules) {
+		if (
+			!docData.weeklySchedules ||
+			Object.keys(docData.weeklySchedules).length === 0
+		) {
 			const res = await addOpenHistory(bizId, openHistory);
 			if (res.success) {
 				const firstPost = res.firstPost;
 
 				scheduledId = res.id;
 				newNextScheduledData.id = scheduledId;
-				// delete newNextScheduledData.createdAt;
-				const weeklySchedules = {
-					[dayOfWeekIndex]: { [scheduledId]: newNextScheduledData },
-				};
+				let weeklySchedules;
+
+				if (recurringDaily) {
+					const daysOfWeek = [1, 2, 3, 4, 5, 6, 7];
+
+					for (let i = 0; i < daysOfWeek.length; i++) {
+						const currDay = daysOfWeek[i];
+						weeklySchedules = {
+							...weeklySchedules,
+							[currDay]: { [scheduledId]: newNextScheduledData },
+						};
+					}
+				} else {
+					weeklySchedules = {
+						[dayOfWeekIndex]: { [scheduledId]: newNextScheduledData },
+					};
+				}
+
+				console.log("weeklyS", weeklySchedules);
+
 				batch.set(bizDocRef, { weeklySchedules }, { merge: true });
 
 				// * Increment numSchedules based on if the post is the first
@@ -207,90 +226,132 @@ async function createNewSchedule(
 
 			const existingNextSchedule = docData.weeklySchedules;
 
-			if (existingNextSchedule.hasOwnProperty(dayOfWeekIndex)) {
-				// * If weeklySchedules has dayIndex, check if there is overlapping times. If so, send error
+			if (!recurringDaily) {
+				if (existingNextSchedule.hasOwnProperty(dayOfWeekIndex)) {
+					// * If weeklySchedules has dayIndex, check if there is overlapping times. If so, send error
 
-				const schedulesPerDay = existingNextSchedule[dayOfWeekIndex];
+					// * Removed overlap time check
+					// const weeklySchedulesIdxArray = [];
 
-				// * Removed overlap time check
-				// const weeklySchedulesIdxArray = [];
+					// for (const key in schedulesPerDay) {
+					// 	if (schedulesPerDay[key].status === "Regular") {
+					// 		weeklySchedulesIdxArray.push(key);
+					// 	}
+					// }
 
-				// for (const key in schedulesPerDay) {
-				// 	if (schedulesPerDay[key].status === "Regular") {
-				// 		weeklySchedulesIdxArray.push(key);
-				// 	}
-				// }
+					// for (let i = 0; i < weeklySchedulesIdxArray.length; i++) {
+					// 	const key = weeklySchedulesIdxArray[i];
+					// 	const currentSchedule = schedulesPerDay[key];
 
-				// for (let i = 0; i < weeklySchedulesIdxArray.length; i++) {
-				// 	const key = weeklySchedulesIdxArray[i];
-				// 	const currentSchedule = schedulesPerDay[key];
+					// 	const hourStartPickUp = currentSchedule.hourStart;
+					// 	const minStartPickUp = currentSchedule.minStart;
+					// 	const hourEndPickUp = currentSchedule.hourEnd;
+					// 	const minEndPickUp = currentSchedule.minEnd;
+					// 	const postDate = currentSchedule.scheduledDate;
 
-				// 	const hourStartPickUp = currentSchedule.hourStart;
-				// 	const minStartPickUp = currentSchedule.minStart;
-				// 	const hourEndPickUp = currentSchedule.hourEnd;
-				// 	const minEndPickUp = currentSchedule.minEnd;
-				// 	const postDate = currentSchedule.scheduledDate;
+					// 	if (postDate === actualDate) {
+					// 		const getTimeStartPickUp = hourStartPickUp * 60 + minStartPickUp;
+					// 		const getTimeEndPickUp = hourEndPickUp * 60 + minEndPickUp;
 
-				// 	if (postDate === actualDate) {
-				// 		const getTimeStartPickUp = hourStartPickUp * 60 + minStartPickUp;
-				// 		const getTimeEndPickUp = hourEndPickUp * 60 + minEndPickUp;
+					// 		const postTimeStartPickUp = hourStart * 60 + minStart;
+					// 		const postTimeEndPickUp = hourEnd * 60 + minEnd;
 
-				// 		const postTimeStartPickUp = hourStart * 60 + minStart;
-				// 		const postTimeEndPickUp = hourEnd * 60 + minEnd;
+					// 		if (
+					// 			(getTimeStartPickUp <= postTimeStartPickUp &&
+					// 				postTimeStartPickUp < getTimeEndPickUp) ||
+					// 			(getTimeStartPickUp < postTimeEndPickUp &&
+					// 				postTimeEndPickUp <= getTimeEndPickUp) ||
+					// 			(postTimeStartPickUp <= getTimeStartPickUp &&
+					// 				getTimeStartPickUp < postTimeEndPickUp) ||
+					// 			(postTimeStartPickUp < getTimeEndPickUp &&
+					// 				getTimeEndPickUp <= postTimeEndPickUp)
+					// 		) {
+					// 			return {
+					// 				success: false,
+					// 				message:
+					// 					"The selected time overlaps an existing schedule. Please select another time.",
+					// 			};
+					// 		}
+					// 	}
+					// }
 
-				// 		if (
-				// 			(getTimeStartPickUp <= postTimeStartPickUp &&
-				// 				postTimeStartPickUp < getTimeEndPickUp) ||
-				// 			(getTimeStartPickUp < postTimeEndPickUp &&
-				// 				postTimeEndPickUp <= getTimeEndPickUp) ||
-				// 			(postTimeStartPickUp <= getTimeStartPickUp &&
-				// 				getTimeStartPickUp < postTimeEndPickUp) ||
-				// 			(postTimeStartPickUp < getTimeEndPickUp &&
-				// 				getTimeEndPickUp <= postTimeEndPickUp)
-				// 		) {
-				// 			return {
-				// 				success: false,
-				// 				message:
-				// 					"The selected time overlaps an existing schedule. Please select another time.",
-				// 			};
-				// 		}
-				// 	}
-				// }
+					const resOpenHistory = await addOpenHistory(bizId, openHistory);
 
-				const resOpenHistory = await addOpenHistory(bizId, openHistory);
+					if (resOpenHistory.success) {
+						scheduledId = resOpenHistory.id;
+						newNextScheduledData.id = scheduledId;
 
-				if (resOpenHistory.success) {
-					scheduledId = resOpenHistory.id;
-					newNextScheduledData.id = scheduledId;
+						const schedulesPerDay = existingNextSchedule[dayOfWeekIndex];
 
-					const newScheduleMapUpdated = {
-						...schedulesPerDay,
-						[scheduledId]: newNextScheduledData,
-					};
+						const newScheduleMapUpdated = {
+							...schedulesPerDay,
+							[scheduledId]: newNextScheduledData,
+						};
 
-					existingNextSchedule[dayOfWeekIndex] = newScheduleMapUpdated;
+						existingNextSchedule[dayOfWeekIndex] = newScheduleMapUpdated;
 
-					batch.update(bizDocRef, {
-						weeklySchedules: existingNextSchedule,
-						numSchedules: incrementArgs(numSchedule),
-					});
+						batch.update(bizDocRef, {
+							weeklySchedules: existingNextSchedule,
+							numSchedules: incrementArgs(numSchedule),
+						});
+					} else {
+						return resOpenHistory;
+					}
 				} else {
-					return resOpenHistory;
+					// * No dayIndex key in weeklySchedules, so add to openHistory and add to weeklySchedules
+					const resHistory = await addOpenHistory(bizId, openHistory);
+					if (resHistory.success) {
+						scheduledId = resHistory.id;
+						newNextScheduledData.id = scheduledId;
+						// delete newNextScheduledData.createdAt;
+
+						existingNextSchedule[dayOfWeekIndex] = {
+							[scheduledId]: newNextScheduledData,
+						};
+
+						batch.update(bizDocRef, {
+							weeklySchedules: existingNextSchedule,
+							numSchedules: incrementArgs(numSchedule),
+						});
+					} else {
+						return resHistory;
+					}
 				}
 			} else {
-				// * No dayIndex key in weeklySchedules, so add to openHistory and add to weeklySchedules
+				// * Recurring daily
 				const resHistory = await addOpenHistory(bizId, openHistory);
 				if (resHistory.success) {
 					scheduledId = resHistory.id;
 					newNextScheduledData.id = scheduledId;
-					// delete newNextScheduledData.createdAt;
 
-					existingNextSchedule[dayOfWeekIndex] = {
-						[scheduledId]: newNextScheduledData,
-					};
+					const dayOfWeek = [1, 2, 3, 4, 5, 6, 7];
+					let newScheduleMapUpdated = {};
+
+					for (let i = 0; i < dayOfWeek.length; i++) {
+						const currDay = dayOfWeek[i];
+						const schedulesPerDay = existingNextSchedule[currDay];
+
+						console.log("schedulesPerDay", schedulesPerDay);
+
+						if (schedulesPerDay) {
+							console.log("some schedules");
+
+							newScheduleMapUpdated[currDay] = {
+								...schedulesPerDay,
+								[scheduledId]: newNextScheduledData,
+							};
+						} else {
+							console.log("no schedules");
+
+							newScheduleMapUpdated = {
+								...newScheduleMapUpdated,
+								[currDay]: { [scheduledId]: newNextScheduledData },
+							};
+						}
+					}
 
 					batch.update(bizDocRef, {
-						weeklySchedules: existingNextSchedule,
+						weeklySchedules: newScheduleMapUpdated,
 						numSchedules: incrementArgs(numSchedule),
 					});
 				} else {
@@ -322,21 +383,21 @@ async function createNewSchedule(
 		try {
 			await batch.commit();
 
-			// sendNotification(
-			// 	bizId,
-			// 	bizName,
-			// 	"regular",
-			// 	null,
-			// 	null,
-			// 	null,
-			// 	scheduledId,
-			// 	dayOfWeekIndex,
-			// 	scheduleData.recurring,
-			// 	null,
-			// 	defaultPrice,
-			// 	itemName,
-			// 	emoji
-			// );
+			sendNotification(
+				bizId,
+				bizName,
+				"regular",
+				null,
+				null,
+				null,
+				scheduledId,
+				dayOfWeekIndex,
+				scheduleData.recurring,
+				null,
+				defaultPrice,
+				itemName,
+				emoji
+			);
 
 			return { success: true, message: "Schedule created successfully" };
 		} catch (error) {
@@ -589,21 +650,21 @@ async function createFlashSchedule(
 		// * Batch Commit
 		try {
 			await batch.commit();
-			// sendNotification(
-			// 	bizId,
-			// 	bizName,
-			// 	"flash",
-			// 	null,
-			// 	null,
-			// 	null,
-			// 	flashScheduleId,
-			// 	dayIndex,
-			// 	null,
-			// 	endTimeEpochMiliSec,
-			// 	defaultPrice,
-			// 	itemName,
-			// 	emoji
-			// );
+			sendNotification(
+				bizId,
+				bizName,
+				"flash",
+				null,
+				null,
+				null,
+				flashScheduleId,
+				dayIndex,
+				null,
+				endTimeEpochMiliSec,
+				defaultPrice,
+				itemName,
+				emoji
+			);
 
 			return { success: true, message: "Schedule created successfully" };
 		} catch (error) {

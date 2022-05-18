@@ -856,7 +856,6 @@ function DayComponent({
 									}
 								})
 								.map((time, i) => {
-									console.log("time", time);
 									return (
 										<div className={styles.DayComponent__bodyDetail} key={i}>
 											<p className={styles.DayComponent__pickUpTime}>

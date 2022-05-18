@@ -73,6 +73,11 @@
 	color: var(--dark-gray);
 }
 
+.CheckBox__container {
+	gap: 20%;
+	/* margin: 5px 0; */
+}
+
 .Form__bottomCheckbox {
 	gap: 10px;
 	align-items: center;
@@ -170,7 +175,7 @@
 		margin: 5px 10px;
 	}
 
-  .Form__bottomCheckbox > input {
+	.Form__bottomCheckbox > input {
 		width: 20px;
 		height: 20px;
 	}
