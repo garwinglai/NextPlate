@@ -79,63 +79,64 @@ async function createNewSchedule(
 		// * 2) Check if scheduled time clashes with existing times
 		// * 3) If not, cont. If so, send error.
 
-		const openHistoryRef = collection(db, "biz", bizId, "openHistory");
-		const queryRecurring = query(
-			openHistoryRef,
-			where("dayOfWeek", "==", dayOfWeek),
-			where("recurring", "==", true)
-		);
+		// * Removed recurring time overlap check
+		// const openHistoryRef = collection(db, "biz", bizId, "openHistory");
+		// const queryRecurring = query(
+		// 	openHistoryRef,
+		// 	where("dayOfWeek", "==", dayOfWeek),
+		// 	where("recurring", "==", true)
+		// );
 
 		let scheduledId;
-		scheduleData.notificationSent = false;
+		// scheduleData.notificationSent = false;
 
-		try {
-			const recurringSchedulesArr = [];
+		// try {
+		// 	const recurringSchedulesArr = [];
 
-			const openHistorySnaps = await getDocs(queryRecurring);
+		// 	const openHistorySnaps = await getDocs(queryRecurring);
 
-			openHistorySnaps.forEach((doc) => {
-				const data = doc.data();
-				recurringSchedulesArr.push(data);
-			});
+		// 	openHistorySnaps.forEach((doc) => {
+		// 		const data = doc.data();
+		// 		recurringSchedulesArr.push(data);
+		// 	});
 
-			for (let i = 0; i < recurringSchedulesArr.length; i++) {
-				const currentSchedule = recurringSchedulesArr[i];
+		// 	for (let i = 0; i < recurringSchedulesArr.length; i++) {
+		// 		const currentSchedule = recurringSchedulesArr[i];
 
-				const hourStartPickUp = currentSchedule.hourStart;
-				const minStartPickUp = currentSchedule.minStart;
-				const hourEndPickUp = currentSchedule.hourEnd;
-				const minEndPickUp = currentSchedule.minEnd;
+		// 		const hourStartPickUp = currentSchedule.hourStart;
+		// 		const minStartPickUp = currentSchedule.minStart;
+		// 		const hourEndPickUp = currentSchedule.hourEnd;
+		// 		const minEndPickUp = currentSchedule.minEnd;
 
-				const getTimeStartPickUp = hourStartPickUp * 60 + minStartPickUp;
-				const getTimeEndPickUp = hourEndPickUp * 60 + minEndPickUp;
+		// 		const getTimeStartPickUp = hourStartPickUp * 60 + minStartPickUp;
+		// 		const getTimeEndPickUp = hourEndPickUp * 60 + minEndPickUp;
 
-				const postTimeStartPickUp = hourStart * 60 + minStart;
-				const postTimeEndPickUp = hourEnd * 60 + minEnd;
+		// 		const postTimeStartPickUp = hourStart * 60 + minStart;
+		// 		const postTimeEndPickUp = hourEnd * 60 + minEnd;
 
-				if (
-					(getTimeStartPickUp <= postTimeStartPickUp &&
-						postTimeStartPickUp < getTimeEndPickUp) ||
-					(getTimeStartPickUp < postTimeEndPickUp &&
-						postTimeEndPickUp <= getTimeEndPickUp) ||
-					(postTimeStartPickUp <= getTimeStartPickUp &&
-						getTimeStartPickUp < postTimeEndPickUp) ||
-					(postTimeStartPickUp < getTimeEndPickUp &&
-						getTimeEndPickUp <= postTimeEndPickUp)
-				) {
-					return {
-						success: false,
-						message:
-							"The selected time overlaps an existing schedule. Please select another time.",
-					};
-				}
-			}
-		} catch (error) {
-			return {
-				success: false,
-				message: `Error fetching recurring docs: ${error}`,
-			};
-		}
+		// 		if (
+		// 			(getTimeStartPickUp <= postTimeStartPickUp &&
+		// 				postTimeStartPickUp < getTimeEndPickUp) ||
+		// 			(getTimeStartPickUp < postTimeEndPickUp &&
+		// 				postTimeEndPickUp <= getTimeEndPickUp) ||
+		// 			(postTimeStartPickUp <= getTimeStartPickUp &&
+		// 				getTimeStartPickUp < postTimeEndPickUp) ||
+		// 			(postTimeStartPickUp < getTimeEndPickUp &&
+		// 				getTimeEndPickUp <= postTimeEndPickUp)
+		// 		) {
+		// 			return {
+		// 				success: false,
+		// 				message:
+		// 					"The selected time overlaps an existing schedule. Please select another time.",
+		// 			};
+		// 		}
+		// 	}
+		// } catch (error) {
+		// 	return {
+		// 		success: false,
+		// 		message: `Error fetching recurring docs: ${error}`,
+		// 	};
+		// }
 
 		// * Setting up variables to use for creating a new schedule
 		const openHistory = scheduleData;
@@ -203,57 +204,59 @@ async function createNewSchedule(
 			}
 		} else {
 			// * weeklySchedules already exists, so check if dayOfWeekIndex key exists in nextSchedule
+
 			const existingNextSchedule = docData.weeklySchedules;
 
 			if (existingNextSchedule.hasOwnProperty(dayOfWeekIndex)) {
 				// * If weeklySchedules has dayIndex, check if there is overlapping times. If so, send error
 
 				const schedulesPerDay = existingNextSchedule[dayOfWeekIndex];
-				const weeklySchedulesIdxArray = [];
 
-				for (const key in schedulesPerDay) {
-					if (schedulesPerDay[key].status === "Regular") {
-						weeklySchedulesIdxArray.push(key);
-					}
-				}
+				// * Removed overlap time check
+				// const weeklySchedulesIdxArray = [];
 
-				for (let i = 0; i < weeklySchedulesIdxArray.length; i++) {
-					const key = weeklySchedulesIdxArray[i];
-					const currentSchedule = schedulesPerDay[key];
+				// for (const key in schedulesPerDay) {
+				// 	if (schedulesPerDay[key].status === "Regular") {
+				// 		weeklySchedulesIdxArray.push(key);
+				// 	}
+				// }
 
-					const hourStartPickUp = currentSchedule.hourStart;
-					const minStartPickUp = currentSchedule.minStart;
-					const hourEndPickUp = currentSchedule.hourEnd;
-					const minEndPickUp = currentSchedule.minEnd;
-					const postDate = currentSchedule.scheduledDate;
+				// for (let i = 0; i < weeklySchedulesIdxArray.length; i++) {
+				// 	const key = weeklySchedulesIdxArray[i];
+				// 	const currentSchedule = schedulesPerDay[key];
 
-					if (postDate === actualDate) {
-						const getTimeStartPickUp = hourStartPickUp * 60 + minStartPickUp;
-						const getTimeEndPickUp = hourEndPickUp * 60 + minEndPickUp;
+				// 	const hourStartPickUp = currentSchedule.hourStart;
+				// 	const minStartPickUp = currentSchedule.minStart;
+				// 	const hourEndPickUp = currentSchedule.hourEnd;
+				// 	const minEndPickUp = currentSchedule.minEnd;
+				// 	const postDate = currentSchedule.scheduledDate;
 
-						const postTimeStartPickUp = hourStart * 60 + minStart;
-						const postTimeEndPickUp = hourEnd * 60 + minEnd;
+				// 	if (postDate === actualDate) {
+				// 		const getTimeStartPickUp = hourStartPickUp * 60 + minStartPickUp;
+				// 		const getTimeEndPickUp = hourEndPickUp * 60 + minEndPickUp;
 
-						if (
-							(getTimeStartPickUp <= postTimeStartPickUp &&
-								postTimeStartPickUp < getTimeEndPickUp) ||
-							(getTimeStartPickUp < postTimeEndPickUp &&
-								postTimeEndPickUp <= getTimeEndPickUp) ||
-							(postTimeStartPickUp <= getTimeStartPickUp &&
-								getTimeStartPickUp < postTimeEndPickUp) ||
-							(postTimeStartPickUp < getTimeEndPickUp &&
-								getTimeEndPickUp <= postTimeEndPickUp)
-						) {
-							return {
-								success: false,
-								message:
-									"The selected time overlaps an existing schedule. Please select another time.",
-							};
-						}
-					}
-				}
+				// 		const postTimeStartPickUp = hourStart * 60 + minStart;
+				// 		const postTimeEndPickUp = hourEnd * 60 + minEnd;
 
-				// * Add biz if no times overlap in dayIndex
+				// 		if (
+				// 			(getTimeStartPickUp <= postTimeStartPickUp &&
+				// 				postTimeStartPickUp < getTimeEndPickUp) ||
+				// 			(getTimeStartPickUp < postTimeEndPickUp &&
+				// 				postTimeEndPickUp <= getTimeEndPickUp) ||
+				// 			(postTimeStartPickUp <= getTimeStartPickUp &&
+				// 				getTimeStartPickUp < postTimeEndPickUp) ||
+				// 			(postTimeStartPickUp < getTimeEndPickUp &&
+				// 				getTimeEndPickUp <= postTimeEndPickUp)
+				// 		) {
+				// 			return {
+				// 				success: false,
+				// 				message:
+				// 					"The selected time overlaps an existing schedule. Please select another time.",
+				// 			};
+				// 		}
+				// 	}
+				// }
+
 				const resOpenHistory = await addOpenHistory(bizId, openHistory);
 
 				if (resOpenHistory.success) {
@@ -319,21 +322,21 @@ async function createNewSchedule(
 		try {
 			await batch.commit();
 
-			sendNotification(
-				bizId,
-				bizName,
-				"regular",
-				null,
-				null,
-				null,
-				scheduledId,
-				dayOfWeekIndex,
-				scheduleData.recurring,
-				null,
-				defaultPrice,
-				itemName,
-				emoji
-			);
+			// sendNotification(
+			// 	bizId,
+			// 	bizName,
+			// 	"regular",
+			// 	null,
+			// 	null,
+			// 	null,
+			// 	scheduledId,
+			// 	dayOfWeekIndex,
+			// 	scheduleData.recurring,
+			// 	null,
+			// 	defaultPrice,
+			// 	itemName,
+			// 	emoji
+			// );
 
 			return { success: true, message: "Schedule created successfully" };
 		} catch (error) {
@@ -586,21 +589,21 @@ async function createFlashSchedule(
 		// * Batch Commit
 		try {
 			await batch.commit();
-			sendNotification(
-				bizId,
-				bizName,
-				"flash",
-				null,
-				null,
-				null,
-				flashScheduleId,
-				dayIndex,
-				null,
-				endTimeEpochMiliSec,
-				defaultPrice,
-				itemName,
-				emoji
-			);
+			// sendNotification(
+			// 	bizId,
+			// 	bizName,
+			// 	"flash",
+			// 	null,
+			// 	null,
+			// 	null,
+			// 	flashScheduleId,
+			// 	dayIndex,
+			// 	null,
+			// 	endTimeEpochMiliSec,
+			// 	defaultPrice,
+			// 	itemName,
+			// 	emoji
+			// );
 
 			return { success: true, message: "Schedule created successfully" };
 		} catch (error) {

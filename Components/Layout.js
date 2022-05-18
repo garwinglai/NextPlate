@@ -268,6 +268,7 @@ function Layout({ children, currentPage, subPage, uid }) {
 		const bizOrdersRef = collection(db, "biz", bizIdTemp, "orders");
 		const queryUnnoticed = query(
 			bizOrdersRef,
+
 			where("shortDate", "==", dateString),
 			where("isNoticed", "==", false)
 		);

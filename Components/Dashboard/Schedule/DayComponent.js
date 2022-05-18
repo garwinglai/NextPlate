@@ -239,7 +239,7 @@ function DayComponent({
 					const scheduleStatus = scheduleIdObj.status;
 					schedId = scheduleId;
 					isNotified = scheduleIdObj.notificationSent;
-					console.log("from db isNotifed", isNotified);
+
 					const timeObj = {
 						startTime: scheduleIdObj.startTime,
 						timeDisplay: scheduleIdObj.timeDisplay,
@@ -257,7 +257,8 @@ function DayComponent({
 					} else {
 						if (scheduleRecur) {
 							if (
-								!tempTimeDisplayArrRecur.includes(scheduleIdObj.timeDisplay)
+								!tempTimeDisplayArrRecur.includes(scheduleIdObj.timeDisplay) &&
+								!tempTimeDisplayArr.includes(scheduleIdObj.timeDisplay)
 							) {
 								timeDisplayArrRecur.push(timeObj);
 								tempTimeDisplayArrRecur.push(scheduleIdObj.timeDisplay);
@@ -265,7 +266,10 @@ function DayComponent({
 							schedArrRecur.push(scheduleIdObj);
 							hasPostRecur = true;
 						} else {
-							if (!tempTimeDisplayArr.includes(scheduleIdObj.timeDisplay)) {
+							if (
+								!tempTimeDisplayArr.includes(scheduleIdObj.timeDisplay) &&
+								!tempTimeDisplayArrRecur.includes(scheduleIdObj.timeDisplay)
+							) {
 								timeDisplayArr.push(timeObj);
 								tempTimeDisplayArr.push(scheduleIdObj.timeDisplay);
 							}
@@ -275,26 +279,6 @@ function DayComponent({
 					}
 				}
 
-				// if (currShortDate === shortDate) {
-				// 	if (isNotified === false && hasPostRecur) {
-				// 		console.log("isNotified", isNotified);
-				// 		console.log("hasPostRecur", hasPostRecur);
-				// 		console.log("getSchedule sendNotification");
-				// 		sendNotification(
-				// 			bizId,
-				// 			bizName,
-				// 			"regular",
-				// 			null,
-				// 			null,
-				// 			null,
-				// 			schedId,
-				// 			dayOfWkIdx,
-				// 			isNotificationSent
-				// 		);
-				// 	}
-				// }
-
-				// setIsNotificationSent(true);
 				// * Set state for recur values
 				setTimeDisplaysRecur(timeDisplayArrRecur);
 				setHasPostOnDateComponentRecur(hasPostRecur);
@@ -872,6 +856,7 @@ function DayComponent({
 									}
 								})
 								.map((time, i) => {
+									console.log("time", time);
 									return (
 										<div className={styles.DayComponent__bodyDetail} key={i}>
 											<p className={styles.DayComponent__pickUpTime}>
