@@ -4,6 +4,9 @@ import Head from "next/head";
 function MyApp({ Component, pageProps }) {
 	return (
 		<>
+			<Head>
+				<title>NextPlate</title>
+			</Head>
 			<Component {...pageProps} />
 		</>
 	);

@@ -171,7 +171,7 @@ async function sendNotification(
 
 			data = {
 				tokens: userTokens,
-				title: "NextPlate order Confirmed",
+				title: "NextPlate Order Confirmed",
 				msg: `${bizName} has confirmed your order. Please pick up your order before ${removeLeadingZeroTime}. Your order may be canceled without a refund if the pickup time is missed.`,
 				senderName: bizName,
 				senderId: bizId,
@@ -183,7 +183,7 @@ async function sendNotification(
 		if (action === "Declined") {
 			data = {
 				tokens: userTokens,
-				title: "NextPlate order Declined",
+				title: "NextPlate Order Declined",
 				msg: `${bizName} has declined your order. You were not charged for this order. Reason for decline: (${reasonsDeclineCancel})`,
 				senderName: bizName,
 				senderId: bizId,
@@ -195,7 +195,7 @@ async function sendNotification(
 		if (action === "Canceled") {
 			data = {
 				tokens: userTokens,
-				title: "NextPlate order Canceled",
+				title: "NextPlate Order Canceled",
 				msg: `${bizName} has canceled your order. The pickup window has passed and this order will not be refunded.`,
 				senderName: bizName,
 				senderId: bizId,

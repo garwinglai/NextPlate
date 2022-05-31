@@ -129,14 +129,14 @@ function Payouts() {
 					obj.clientName = clientName;
 
 					// * Live restaurants
-					// if (!blackListRestaurants.includes(obj.id)) {
-					// 	bizArr.push(obj);
-					// }
-
-					// ! Test restaurant (testing)
-					if (testRestaurants.includes(obj.id)) {
+					if (!blackListRestaurants.includes(obj.id)) {
 						bizArr.push(obj);
 					}
+
+					// ! Test restaurant (testing)
+					// if (testRestaurants.includes(obj.id)) {
+					// 	bizArr.push(obj);
+					// }
 				}
 			});
 			return bizArr;

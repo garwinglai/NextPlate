@@ -1,4 +1,4 @@
-export const versionNumber = "V 1.1.7";
+export const versionNumber = "V 1.1.9";
 
 /*
  * 1.1.3 -
@@ -32,4 +32,12 @@ export const versionNumber = "V 1.1.7";
 /*
  * 1.1.8 -
  * 1. Recur daily check
+ */
+
+/*
+ * 1.1.9 -
+ * 1. Capitalized notification titles
+ * 2. Created /a page to redirect to admin/signin
+ * 2. Created /b page to redirect to business/signin
+ * 2. Created /merchants page to redirect to for-business (wix)
  */

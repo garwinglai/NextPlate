@@ -19,7 +19,7 @@ class MyDocument extends Document {
 						rel="stylesheet"
 					/>
 
-					<link rel="shortcut icon" href="/images/nextplatelogo.png" />
+					<link rel="shortcut icon" href="/images/logo_bg.png" />
 				</Head>
 				<body>
 					<Main />
