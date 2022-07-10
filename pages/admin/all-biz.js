@@ -54,7 +54,6 @@ function AllBiz() {
 		setFetchingQuery(true);
 
 		const lowerCaseQuery = _.toLower(searchQuery);
-		console.log(searchQuery);
 
 		if (searchQuery !== null || searchQuery !== "") {
 			const res = await queryBizUser(lowerCaseQuery);

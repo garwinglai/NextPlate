@@ -48,7 +48,7 @@
 	height: 90vh;
 }
 
-@media screen and (min-width: 768px) {
+@media screen and (min-width: 770px) {
 	.Nav__admin h1:hover,
 	.Nav__user h1:hover {
 		cursor: pointer;

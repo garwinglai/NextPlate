@@ -1,4 +1,4 @@
-export const versionNumber = "V 1.1.9";
+export const versionNumber = "V 1.2.0";
 
 /*
  * 1.1.3 -
@@ -40,4 +40,17 @@ export const versionNumber = "V 1.1.9";
  * 2. Created /a page to redirect to admin/signin
  * 2. Created /b page to redirect to business/signin
  * 2. Created /merchants page to redirect to for-business (wix)
+ */
+
+/*
+ * 1.2.0 -
+ * 1. Fixed payout admin bug, not loading all biz and decimals not fixed to 2 for some payments
+ * 2. Updated NextPlate Profits and Payments
+ * 3. Updated popup sizing for flash deal modal in schedule, incoming orders
+ */
+
+/*
+ * 1.2.1 -
+ * 1. Tab A not showing top navbar in vertical position
+ * 2. Removed Link from NextPlate logo on navbar. Clicking on NextPlate no longer directs to dashboard.
  */

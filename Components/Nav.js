@@ -116,26 +116,26 @@ function Nav({ currentPage, notifications, notificationsConfirmed }) {
 	// * MOBILE NAV -----------------------------------
 
 	// * ACTIONS
-	function handleBurgerClick() {
+	const handleBurgerClick = () => {
 		setMobileNav((prev) => ({
 			showNotifications: false,
 			showHamburger: !prev.showHamburger,
 		}));
-	}
+	};
 
-	function handleNotificationsClick() {
+	const handleNotificationsClick = () => {
 		setMobileNav((prev) => ({
 			showHamburger: false,
 			showNotifications: !prev.showNotifications,
 		}));
-	}
+	};
 
-	function handleClickAway() {
+	const handleClickAway = () => {
 		setMobileNav({
 			showHamburger: false,
 			showNotifications: false,
 		});
-	}
+	};
 
 	// * DISPLAY
 
@@ -182,17 +182,13 @@ function Nav({ currentPage, notifications, notificationsConfirmed }) {
 								}}
 							/>
 						</IconButton>
-						<Link href={`/dashboard/${uid}`}>
-							<a style={{ padding: "0", margin: "0" }}>
-								<Image
-									priority={true}
-									src="/images/NP_White.png"
-									alt="logo"
-									width="150px"
-									height="60px"
-								/>
-							</a>
-						</Link>
+						<Image
+							priority={true}
+							src="/images/NP_White.png"
+							alt="logo"
+							width="150px"
+							height="60px"
+						/>
 						{count !== 0 && (
 							<Avatar
 								alt="notifications"

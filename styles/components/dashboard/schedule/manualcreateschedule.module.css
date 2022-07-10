@@ -130,6 +130,10 @@
 		color: var(--dark-gray);
 	}
 
+	.CheckBox__container {
+		margin: -20px 0;
+	}
+
 	.Form__bottomCheckbox {
 		gap: 10px;
 		align-items: center;
@@ -156,31 +160,44 @@
 @media screen and (max-width: 480px) {
 	/* Titles and hour radio font */
 	.ScheduleModal__container {
-		width: 290px;
-		gap: 30px;
+		width: 250px;
+		/* height: 560px; */
+		overflow-y: scroll;
+		gap: 20px;
 	}
 
 	.ScheduleModal__container h3 {
-		font-size: 20px;
+		font-size: 16px;
 	}
 
 	.mealLabels {
-		font-size: 18px;
+		font-size: 14px;
 		width: 40px;
-		margin: 10px;
+		margin: 5px;
 	}
 
 	.labels {
-		font-size: 18px;
-		margin: 5px 10px;
+		font-size: 14px;
+		margin: 5px;
+	}
+
+	.CheckBox__container {
+		margin: 0;
 	}
 
 	.Form__bottomCheckbox > input {
-		width: 20px;
-		height: 20px;
+		width: 16px;
+		height: 16px;
 	}
 
 	.Form__bottomCheckbox > label {
-		font-size: 16px;
+		font-size: 14px;
+	}
+
+	.footer > button {
+		height: 35px;
+		width: 100%;
+		margin: 0 auto;
+		font-size: 14px;
 	}
 }

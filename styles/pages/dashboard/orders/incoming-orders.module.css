@@ -181,7 +181,7 @@
 	/* Titles and hour radio font */
 	.ScheduleModal__container {
 		width: 450px;
-		gap: 50px;
+		gap: 30px;
 	}
 
 	.ScheduleModal__container h3 {
@@ -247,22 +247,29 @@
 	}
 
 	.ScheduleModal__container {
-		width: 290px;
+		width: 250px;
 		gap: 20px;
 	}
 
 	.ScheduleModal__container h3 {
-		font-size: 20px;
+		font-size: 16px;
 	}
 
 	.mealLabels {
-		font-size: 18px;
+		font-size: 14px;
 		width: 40px;
-		margin: 10px;
+		margin: 5px;
 	}
 
 	.labels {
-		font-size: 18px;
-		margin: 5px 10px;
+		font-size: 14px;
+		margin: 5px;
+	}
+
+	.ScheduleModal__container > button {
+		height: 35px;
+		width: 100%;
+		font-size: 12px;
+		margin: 0 auto;
 	}
 }

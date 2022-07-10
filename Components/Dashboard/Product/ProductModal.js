@@ -17,6 +17,7 @@ import {
 	createNewProduct,
 	updateProduct,
 } from "../../../actions/dashboard/productsCrud";
+import { parse } from "date-fns";
 
 const style = {
 	position: "absolute",
@@ -64,6 +65,19 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 
 	async function handleSubmit(e) {
 		e.preventDefault();
+
+		// * Check if price is 20% off original price. defaultPrice should be undefined, return error.
+
+		if (!defaultPrice) {
+			setHandleResponse((prev) => ({
+				...prev,
+				loading: false,
+				errorMessage: "List price should be at least 20% off.",
+				isAlertOpen: true,
+			}));
+			return;
+		}
+
 		setHandleResponse((prev) => ({ ...prev, loading: true }));
 
 		const isUpdate = product ? true : false;
@@ -93,6 +107,7 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 					...prev,
 					loading: false,
 					isAlertOpen: false,
+					errorMessage: "",
 				}));
 				close();
 			} else {
@@ -116,6 +131,7 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 					...prev,
 					loading: false,
 					isAlertOpen: false,
+					errorMessage: "",
 				}));
 				close();
 			} else {
@@ -129,39 +145,47 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 		}
 	}
 
-	function handleChange(e) {
+	const handleChange = (e) => {
 		const { name, value } = e.target;
-		// console.log(name, value);
-		if (name === "originalPrice" || name === "defaultPrice") {
-			setNewItemValues((prev) => ({ ...prev, [name]: value }));
-		} else {
-			setNewItemValues((prev) => ({ ...prev, [name]: value }));
-		}
-	}
+		setNewItemValues((prev) => ({ ...prev, [name]: value }));
+	};
 
-	function handleCheckedPrice(price) {
-		if (price === defaultPrice) {
-			return true;
-		}
-
-		return false;
-	}
-
-	// console.log("product", product);
-	// console.log("defaultPrice", defaultPrice);
+	const handleCloseModal = () => {
+		setHandleResponse((prev) => ({
+			loading: false,
+			isAlertOpen: false,
+			errorMessage: "",
+		}));
+		setNewItemValues((prev) => ({
+			itemName: product ? product.itemName : "",
+			itemDescription: product
+				? product.itemDescription
+				: "Let's fight food waste together! Come try our delicious surprise item!",
+			originalPrice: product ? product.originalPrice.slice(1) : "",
+			defaultPrice: product ? product.defaultPrice.slice(1) : "",
+			allergens: product ? product.allergens : "",
+			id: product ? product.id : "",
+			isDefault: product
+				? product.isDefault
+					? product.isDefault
+					: false
+				: false,
+		}));
+		close();
+	};
 
 	return (
 		<React.Fragment>
 			<Modal
 				open={isOpen}
-				onClose={close}
+				// onClose={handleCloseModal}
 				aria-labelledby="modal-modal-title"
 				aria-describedby="modal-modal-description"
 			>
 				<Box sx={style}>
 					<div className={`${styles.header} ${styles.flexRow}`}>
 						<h2 className={`${styles.title}`}>New Item</h2>
-						<Button color="error" onClick={close}>
+						<Button color="error" onClick={handleCloseModal}>
 							Close
 						</Button>
 					</div>
@@ -172,22 +196,19 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 					>
 						<div className={`${styles.itemContainer} ${styles.flexCol}`}>
 							{errorMessage && (
-								<Grid item xs={12} md={6} mt={2} sx={{ width: "50px" }}>
-									<Collapse in={isAlertOpen}>
-										<Alert
-											severity="error"
-											onClose={() => {
-												setHandleResponse((prev) => ({
-													...prev,
-													isAlertOpen: false,
-												}));
-											}}
-										>
-											<AlertTitle>Error</AlertTitle>
-											{errorMessage}
-										</Alert>
-									</Collapse>
-								</Grid>
+								<Collapse in={isAlertOpen}>
+									<Alert
+										severity="error"
+										onClose={() => {
+											setHandleResponse((prev) => ({
+												...prev,
+												isAlertOpen: false,
+											}));
+										}}
+									>
+										{errorMessage}
+									</Alert>
+								</Collapse>
 							)}
 
 							<div className={`${styles.itemGroup} ${styles.flexCol}`}>
@@ -247,9 +268,9 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 									required
 									decimalScale={2}
 									decimalsLimit={2}
-									onValueChange={(value, name) =>
-										setNewItemValues((prev) => ({ ...prev, [name]: value }))
-									}
+									onValueChange={(value, name) => {
+										setNewItemValues((prev) => ({ ...prev, [name]: value }));
+									}}
 									style={{
 										width: "100%",
 										textIndent: "5px",
@@ -258,72 +279,39 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 								/>
 							</div>
 							<div className={`${styles.itemGroup} ${styles.flexCol}`}>
-								<label htmlFor="loginEmail">* List price</label>
-								<div className={`${styles.listPriceRadioGroup}`}>
-									<div className={`${styles.priceGroup}`}>
-										<input
-											className={`${styles.radios}`}
-											id="three"
-											checked={handleCheckedPrice("3.99")}
-											type="radio"
-											name="defaultPrice"
-											value="3.99"
-											onChange={handleChange}
-										/>
-										<label
-											htmlFor="three"
-											className={`${styles.labels} ${
-												defaultPrice === "3.99"
-													? styles.labelsChecked
-													: undefined
-											}`}
-										>
-											$3.99
-										</label>
-									</div>
-									<div className={`${styles.priceGroup}`}>
-										<input
-											className={`${styles.radios}`}
-											id="four"
-											checked={handleCheckedPrice("4.99")}
-											type="radio"
-											name="defaultPrice"
-											value="4.99"
-											onChange={handleChange}
-										/>
-										<label
-											htmlFor="four"
-											className={`${styles.labels} ${
-												defaultPrice === "4.99"
-													? styles.labelsChecked
-													: undefined
-											}`}
-										>
-											$4.99
-										</label>
-									</div>
-									<div className={`${styles.priceGroup}`}>
-										<input
-											className={`${styles.radios}`}
-											id="five"
-											checked={handleCheckedPrice("5.99")}
-											type="radio"
-											name="defaultPrice"
-											value="5.99"
-											onChange={handleChange}
-										/>
-										<label
-											htmlFor="five"
-											className={`${styles.labels} ${
-												defaultPrice === "5.99"
-													? styles.labelsChecked
-													: undefined
-											}`}
-										>
-											$5.99
-										</label>
-									</div>
-								</div>
+								<label htmlFor="loginEmail">
+									* List price - <i>20% off min.</i>
+								</label>
+								<CurrencyInput
+									id="defaultPrice"
+									name="defaultPrice"
+									value={defaultPrice}
+									prefix="$"
+									required
+									decimalScale={2}
+									decimalsLimit={2}
+									onValueChange={(value, name) => {
+										const intDefaultPrice = parseFloat(value);
+										const intOriginalPrice = parseFloat(originalPrice);
+										const twentyOffOriginal = intOriginalPrice * 0.8;
+
+										if (intDefaultPrice > twentyOffOriginal) {
+											setHandleResponse((prev) => ({
+												...prev,
+												loading: false,
+												errorMessage: "List price should be at least 20% off.",
+												isAlertOpen: true,
+											}));
+										} else {
+											setNewItemValues((prev) => ({ ...prev, [name]: value }));
+										}
+									}}
+									style={{
+										width: "100%",
+										textIndent: "5px",
+										height: "40px",
+									}}
+								/>
 							</div>
 							<Button
 								type="submit"

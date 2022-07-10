@@ -1,14 +1,14 @@
 import React, { useEffect } from "react";
 import { useRouter } from "next/router";
 
-function B() {
+function Markets() {
 	const router = useRouter();
 
 	useEffect(() => {
-		router.push("https://www.nextplate.app/business/signin");
+		router.push("https://www.home.nextplate.app/markets");
 	}, [router]);
 
 	return <div style={{ display: "none" }}>app</div>;
 }
 
-export default B;
+export default Markets;

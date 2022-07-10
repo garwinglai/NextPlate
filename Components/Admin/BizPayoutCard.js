@@ -26,6 +26,10 @@ function BizPayoutCard({ payout }) {
 		totalStripeFeesStr,
 		nextPlateRevenueStr,
 		totalCanceledStripeFeesStr,
+		customerFeesDouble,
+		customerFeesString,
+		nextPlateProfitDouble,
+		nextPlateProfitString,
 	} = payout;
 
 	const { fullAddress } = address;
@@ -41,6 +45,7 @@ function BizPayoutCard({ payout }) {
 					<p>From: {startDateShort}</p>
 					<p>To: {endDateShort}</p>
 					<p>Payment date: {paymentDateShort}</p>
+					<p>Customer fees: {customerFeesString}</p>
 				</div>
 				<div className={`${styles.flexCol}`}>
 					<p>Number of orders: {numOrders}</p>
@@ -50,6 +55,7 @@ function BizPayoutCard({ payout }) {
 					<p>Total stripe fees: {totalStripeFeesStr}</p>
 					<p>Total cancel fees: {totalCanceledStripeFeesStr}</p>
 					<p>NextPlate revenue: {nextPlateRevenueStr}</p>
+					<p>NextPlate profit: {nextPlateProfitString}</p>
 					<p>Payout amount: {payoutAmtStr}</p>
 				</div>
 			</div>
