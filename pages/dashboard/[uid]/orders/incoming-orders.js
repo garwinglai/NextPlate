@@ -641,7 +641,16 @@ function IncomingOrders() {
 		const numHoursInt = parseInt(numMins);
 		const numAvailInt = parseInt(resetNumTo10);
 		let product = products.filter((item) => item.itemName === itemName).pop();
-		const { itemDescription, defaultPrice, originalPrice, allergens } = product;
+
+		const {
+			id: productId,
+			itemDescription,
+			defaultPrice,
+			originalPrice,
+			allergens,
+			itemImgLink,
+			itemLrgImgLink,
+		} = product;
 
 		if (numAvailInt < 1 || !numAvailable) {
 			setScheduleNowValues((prev) => ({
@@ -686,20 +695,10 @@ function IncomingOrders() {
 		let hourEnd = parseInt(timeEnd.split("").slice(0, 2).join(""));
 		let minEnd = parseInt(timeEnd.split("").slice(3, 5).join(""));
 
-		// console.log("timeStart", timeStart);
-		// console.log("timeEnd", timeEnd);
-		// console.log("hourStart", hourStart);
-		// console.log("minStart", minStart);
-		// console.log("hourEnd", hourEnd);
-		// console.log("minEnd", minEnd);
-
 		const newDate = new Date();
 		const todaysDate = new Date().toDateString();
 		newDate.setDate(date.getDate() + 1);
 		const tmwsDate = newDate.toDateString();
-
-		// console.log("today Date", todaysDate);
-		// console.log("tmw Date", tmwsDate);
 
 		if (hourStart === 24) {
 			hourStart = 0;
@@ -715,17 +714,6 @@ function IncomingOrders() {
 			hourEnd += 1;
 			minEnd = 0;
 		}
-
-		// if (hourEnd === 24) {
-		// 	hourEnd = 0;
-		// } else if (hourEnd === 25) {
-		// 	hourEnd = 1;
-		// } else if (hourEnd === 26) {
-		// 	hourEnd = 2;
-		// }
-
-		// console.log("new hourEnd", hourEnd);
-		// console.log("new minEnd", minEnd);
 
 		let today0 = Date.parse(todaysDate + " " + hourEnd + ":00:00");
 		let today15 = Date.parse(todaysDate + " " + hourEnd + ":16:00");
@@ -748,12 +736,6 @@ function IncomingOrders() {
 			today45 = Date.parse(tmwsDate + " " + hourEnd + ":46:00");
 			today59 = Date.parse(tmwsDate + " " + hourEnd + ":59:59");
 		}
-
-		// console.log("today0", today0);
-		// console.log("today15", today15);
-		// console.log("today30", today30);
-		// console.log("today45", today45);
-		// console.log("today59", today59);
 
 		// * Update times
 		const update0 = Date.parse(todaysDate + " " + hourEnd + ":00:00");
@@ -788,8 +770,6 @@ function IncomingOrders() {
 			}
 			endTimeEpochMiliSec = todayRollOverAm;
 		}
-
-		// console.log("new End Time", endTimeEpochMiliSec);
 
 		const startTimeString = new Date(
 			date.toDateString() + " " + hourStart + ":" + minStart
@@ -838,10 +818,13 @@ function IncomingOrders() {
 		}
 
 		const flashScheduledData = {
+			productId,
 			itemName,
 			itemDescription,
 			originalPrice,
 			allergens,
+			itemImgLink: itemImgLink ? itemImgLink : "",
+			itemLrgImgLink: itemLrgImgLink ? itemLrgImgLink : "",
 			itemPrice: defaultPrice,
 			itemPriceDouble: itemPriceDoubleConvert,
 			itemPricePenny: itemPricePennyConvert,

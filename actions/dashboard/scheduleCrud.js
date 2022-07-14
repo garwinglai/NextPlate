@@ -27,6 +27,7 @@ import {
 import _ from "lodash";
 import sendNotification from "../heroku/notifications";
 import { updateOrder } from "./ordersCrud";
+import { isTomorrow } from "date-fns";
 
 async function createNewSchedule(
 	bizId,
@@ -374,30 +375,39 @@ async function createNewSchedule(
 			}
 		}
 
+		// * variables for today and tomorrow
 		const todayDate = new Date();
-		const todayShort = todayDate.toLocaleDateString();
+		const todayDay = todayDate.getDay();
+		const todayDayPlusOne = todayDay + 1;
 		todayDate.setDate(todayDate.getDate() + 1);
-		const tomorrowShort = todayDate.toLocaleDateString();
+		const tomorrowDay = todayDate.getDay();
+		const tomorrowDayPlusOne = tomorrowDay + 1;
 
 		// * Batch Commit
 		try {
 			await batch.commit();
 
-			sendNotification(
-				bizId,
-				bizName,
-				"regular",
-				null,
-				null,
-				null,
-				scheduledId,
-				dayOfWeekIndex,
-				scheduleData.recurring,
-				null,
-				defaultPrice,
-				itemName,
-				emoji
-			);
+			// * Check if today or tomorrow, if so send notification
+			if (
+				dayOfWeekIndex == todayDayPlusOne ||
+				dayOfWeekIndex == tomorrowDayPlusOne
+			) {
+				sendNotification(
+					bizId,
+					bizName,
+					"regular",
+					null,
+					null,
+					null,
+					scheduledId,
+					dayOfWeekIndex,
+					scheduleData.recurring,
+					null,
+					defaultPrice,
+					itemName,
+					emoji
+				);
+			}
 
 			return { success: true, message: "Schedule created successfully" };
 		} catch (error) {

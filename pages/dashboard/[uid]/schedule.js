@@ -360,7 +360,16 @@ function Schedule() {
 		const numHoursInt = parseInt(numMins);
 		const numAvailInt = parseInt(resetNumTo10);
 		let product = products.filter((item) => item.itemName === itemName).pop();
-		const { itemDescription, defaultPrice, originalPrice, allergens } = product;
+
+		const {
+			id: productId,
+			itemDescription,
+			defaultPrice,
+			originalPrice,
+			allergens,
+			itemImgLink,
+			itemLrgImgLink,
+		} = product;
 
 		if (numAvailInt < 1 || !numAvailable) {
 			setScheduleNowValues((prev) => ({
@@ -557,10 +566,13 @@ function Schedule() {
 		}
 
 		const flashScheduledData = {
+			productId,
 			itemName,
 			itemDescription,
 			originalPrice,
 			allergens,
+			itemImgLink: itemImgLink ? itemImgLink : "",
+			itemLrgImgLink: itemLrgImgLink ? itemLrgImgLink : "",
 			itemPrice: defaultPrice,
 			itemPriceDouble: itemPriceDoubleConvert,
 			itemPricePenny: itemPricePennyConvert,

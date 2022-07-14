@@ -9,9 +9,9 @@ import { CircularProgress } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import AdapterDateFns from "@mui/lab/AdapterDateFns";
 import Stack from "@mui/material/Stack";
-import LocalizationProvider from "@mui/lab/LocalizationProvider";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import TimePicker from "@mui/lab/TimePicker";
-import MobileTimePicker from "@mui/lab/MobileTimePicker";
+import { MobileTimePicker } from "@mui/x-date-pickers/MobileTimePicker";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Collapse from "@mui/material/Collapse";
@@ -133,7 +133,16 @@ function ManualCreateSchedule({
 		setValues((prev) => ({ ...prev, loading: true }));
 		const numAvailInt = parseInt(numAvailable);
 		let product = products.filter((item) => item.itemName === itemName).pop();
-		const { itemDescription, defaultPrice, originalPrice, allergens } = product;
+
+		const {
+			id: productId,
+			itemDescription,
+			defaultPrice,
+			originalPrice,
+			allergens,
+			itemImgLink,
+			itemLrgImgLink,
+		} = product;
 
 		const today = new Date();
 
@@ -178,9 +187,12 @@ function ManualCreateSchedule({
 		const minEnd = parseInt(timeEnd.split("").slice(3, 5).join(""));
 		// console.log(timeDisplay);
 		const scheduleData = {
+			productId,
 			itemName,
 			itemDescription,
 			originalPrice,
+			itemImgLink: itemImgLink ? itemImgLink : "",
+			itemLrgImgLink: itemLrgImgLink ? itemLrgImgLink : "",
 			itemPrice: defaultPrice,
 			itemPriceDouble: itemPriceDoubleConvert,
 			itemPricePenny: itemPricePennyConvert,

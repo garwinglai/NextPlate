@@ -1,25 +1,14 @@
 import { useRadioGroup } from "@mui/material";
 import {
 	collection,
-	addDoc,
-	setDoc,
-	updateDoc,
 	getDocs,
 	getDoc,
 	doc,
-	query,
-	orderBy,
 	writeBatch,
-	serverTimestamp,
-	onSnapshot,
-	deleteDoc,
-	deleteField,
-	FieldValue,
-	limit,
-	where,
 } from "firebase/firestore";
-import { db, increment, decrement } from "../../firebase/fireConfig";
+import { db } from "../../firebase/fireConfig";
 import fetch from "isomorphic-fetch";
+import getNearbyUserTokens from "../../helper/GeoHash";
 
 async function sendNotification(
 	bizId,
@@ -54,8 +43,15 @@ async function sendNotification(
 		customerFavesSnap.forEach((doc) => {
 			const data = doc.data();
 			const docId = doc.id;
+
 			customerIdArr.push(docId);
 		});
+
+		// * If favorited customers is less than 50, send to nearby 50.
+		// const numOfCustomers = customerIdArr.length;
+		// if (numOfCustomers < 51) {
+		// 	const nearbyTokens = getNearbyUserTokens(bizId);
+		// }
 
 		// * Loop through customerIdArr to find userTokens of each customer.
 		for (let i = 0; i < customerIdArr.length; i++) {

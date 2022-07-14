@@ -1,4 +1,4 @@
-export const versionNumber = "V 1.2.0";
+export const versionNumber = "V 1.2.3";
 
 /*
  * 1.1.3 -
@@ -53,4 +53,15 @@ export const versionNumber = "V 1.2.0";
  * 1.2.1 -
  * 1. Tab A not showing top navbar in vertical position
  * 2. Removed Link from NextPlate logo on navbar. Clicking on NextPlate no longer directs to dashboard.
+ */
+
+/*
+ * 1.2.2 -
+ * 1. Adding images to products to be seen
+ * 2. Adding product images to weeklySchedules
+ */
+
+/*
+ * 1.2.3 -
+ * 1. Changed sendNotification to only send for today and tomorrow when pre-scheduling.
  */
