@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
 	Button,
 	Modal,
@@ -17,22 +17,37 @@ import {
 	createNewProduct,
 	updateProduct,
 } from "../../../actions/dashboard/productsCrud";
-import { parse } from "date-fns";
 
-const style = {
-	position: "absolute",
-	top: "50%",
-	left: "50%",
-	transform: "translate(-50%, -50%)",
-	width: "max-content",
-	bgcolor: "background.paper",
-	border: "2px solid #000",
-	boxShadow: 24,
-	borderRadius: "5px",
-	p: 4,
+const modalStyle = {
+	overflow: "scroll",
 };
 
+// let style = {
+// 	position: "absolute",
+// 	top: "50%",
+// 	left: "50%",
+// 	transform: "translate(-50%, -50%)",
+// 	width: "max-content",
+// 	bgcolor: "background.paper",
+// 	border: "2px solid #000",
+// 	boxShadow: 24,
+// 	borderRadius: "5px",
+// 	p: 4,
+// };
+
 function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
+	const [style, setStyle] = useState({
+		position: "absolute",
+		top: "50%",
+		left: "50%",
+		transform: "translate(-50%, -50%)",
+		width: "max-content",
+		bgcolor: "background.paper",
+		border: "2px solid #000",
+		boxShadow: 24,
+		borderRadius: "5px",
+		p: 4,
+	});
 	const [newItemValues, setNewItemValues] = useState({
 		itemName: product ? product.itemName : "",
 		itemDescription: product
@@ -62,6 +77,27 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 		isDefault,
 	} = newItemValues;
 	const { loading, errorMessage, isAlertOpen } = handleResponse;
+
+	useEffect(() => {
+		let portrait = window.matchMedia("(orientation: portrait)");
+
+		portrait.addEventListener("change", function (e) {
+			if (e.matches) {
+				// Portrait mode
+				setStyle((prev) => ({ ...prev, top: "50%" }));
+			} else {
+				// Landscape
+				setStyle((prev) => ({ ...prev, top: "100%" }));
+			}
+		});
+
+		return () => {
+			portrait.removeEventListener(
+				"change",
+				setStyle((prev) => ({ ...prev, top: "50%" }))
+			);
+		};
+	}, []);
 
 	async function handleSubmit(e) {
 		e.preventDefault();
@@ -181,6 +217,7 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 				// onClose={handleCloseModal}
 				aria-labelledby="modal-modal-title"
 				aria-describedby="modal-modal-description"
+				sx={modalStyle}
 			>
 				<Box sx={style}>
 					<div className={`${styles.header} ${styles.flexRow}`}>

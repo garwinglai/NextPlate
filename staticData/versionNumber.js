@@ -65,3 +65,8 @@ export const versionNumber = "V 1.2.3";
  * 1.2.3 -
  * 1. Changed sendNotification to only send for today and tomorrow when pre-scheduling.
  */
+
+/*
+ * 1.2.3.5 -
+ * 1. Deployed before version number. Updated scrollable modal for product create form
+ */
