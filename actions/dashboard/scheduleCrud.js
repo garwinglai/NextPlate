@@ -41,7 +41,8 @@ async function createNewSchedule(
 	shortDate,
 	defaultPrice,
 	itemName,
-	emoji
+	emoji,
+	originalPrice
 ) {
 	const bizDocRef = doc(db, "biz", bizId);
 	const docSnap = await getDoc(bizDocRef);
@@ -204,8 +205,6 @@ async function createNewSchedule(
 						[dayOfWeekIndex]: { [scheduledId]: newNextScheduledData },
 					};
 				}
-
-				console.log("weeklyS", weeklySchedules);
 
 				batch.set(bizDocRef, { weeklySchedules }, { merge: true });
 
@@ -405,7 +404,8 @@ async function createNewSchedule(
 					null,
 					defaultPrice,
 					itemName,
-					emoji
+					emoji,
+					originalPrice
 				);
 			}
 
@@ -465,7 +465,8 @@ async function createFlashSchedule(
 	currShortDate,
 	defaultPrice,
 	itemName,
-	emoji
+	emoji,
+	originalPrice
 ) {
 	const bizDocRef = doc(db, "biz", bizId);
 	const bizDocSnap = await getDoc(bizDocRef);
@@ -673,7 +674,8 @@ async function createFlashSchedule(
 				endTimeEpochMiliSec,
 				defaultPrice,
 				itemName,
-				emoji
+				emoji,
+				originalPrice
 			);
 
 			return { success: true, message: "Schedule created successfully" };

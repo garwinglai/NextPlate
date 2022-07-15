@@ -8,7 +8,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../../firebase/fireConfig";
 import fetch from "isomorphic-fetch";
-import getNearbyUserTokens from "../../helper/GeoHash";
+import getNearbyUserId from "../../helper/GeoHash";
 
 async function sendNotification(
 	bizId,
@@ -23,10 +23,11 @@ async function sendNotification(
 	endTime,
 	defaultPrice,
 	itemName,
-	emoji
-	// isNotificationSent
+	emoji,
+	originalPrice
 ) {
-	// console.log("isNotificationSent", isNotificationSent);
+	const percentDiscountStr = calculateDiscount(defaultPrice, originalPrice);
+
 	// * URL for sending notifications to heroku
 	const baseUrl = "https://restoq.herokuapp.com/";
 	const notificationEndPoint = "sendNotification";
@@ -48,10 +49,11 @@ async function sendNotification(
 		});
 
 		// * If favorited customers is less than 50, send to nearby 50.
-		// const numOfCustomers = customerIdArr.length;
-		// if (numOfCustomers < 51) {
-		// 	const nearbyTokens = getNearbyUserTokens(bizId);
-		// }
+		const numOfCustomers = customerIdArr.length;
+		if (numOfCustomers < 51) {
+			const nearbyUserIdArr = await getNearbyUserId(bizId, customerIdArr);
+			customerIdArr = [...customerIdArr, ...nearbyUserIdArr];
+		}
 
 		// * Loop through customerIdArr to find userTokens of each customer.
 		for (let i = 0; i < customerIdArr.length; i++) {
@@ -81,7 +83,7 @@ async function sendNotification(
 			data = {
 				tokens: usersTokenArr,
 				title: "NextPlate",
-				msg: `${emoji} ${bizName} has a ${itemName} for only ${defaultPrice}! Offer available until ${removeLeadingZeroTime}. Grab it before it's gone!`,
+				msg: `${emoji} ${bizName} has a ${itemName} for ${percentDiscountStr} off! Offer available until ${removeLeadingZeroTime}. Grab it before it's gone!`,
 				senderName: bizName,
 				senderId: bizId,
 				dataType: event,
@@ -93,7 +95,7 @@ async function sendNotification(
 				data = {
 					tokens: usersTokenArr,
 					title: "NextPlate",
-					msg: `${emoji} ${bizName} has a ${itemName} for only ${defaultPrice}! Grab it before it's gone!`,
+					msg: `${emoji} ${bizName} has a ${itemName} for ${percentDiscountStr} off! Grab it before it's gone!`,
 					senderName: bizName,
 					senderId: bizId,
 					dataType: "flash",
@@ -102,7 +104,7 @@ async function sendNotification(
 				data = {
 					tokens: usersTokenArr,
 					title: "NextPlate",
-					msg: `${emoji} ${bizName} has a ${itemName} for only ${defaultPrice}! Grab it before it's gone!`,
+					msg: `${emoji} ${bizName} has a ${itemName} for ${percentDiscountStr} off! Grab it before it's gone!`,
 					senderName: bizName,
 					senderId: bizId,
 					dataType: "flash",
@@ -111,30 +113,22 @@ async function sendNotification(
 		}
 
 		// * Send push notifications
-		return (
-			fetch(notificationUrl, {
-				method: "POST",
-				headers: {
-					Accept: "application/json",
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify(data),
+		return fetch(notificationUrl, {
+			method: "POST",
+			headers: {
+				Accept: "application/json",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(data),
+		})
+			.then((data) => {
+				const status = data.status;
+				return { success: true };
 			})
-				.then((data) => {
-					const status = data.status;
-					return { success: true };
-				})
-				// .then((status) => {
-				// 	updateNotificationSent(bizId, scheduleId, dayOfWeekIdx);
-				// })
-				// .then((status) => {
-				// 	return { success: true };
-				// })
-				.catch((error) => {
-					console.log("notification", error);
-					return { success: false, error };
-				})
-		);
+			.catch((error) => {
+				console.log("notification", error);
+				return { success: false, error };
+			});
 	}
 
 	// * Handle push notifications for incoming orders
@@ -222,27 +216,17 @@ async function sendNotification(
 	}
 }
 
-async function updateNotificationSent(bizId, scheduleId, dayOfWeekIndex) {
-	const bizDocRef = doc(db, "biz", bizId);
-	const openHistoryDocRef = doc(db, "biz", bizId, "openHistory", scheduleId);
+const calculateDiscount = (defaultPrice, originalPrice) => {
+	const defaultPriceNoDollar = defaultPrice.substring(1);
+	const originalPriceNoDollar = originalPrice.substring(1);
+	const defaultPriceNum = parseFloat(defaultPriceNoDollar);
+	const originalPriceNum = parseFloat(originalPriceNoDollar);
+	const decimalDiscount =
+		(originalPriceNum - defaultPriceNum) / originalPriceNum;
+	const roundedDiscount = decimalDiscount.toFixed(2) * 100;
+	const percentDiscountStr = roundedDiscount.toString() + "%";
 
-	const batch = writeBatch(db);
-
-	batch.update(
-		bizDocRef,
-		{
-			[`weeklySchedules.${dayOfWeekIndex}.${scheduleId}.notificationSent`]: true,
-		},
-		{ merge: true }
-	);
-
-	batch.update(openHistoryDocRef, { notificationSent: true }, { merge: true });
-
-	try {
-		await batch.commit();
-	} catch (error) {
-		console.log(error);
-	}
-}
+	return percentDiscountStr;
+};
 
 export default sendNotification;

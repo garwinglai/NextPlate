@@ -1,4 +1,4 @@
-export const versionNumber = "V 1.2.3";
+export const versionNumber = "V 1.2.4";
 
 /*
  * 1.1.3 -
@@ -69,4 +69,10 @@ export const versionNumber = "V 1.2.3";
 /*
  * 1.2.3.5 -
  * 1. Deployed before version number. Updated scrollable modal for product create form
+ */
+
+/*
+ * 1.2.4 -
+ * 1. sendNotification to 2 miles, 50 people.
+ * 2. Changed notification to show percent discount instead of dollar amount.
  */

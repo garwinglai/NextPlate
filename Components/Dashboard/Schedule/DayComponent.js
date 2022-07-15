@@ -3,7 +3,6 @@ import Grid from "@mui/material/Grid";
 import React, { useEffect, useState } from "react";
 import styles from "../../../styles/components/dashboard/schedule/daycomponent.module.css";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import {
 	collection,
 	query,
@@ -22,8 +21,6 @@ import Alert from "@mui/material/Alert";
 import Collapse from "@mui/material/Collapse";
 import SuccessError from "../Orders/SuccessError";
 import ManualCreateSchedule from "./ManualCreateSchedule";
-import sendNotification from "../../../actions/heroku/notifications";
-import { getLocalStorage, setLocalStorage } from "../../../actions/auth/auth";
 
 const style = {
 	position: "absolute",

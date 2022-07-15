@@ -606,7 +606,8 @@ function Schedule() {
 			currShortDate,
 			defaultPrice,
 			itemName,
-			emoji
+			emoji,
+			originalPrice
 		);
 
 		if (resFlashSchedule.success) {

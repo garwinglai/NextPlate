@@ -230,7 +230,8 @@ function ManualCreateSchedule({
 			date.shortDate,
 			defaultPrice,
 			itemName,
-			emoji
+			emoji,
+			originalPrice
 		);
 
 		if (success) {
