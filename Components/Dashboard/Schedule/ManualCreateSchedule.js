@@ -154,6 +154,7 @@ function ManualCreateSchedule({
 		const itemPriceNoDollarSign = defaultPrice.slice(1);
 		const itemPriceDoubleConvert = parseFloat(itemPriceNoDollarSign);
 		const itemPricePennyConvert = itemPriceDoubleConvert * 100;
+		const itemPricePennyInt = parseInt(itemPricePennyConvert);
 
 		const startTimeEpochMiliSec = Date.parse(actualDate + " " + timeStart);
 		const endTimeEpochMiliSec = Date.parse(actualDate + " " + timeEnd);
@@ -195,7 +196,7 @@ function ManualCreateSchedule({
 			itemLrgImgLink: itemLrgImgLink ? itemLrgImgLink : "",
 			itemPrice: defaultPrice,
 			itemPriceDouble: itemPriceDoubleConvert,
-			itemPricePenny: itemPricePennyConvert,
+			itemPricePenny: itemPricePennyInt,
 			numAvailable: parseInt(numAvailable),
 			numAvailableStart: parseInt(numAvailable),
 			startTime: startTimeEpochMiliSec,
@@ -242,6 +243,8 @@ function ManualCreateSchedule({
 				endTime: new Date(),
 				openAlert: false,
 				errorMessage: "",
+				recurringWeekly: false,
+				recurringDaily: false,
 			}));
 			close();
 		} else {
@@ -250,6 +253,8 @@ function ManualCreateSchedule({
 				loading: false,
 				errorMessage: message,
 				openAlert: true,
+				recurringWeekly: false,
+				recurringDaily: false,
 			}));
 		}
 	}

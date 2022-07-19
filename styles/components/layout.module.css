@@ -92,7 +92,17 @@
 }
 
 @media screen and (max-width: 768px) {
+	.Layout {
+		flex-direction: column;
+	}
 	.Layout__Main {
-		padding-top: 50px;
+		padding-top: 100px;
+	}
+}
+
+
+@media screen and (max-width: 480px) {
+	.Layout__Main {
+		padding-top: 70px;
 	}
 }

@@ -1,0 +1,22 @@
+.Flex {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 25px;
+}
+
+.EditSchedule__Container {
+	width: 350px;
+}
+
+@media screen and (max-width: 768px) {
+	.EditSchedule__Container {
+		width: 300px;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.EditSchedule__Container {
+		width: 250px;
+	}
+}

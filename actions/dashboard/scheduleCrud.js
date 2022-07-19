@@ -331,18 +331,12 @@ async function createNewSchedule(
 						const currDay = dayOfWeek[i];
 						const schedulesPerDay = existingNextSchedule[currDay];
 
-						console.log("schedulesPerDay", schedulesPerDay);
-
 						if (schedulesPerDay) {
-							console.log("some schedules");
-
 							newScheduleMapUpdated[currDay] = {
 								...schedulesPerDay,
 								[scheduledId]: newNextScheduledData,
 							};
 						} else {
-							console.log("no schedules");
-
 							newScheduleMapUpdated = {
 								...newScheduleMapUpdated,
 								[currDay]: { [scheduledId]: newNextScheduledData },
@@ -758,7 +752,7 @@ async function removeSchedule(bizId, scheduleId, dayIndex, event) {
 
 		const arrayOfCurrSchedule = Object.keys(currDayIdxObj);
 
-		if (event === "flash") {
+		if (event === "Flash") {
 			let flashCounter = 0;
 			let numSchedule = 0;
 
@@ -833,6 +827,113 @@ async function removeSchedule(bizId, scheduleId, dayIndex, event) {
 				statusIndex: 2,
 				removedBy: "Biz",
 				removedAt: new serverTimestamp(),
+			});
+			return { success: true, message: "Schedule successfully deleted." };
+		} catch (error) {
+			return {
+				success: false,
+				message: "Error deleting schedule/history. Please try again.",
+			};
+		}
+	} else {
+		return { success: false, message: `User does not exists. Cannot delete.` };
+	}
+}
+
+async function pauseSchedule(bizId, scheduleId, dayIndex, event) {
+	console.log(bizId, scheduleId, dayIndex, event);
+	const bizDocRef = doc(db, "biz", bizId);
+	const openHistoryRef = doc(db, "biz", bizId, "openHistory", scheduleId);
+
+	const bizDocRefSnap = await getDoc(bizDocRef);
+
+	if (bizDocRefSnap.exists()) {
+		const docData = bizDocRefSnap.data();
+		const dayIdxStr = dayIndex.toString();
+
+		const weeklySchedules = docData.weeklySchedules;
+		const currDayIdxObj = docData.weeklySchedules[dayIdxStr];
+		const daysPickUpArr = docData.daysWithPickup;
+		const numSchedule =
+			docData.weeklySchedules[dayIndex][scheduleId].numAvailable;
+
+		const arrayOfCurrSchedule = Object.keys(currDayIdxObj);
+
+		if (event === "Flash") {
+			let flashCounter = 0;
+			let numSchedule = 0;
+
+			for (const key in weeklySchedules) {
+				const dayIdxObj = weeklySchedules[key];
+				for (const property in dayIdxObj) {
+					const scheduleObj = dayIdxObj[property];
+					const scheduleStatus = scheduleObj.status;
+					numSchedule = scheduleObj.numAvailable;
+					if (scheduleStatus === "Flash") {
+						flashCounter += 1;
+					}
+				}
+			}
+
+			if (flashCounter === 1) {
+				try {
+					await updateDoc(bizDocRef, {
+						flashDay: deleteField(),
+						flashEnds: deleteField(),
+					});
+				} catch (error) {
+					console.log("delete flash error", error);
+					return {
+						success: false,
+						message: `Error deleting flash schedule`,
+					};
+				}
+			}
+		}
+
+		if (arrayOfCurrSchedule.length <= 1) {
+			try {
+				await updateDoc(
+					bizDocRef,
+					{
+						daysWithPickup: daysPickUpArr.filter((day) => day !== dayIndex),
+						[`weeklySchedules.${dayIndex}`]: deleteField(),
+						numSchedules: decrementArgs(numSchedule),
+					},
+					{ merge: true }
+				);
+			} catch (error) {
+				console.log("delete schedule", error);
+				return {
+					success: false,
+					message: `Error deleting scheduled data.`,
+				};
+			}
+		} else {
+			try {
+				await updateDoc(
+					bizDocRef,
+					{
+						[`weeklySchedules.${dayIndex}.${scheduleId}`]: deleteField(),
+						numSchedules: decrementArgs(numSchedule),
+					},
+					{ merge: true }
+				);
+			} catch (error) {
+				return {
+					success: false,
+					message: `Error deleting scheduled data. ${error}`,
+				};
+			}
+		}
+
+		try {
+			await updateDoc(openHistoryRef, {
+				recurring: false,
+				status: "Paused",
+				statusIndex: 2,
+				pausedBy: "Biz",
+				pausedAt: new serverTimestamp(),
 			});
 			return { success: true, message: "Schedule successfully deleted." };
 		} catch (error) {
@@ -1051,6 +1152,131 @@ async function updatePastSchedules(bizId) {
 	}
 }
 
+const updateYdaySchedPaused = async (bizId) => {
+	const yesterdayIdx = getYesterdayIdx();
+
+	const bizDocRef = doc(db, "biz", bizId);
+	const bizSnapshot = await getDoc(bizDocRef);
+
+	if (bizSnapshot.exists()) {
+		const data = bizSnapshot.data();
+		const pausedSchedules = data.pausedSchedules;
+
+		if (
+			pausedSchedules === undefined ||
+			Object.keys(pausedSchedules).length === 0
+		) {
+			return;
+		} else {
+			const ydaySchedulePaused = pausedSchedules[yesterdayIdx];
+			const scheduleIdArray = Object.keys(ydaySchedulePaused);
+
+			for (let i = 0; i < scheduleIdArray.length; i++) {
+				const currId = scheduleIdArray[i];
+				ydaySchedulePaused[currId].isPaused = false;
+			}
+
+			const removeYdyPaused = await removeYdayPaused(bizDocRef, yesterdayIdx);
+
+			if (removeYdyPaused) {
+				await saveWeeklySchedules(
+					ydaySchedulePaused,
+					bizDocRef,
+					yesterdayIdx,
+					scheduleIdArray,
+					bizId
+				);
+			}
+		}
+	}
+};
+
+const removeYdayPaused = async (bizDocRef, yesterdayIdx) => {
+	try {
+		await updateDoc(bizDocRef, {
+			[`pausedSchedules.${yesterdayIdx}`]: deleteField(),
+		});
+
+		return true;
+	} catch (error) {
+		console.log("error remove ydayPausedSchedules", error);
+		return false;
+	}
+};
+
+const saveWeeklySchedules = async (
+	ydaySchedulePaused,
+	bizDocRef,
+	yesterdayIdx,
+	scheduleIdArray,
+	bizId
+) => {
+	try {
+		await updateDoc(bizDocRef, {
+			[`weeklySchedules.${yesterdayIdx}`]: ydaySchedulePaused,
+		});
+	} catch (error) {
+		console.log("problem saving weeklySchedule", error);
+		return false;
+	}
+
+	for (let i = 0; i < scheduleIdArray.length; i++) {
+		const currScheduleId = scheduleIdArray[i];
+		const openHistoryRef = doc(db, "biz", bizId, "openHistory", currScheduleId);
+
+		try {
+			await updateDoc(openHistoryRef, {
+				recurring: true,
+				status: "Regular",
+				statusIndex: 0,
+				pausedBy: "",
+				pausedAt: null,
+			});
+		} catch (error) {
+			console.log("problem updating paused openHistory", error);
+			return false;
+		}
+	}
+
+	return true;
+};
+
+const getYesterdayIdx = () => {
+	const weekday = ["Sun", "Mon", "Tue", "Wed", "Thur", "Fri", "Sat"];
+	const date = new Date();
+	date.setDate(date.getDate() - 1);
+	const yesterday = weekday[date.getDay()];
+	let yesterdayIdx;
+
+	switch (yesterday) {
+		case "Sun":
+			yesterdayIdx = 1;
+			break;
+		case "Mon":
+			yesterdayIdx = 2;
+			break;
+		case "Tue":
+			yesterdayIdx = 3;
+			break;
+		case "Wed":
+			yesterdayIdx = 4;
+			break;
+		case "Thur":
+			yesterdayIdx = 5;
+			break;
+		case "Fri":
+			yesterdayIdx = 6;
+			break;
+		case "Sat":
+			yesterdayIdx = 7;
+			break;
+		default:
+			break;
+	}
+
+	return yesterdayIdx;
+};
+
 export {
 	createNewSchedule,
 	getNextSchedule,
@@ -1058,4 +1284,6 @@ export {
 	removeSchedule,
 	createFlashSchedule,
 	updatePastSchedules,
+	pauseSchedule,
+	updateYdaySchedPaused,
 };

@@ -372,6 +372,10 @@
 		font-size: 16px;
 	}
 
+	.RemoveConfirm__Container {
+		width: 450px;
+	}
+
 	.RemovePost {
 		display: flex;
 		flex-direction: column;
@@ -465,6 +469,11 @@
 	.DayComponent_clickAwayListerner {
 		position: fixed;
 	}
+
+	.RemoveConfirm__Container {
+		width: 290px;
+	}
+
 
 	.RemovePost {
 		display: flex;

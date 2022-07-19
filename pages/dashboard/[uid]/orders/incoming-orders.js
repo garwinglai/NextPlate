@@ -28,7 +28,10 @@ import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Collapse from "@mui/material/Collapse";
 import { getBiz } from "../../../../actions/crud/bizUser";
-import { createFlashSchedule } from "../../../../actions/dashboard/scheduleCrud";
+import {
+	createFlashSchedule,
+	updateYdaySchedPaused,
+} from "../../../../actions/dashboard/scheduleCrud";
 import SuccessError from "../../../../Components/Dashboard/Orders/SuccessError";
 import getProducts from "../../../../actions/dashboard/productsCrud";
 import playNotificationSound from "../../../../helper/PlayAudio";
@@ -132,6 +135,7 @@ function IncomingOrders() {
 	});
 	const [scheduleValues, setScheduleValues] = useState({
 		scheduleNumAvail: 0,
+		pausedNumAvail: 0,
 		scheduleDate: new Date().toLocaleDateString(),
 		scheduleOpen: false,
 		schedules: [],
@@ -153,6 +157,7 @@ function IncomingOrders() {
 	const { storedUser, bizId } = user;
 	const {
 		scheduleNumAvail,
+		pausedNumAvail,
 		scheduleDate,
 		scheduleOpen,
 		schedules,
@@ -237,6 +242,7 @@ function IncomingOrders() {
 		loadProducts(bizIdTemp);
 		loadUserData(bizIdTemp);
 		updatePast(bizIdTemp);
+		// updateYdayPaused(bizIdTemp);
 		const unsubscribePendingOrders = loadPendingOrdersData(bizIdTemp);
 		const unsubscribeConfirmedOrders = loadConfirmedOrdersData(bizIdTemp);
 		const unsubscribeSchedules = loadSchedules(bizIdTemp);
@@ -268,6 +274,10 @@ function IncomingOrders() {
 	async function updatePast(bizIdTemp) {
 		const res = await updatePastOrders(bizIdTemp);
 	}
+
+	const updateYdayPaused = async (bizIdTemp) => {
+		const res = await updateYdaySchedPaused(bizIdTemp);
+	};
 
 	async function loadProducts(bizId) {
 		const productRes = await getProducts(bizId);
@@ -330,24 +340,25 @@ function IncomingOrders() {
 		const bizDocRef = doc(db, "biz", bizId);
 
 		const date = new Date();
-		const shortDate = date.toDateString();
 		const dayOne = date.getDay() + 1;
-		date.setDate(date.getDate() + 1);
-		const dayTwo = date.getDay() + 1;
 
 		const unsubscribeSchedules = onSnapshot(
 			bizDocRef,
 			(doc) => {
 				const data = doc.data();
 				const weeklySchedules = data.weeklySchedules;
+				const pausedSchedules = data.pausedSchedules;
 				const timeDisplayArr = [];
 				const tempTimeDisplayArr = [];
 				const schedulesArr = [];
 				let posts = 0;
+				let paused = 0;
+				let todayPaused;
 
 				const todaySchedules = weeklySchedules[dayOne];
-				const tomorrowSchedules = weeklySchedules[dayTwo];
-
+				if (pausedSchedules !== undefined) {
+					todayPaused = pausedSchedules[dayOne];
+				}
 				const newDate = new Date();
 				const currEpochTime = Date.parse(newDate);
 
@@ -375,17 +386,29 @@ function IncomingOrders() {
 					}
 				}
 
-				// * Count tomorrow's schedules
-				// for (const scheduleId in tomorrowSchedules) {
-				// 	const currSchedule = tomorrowSchedules[scheduleId];
-				// 	const numAvail = currSchedule.numAvailable;
+				// * Count paused schedules
+				for (const pausedId in todayPaused) {
+					const currPaused = todayPaused[pausedId];
+					const numAvail = currPaused.numAvailable;
+					const timeObj = {
+						startTime: currPaused.startTime,
+						timeDisplay: currPaused.timeDisplay,
+						hourStart: currPaused.hourStart,
+						minStart: currPaused.minStart,
+					};
 
-				// 	posts += numAvail;
-				// }
+					if (!tempTimeDisplayArr.includes(currPaused.timeDisplay)) {
+						timeDisplayArr.push(timeObj);
+						tempTimeDisplayArr.push(currPaused.timeDisplay);
+					}
+					paused += numAvail;
+					schedulesArr.push(currPaused);
+				}
 
 				setScheduleValues((prev) => ({
 					...prev,
 					scheduleNumAvail: posts,
+					pausedNumAvail: paused,
 					scheduleOpen: true,
 					schedules: schedulesArr,
 					timeDisplay: timeDisplayArr,
@@ -674,7 +697,9 @@ function IncomingOrders() {
 		const itemPriceDoubleConvert = parseFloat(
 			parseFloat(defaultPrice.slice(1)).toFixed(2)
 		);
+
 		const itemPricePennyConvert = itemPriceDoubleConvert * 100;
+		const itemPricePennyInt = parseInt(itemPricePennyConvert);
 
 		const date = new Date();
 		const currShortDate = date.toLocaleDateString();
@@ -827,7 +852,7 @@ function IncomingOrders() {
 			itemLrgImgLink: itemLrgImgLink ? itemLrgImgLink : "",
 			itemPrice: defaultPrice,
 			itemPriceDouble: itemPriceDoubleConvert,
-			itemPricePenny: itemPricePennyConvert,
+			itemPricePenny: itemPricePennyInt,
 			numAvailable: numAvailInt,
 			numAvailableStart: numAvailInt,
 			startTime: startTimeEpochMiliSec,
@@ -1218,15 +1243,17 @@ function IncomingOrders() {
 				/>
 			)}
 			<div className={styles.IncomingOrders__container}>
-				{scheduleNumAvail > 0 && (
+				{(scheduleNumAvail > 0 || pausedNumAvail > 0) && (
 					<div className={`${styles.scheduleNumItemsLeft} ${styles.flexRow}`}>
 						<Button
 							onClick={handleSchedulesClick}
 							variant="contained"
-							color="success"
+							color="secondary"
 							size="large"
 						>
-							{scheduleNumAvail} {scheduleNumAvail > 1 ? "meals" : "meal"} left
+							{scheduleNumAvail > 0 && `${scheduleNumAvail} left`}{" "}
+							{scheduleNumAvail > 0 && pausedNumAvail > 0 && `- `}
+							{pausedNumAvail > 0 && `${pausedNumAvail} paused`}
 						</Button>
 					</div>
 				)}

@@ -186,8 +186,8 @@ function Nav({ currentPage, notifications, notificationsConfirmed }) {
 							priority={true}
 							src="/images/NP_White.png"
 							alt="logo"
-							width="150px"
-							height="60px"
+							width="250px"
+							height="95px"
 						/>
 						{count !== 0 && (
 							<Avatar

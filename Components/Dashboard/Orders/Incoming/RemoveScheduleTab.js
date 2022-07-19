@@ -2,13 +2,17 @@ import React, { useState } from "react";
 import { Button } from "@mui/material";
 import styles from "../../../../styles/components/dashboard/orders/remove-schedule-tab.module.css";
 import RemoveScheduleModal from "./RemoveScheduleModal";
-import { removeSchedule } from "../../../../actions/dashboard/scheduleCrud";
+import {
+	pauseSchedule,
+	removeSchedule,
+} from "../../../../actions/dashboard/scheduleCrud";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
 import Alert from "@mui/material/Alert";
 import Collapse from "@mui/material/Collapse";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
+import EditScheduleModal from "./EditScheduleModal";
 
 const keyFlash = {
 	borderLeft: "3px solid var(--flash)",
@@ -31,19 +35,6 @@ const keyOrange = {
 	fontWeight: "500",
 };
 
-const style = {
-	position: "absolute",
-	top: "50%",
-	left: "50%",
-	transform: "translate(-50%, -50%)",
-	width: "max-content",
-	bgcolor: "background.paper",
-	border: "2px solid var(--gray)",
-	boxShadow: 24,
-	p: 4,
-	borderRadius: "5px",
-};
-
 function RemoveScheduleTab({ bizId, schedule }) {
 	const [scheduleRemove, setScheduleRemove] = useState({
 		openRemoveModal: false,
@@ -54,9 +45,14 @@ function RemoveScheduleTab({ bizId, schedule }) {
 		errorMessage: "",
 		openErrorModal: false,
 	});
+	const [edit, setEdit] = useState({
+		openEditModal: false,
+		editDisabled: false,
+	});
 
 	const { errorMessage, openErrorModal } = removeRes;
 	const { openRemoveModal, canRemove, removeScheduleId } = scheduleRemove;
+	const { openEditModal, editDisabled } = edit;
 	const {
 		endTime,
 		numAvailable,
@@ -65,7 +61,32 @@ function RemoveScheduleTab({ bizId, schedule }) {
 		recurring,
 		dayOfWkIdx,
 		id,
+		status,
+		isPaused,
 	} = schedule;
+
+	const handleEdit = () => {
+		const currDate = new Date();
+		const currEpoch = Date.parse(currDate);
+
+		if (currEpoch < endTime) {
+			setEdit((prev) => ({
+				...prev,
+				openEditModal: true,
+				editDisabled: false,
+			}));
+		} else {
+			setEdit((prev) => ({
+				...prev,
+				openEditModal: true,
+				editDisabled: true,
+			}));
+		}
+	};
+
+	const handleCloseEdit = () => {
+		setEdit((prev) => ({ ...prev, openEditModal: false }));
+	};
 
 	const handleRemove = () => {
 		const currDate = new Date();
@@ -87,12 +108,25 @@ function RemoveScheduleTab({ bizId, schedule }) {
 		}
 	};
 
+	const handleCloseRemove = () => {
+		setRemoveRes((prev) => ({
+			...prev,
+			errorMessage: "",
+			openErrorModal: false,
+		}));
+		setScheduleRemove((prev) => ({
+			...prev,
+			openRemoveModal: false,
+			removeScheduleId: "",
+		}));
+	};
+
 	const handleRemoveSchedule = async (e, removeScheduleId, dayOfWkIdx) => {
 		const { success, message } = await removeSchedule(
 			bizId,
 			removeScheduleId,
 			dayOfWkIdx,
-			null
+			status
 		);
 
 		if (!success) {
@@ -105,82 +139,35 @@ function RemoveScheduleTab({ bizId, schedule }) {
 		}
 	};
 
-	function RemoveScheduleModal() {
-		return (
-			<Modal
-				open={openRemoveModal}
-				onClose={() => {
-					setRemoveRes((prev) => ({
-						...prev,
-						errorMessage: "",
-						openErrorModal: false,
-					}));
-					setScheduleRemove((prev) => ({
-						...prev,
-						openRemoveModal: false,
-						removeScheduleId: "",
-					}));
-				}}
-				aria-labelledby="modal-modal-title"
-				aria-describedby="modal-modal-description"
-			>
-				<Box sx={style}>
-					<Typography id="modal-modal-title" variant="h6" component="h2">
-						{canRemove ? "Removing set schedule" : "Can't remove"}
-					</Typography>
-					<Typography id="modal-modal-description" sx={{ mt: 2, mb: 2 }}>
-						{canRemove
-							? "Are you sure you want to remove the schedule?"
-							: "Cannot remove posts during pickup time."}
-					</Typography>
-					<div style={{ marginBottom: "20px" }}>
-						{canRemove && (
-							<Button
-								variant="contained"
-								color="error"
-								sx={{ mr: 5 }}
-								onClick={(e) =>
-									handleRemoveSchedule(e, removeScheduleId, dayOfWkIdx)
-								}
-							>
-								Remove
-							</Button>
-						)}
-						<Button
-							variant="outlined"
-							onClick={() => {
-								setRemoveRes((prev) => ({
-									...prev,
-									errorMessage: "",
-									openErrorModal: false,
-								}));
-								setScheduleRemove((prev) => ({
-									...prev,
-									openRemoveModal: false,
-									removeScheduleId: "",
-								}));
-							}}
-						>
-							Close
-						</Button>
-					</div>
-					{openErrorModal && (
-						<Collapse in={openErrorModal}>
-							<Alert severity="error">{errorMessage}</Alert>
-						</Collapse>
-					)}
-				</Box>
-			</Modal>
+	const handlePauseSchedule = async (e, removeScheduleId, dayOfWkIdx) => {
+		const { success, message } = await pauseSchedule(
+			bizId,
+			removeScheduleId,
+			dayOfWkIdx,
+			status
 		);
-	}
+
+		if (!success) {
+			console.log(`error removing schedule on orders: ${message}`);
+			setRemoveRes((prev) => ({
+				...prev,
+				errorMessage: "Error removing.",
+				openErrorModal: true,
+			}));
+		}
+	};
 
 	return (
 		<div
 			className={`${styles.RemoveScheduleTab}`}
 			style={
-				endTime > Date.parse(new Date())
-					? numAvailable > 0
-						? keyGreen
+				!isPaused
+					? endTime > Date.parse(new Date())
+						? numAvailable > 0
+							? status === "Flash"
+								? keyFlash
+								: keyGreen
+							: keyGray
 						: keyGray
 					: keyGray
 			}
@@ -188,37 +175,90 @@ function RemoveScheduleTab({ bizId, schedule }) {
 			<p
 				className={`${styles.Status}`}
 				style={{
-					backgroundColor:
-						endTime > Date.parse(new Date())
+					backgroundColor: !isPaused
+						? endTime > Date.parse(new Date())
 							? numAvailable > 0
-								? "var(--light-green)"
+								? status === "Flash"
+									? "var(--flash)"
+									: "var(--light-green)"
 								: "var(--light-red)"
-							: "var(--gray)",
+							: "var(--gray)"
+						: "var(--gray)",
 				}}
 			>
-				{endTime > Date.parse(new Date())
-					? numAvailable > 0
-						? "Live"
-						: "Sold out"
-					: "Past"}
+				{!isPaused
+					? endTime > Date.parse(new Date())
+						? numAvailable > 0
+							? status === "Flash"
+								? "Flash"
+								: "Live"
+							: "Sold out"
+						: "Past"
+					: "Pause"}
 			</p>
-			<p>{itemPrice}</p>
+			{/* <p>{itemPrice}</p> */}
 			<div className={`${styles.Quantity}`}>
 				<p>{numAvailable}x</p>
-				<p>{itemName}</p>
+				<p className={`${styles.ItemName}`}>{itemName}</p>
 			</div>
 			<p
 				style={{
-					color: "var(--gray)",
+					color: recurring ? "black" : "var(--gray)",
 					textDecoration: recurring ? "none" : "line-through",
+					// fontWeight: "bold",
 				}}
 			>
-				recur
+				Recur
 			</p>
-			<Button variant="text" color="error" onClick={handleRemove}>
-				remove
-			</Button>
-			{openRemoveModal && RemoveScheduleModal()}
+			{recurring ? (
+				<Button
+					disabled={numAvailable === 0}
+					variant="text"
+					color="info"
+					onClick={handleEdit}
+				>
+					edit
+				</Button>
+			) : (
+				<Button variant="text" color="error" onClick={handleRemove}>
+					remove
+				</Button>
+			)}
+			{openRemoveModal && (
+				<RemoveScheduleModal
+					openRemove={openRemoveModal}
+					removeScheduleId={removeScheduleId}
+					closeRemove={handleCloseRemove}
+					canRemove={canRemove}
+					dayOfWkIdx={dayOfWkIdx}
+					handleRemoveSchedule={handleRemoveSchedule}
+					openErrorModal={openErrorModal}
+					errorMessage={errorMessage}
+					isRecur={false}
+					destination
+				/>
+			)}
+			{openEditModal && (
+				<EditScheduleModal
+					isPaused={isPaused}
+					bizId={bizId}
+					isOpen={openEditModal}
+					close={handleCloseEdit}
+					handleRemoveSchedule={handleRemoveSchedule}
+					handlePauseSchedule={handlePauseSchedule}
+					dayIdx={dayOfWkIdx}
+					scheduleId={id}
+					editDisabled={editDisabled}
+					handleRemove={handleRemove}
+					openRemove={openRemoveModal}
+					closeRemove={handleCloseRemove}
+					canRemove={canRemove}
+					openErrorModal={openErrorModal}
+					errorMessage={errorMessage}
+					destination={"orders"}
+					schedule={schedule}
+				/>
+			)}
 		</div>
 	);
 }

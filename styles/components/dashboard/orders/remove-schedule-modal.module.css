@@ -1,0 +1,15 @@
+.ConfirmRemove__Container {
+	width: 400px;
+}
+
+@media screen and (max-width: 768px) {
+	.ConfirmRemove__Container {
+		width: 300px;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.ConfirmRemove__Container {
+		width: 250px;
+	}
+}

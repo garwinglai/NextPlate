@@ -1,12 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
-import { removeSchedule } from "../../../../actions/dashboard/scheduleCrud";
 import Alert from "@mui/material/Alert";
 import Collapse from "@mui/material/Collapse";
-import Grid from "@mui/material/Grid";
 import { Button } from "@mui/material";
+import styles from "../../../../styles/components/dashboard/orders/remove-schedule-modal.module.css";
 
 const style = {
 	position: "absolute",
@@ -22,98 +21,69 @@ const style = {
 };
 
 function RemoveScheduleModal({
-	bizId,
 	openRemove,
 	removeScheduleId,
 	closeRemove,
 	canRemove,
 	dayOfWkIdx,
+	handleRemoveSchedule,
+	openErrorModal,
+	errorMessage,
+	isRecur,
+	destination,
+	isPaused,
 }) {
-	const [removeRes, setRemoveRes] = useState({
-		errorMessage: "",
-		openErrorModal: false,
-	});
-
-	const { errorMessage, openErrorModal } = removeRes;
-
-	const handleRemoveSchedule = async (e, removeScheduleId, dayOfWkIdx) => {
-		const { success, message } = await removeSchedule(
-			bizId,
-			removeScheduleId,
-			dayOfWkIdx,
-			null
-		);
-
-		if (success) {
-			setRemoveRes((prev) => ({
-				...prev,
-				errorMessage: "",
-				openErrorModal: false,
-			}));
-			closeRemove();
+	const removeSchedule = (e) => {
+		if (destination === "schedule") {
+			handleRemoveSchedule(removeScheduleId, dayOfWkIdx);
 		} else {
-			console.log(`error removing schedule on orders: ${message}`);
-			setRemoveRes((prev) => ({
-				...prev,
-				errorMessage: "Error removing.",
-				openErrorModal: true,
-			}));
+			handleRemoveSchedule(e, removeScheduleId, dayOfWkIdx);
 		}
+
+		closeRemove();
 	};
 
 	return (
 		<Modal
 			open={openRemove}
-			onClose={() => {
-				setRemoveRes((prev) => ({
-					...prev,
-					errorMessage: "",
-					openErrorModal: false,
-				}));
-				closeRemove();
-			}}
+			onClose={closeRemove}
 			aria-labelledby="modal-modal-title"
 			aria-describedby="modal-modal-description"
 		>
 			<Box sx={style}>
-				<Typography id="modal-modal-title" variant="h6" component="h2">
-					{canRemove ? "Removing set schedule" : "Can't remove"}
-				</Typography>
-				<Typography id="modal-modal-description" sx={{ mt: 2, mb: 2 }}>
-					{canRemove
-						? "Are you sure you want to remove the schedule?"
-						: "Cannot remove posts during pickup time."}
-				</Typography>
-				<div style={{ marginBottom: "20px" }}>
-					{canRemove && (
-						<Button
-							variant="contained"
-							color="error"
-							sx={{ mr: 5 }}
-							onClick={(e) =>
-								handleRemoveSchedule(e, removeScheduleId, dayOfWkIdx)
-							}
-						>
-							Remove
+				<div className={`${styles.ConfirmRemove__Container}`}>
+					<Typography id="modal-modal-title" variant="h6" component="h2">
+						{canRemove ? "Removing set schedule" : "Can't remove"}
+					</Typography>
+					<Typography id="modal-modal-description" sx={{ mt: 3, mb: 4 }}>
+						{!isPaused
+							? canRemove
+								? isRecur
+									? "Removing a recurring schedule will remove all future schedules. We recommend to pause instead. Click CLOSE and turn Recur Off. Save."
+									: "Are you sure you want to remove the schedule?"
+								: "Cannot remove posts after pickup time."
+							: "Paused schedules cannot be removed."}
+					</Typography>
+					<div style={{ marginBottom: "20px" }}>
+						{canRemove && (
+							<Button
+								variant="contained"
+								color="error"
+								sx={{ mr: 5 }}
+								onClick={removeSchedule}
+								disabled={isPaused}
+							>
+								Remove
+							</Button>
+						)}
+						<Button variant="outlined" onClick={closeRemove}>
+							Close
 						</Button>
-					)}
-					<Button
-						variant="outlined"
-						onClick={() => {
-							setRemoveRes((prev) => ({
-								...prev,
-								errorMessage: "",
-								openErrorModal: false,
-							}));
-							closeRemove();
-						}}
-					>
-						Close
-					</Button>
+					</div>
+					<Collapse in={openErrorModal}>
+						<Alert severity="error">{errorMessage}</Alert>
+					</Collapse>
 				</div>
-				<Collapse in={openErrorModal}>
-					<Alert severity="error">{errorMessage}</Alert>
-				</Collapse>
 			</Box>
 		</Modal>
 	);

@@ -28,6 +28,7 @@ async function sendNotification(
 ) {
 	const percentDiscountStr = calculateDiscount(defaultPrice, originalPrice);
 
+	return;
 	// * URL for sending notifications to heroku
 	const baseUrl = "https://restoq.herokuapp.com/";
 	const notificationEndPoint = "sendNotification";
@@ -224,7 +225,7 @@ const calculateDiscount = (defaultPrice, originalPrice) => {
 	const decimalDiscount =
 		(originalPriceNum - defaultPriceNum) / originalPriceNum;
 	const roundedDiscount = decimalDiscount.toFixed(2) * 100;
-	const percentDiscountStr = roundedDiscount.toString() + "%";
+	const percentDiscountStr = Math.round(roundedDiscount).toString() + "%";
 
 	return percentDiscountStr;
 };

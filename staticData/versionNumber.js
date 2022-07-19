@@ -1,4 +1,4 @@
-export const versionNumber = "V 1.2.4";
+export const versionNumber = "V 1.2.7";
 
 /*
  * 1.1.3 -
@@ -75,4 +75,29 @@ export const versionNumber = "V 1.2.4";
  * 1.2.4 -
  * 1. sendNotification to 2 miles, 50 people.
  * 2. Changed notification to show percent discount instead of dollar amount.
+ */
+
+/*
+ * 1.2.5 -
+ * 1. updated % in notification to display correctly.
+ * 2. changed itemPricePenny to int.
+ */
+
+/*
+ * 1.2.6 -
+ * 1. Mobile Nav Increased Logo Size
+ * 2. Changed RemoveScheduleTab Colors to include flash. It was previously all  "live" even if it was flash.
+ * 3. Can Pause recurring in incoming-orders tab.
+ */
+
+/*
+ * 1.2.7 -
+ * 1. Updated schedule pause in incoming-orders & schedule
+ * 2. Changed schedule view in order page to purple, includes paused schedules now.
+ */
+
+/*
+ * 1.2.8 -
+ * 1. Pause language changed to "pause".
+ * 2. Automatically unpause the next day.
  */

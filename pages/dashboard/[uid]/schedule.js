@@ -394,6 +394,7 @@ function Schedule() {
 			parseFloat(defaultPrice.slice(1)).toFixed(2)
 		);
 		const itemPricePennyConvert = itemPriceDoubleConvert * 100;
+		const itemPricePennyInt = parseInt(itemPricePennyConvert);
 
 		const date = new Date();
 		const currShortDate = date.toLocaleDateString();
@@ -575,7 +576,7 @@ function Schedule() {
 			itemLrgImgLink: itemLrgImgLink ? itemLrgImgLink : "",
 			itemPrice: defaultPrice,
 			itemPriceDouble: itemPriceDoubleConvert,
-			itemPricePenny: itemPricePennyConvert,
+			itemPricePenny: itemPricePennyInt,
 			numAvailable: numAvailInt,
 			numAvailableStart: numAvailInt,
 			startTime: startTimeEpochMiliSec,

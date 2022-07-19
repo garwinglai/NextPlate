@@ -15,12 +15,16 @@ import { db } from "../../../firebase/fireConfig";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
-import { removeSchedule } from "../../../actions/dashboard/scheduleCrud";
+import {
+	removeSchedule,
+	pauseSchedule,
+} from "../../../actions/dashboard/scheduleCrud";
 import { updateOrder } from "../../../actions/dashboard/ordersCrud";
 import Alert from "@mui/material/Alert";
 import Collapse from "@mui/material/Collapse";
 import SuccessError from "../Orders/SuccessError";
 import ManualCreateSchedule from "./ManualCreateSchedule";
+import EditScheduleModal from "../Orders/Incoming/EditScheduleModal";
 
 const style = {
 	position: "absolute",
@@ -53,6 +57,18 @@ function DayComponent({
 	ordersDataArr,
 	emoji,
 }) {
+	const [edit, setEdit] = useState({
+		openEditModal: false,
+		editDisabled: false,
+		isPaused: false,
+		editId: "",
+	});
+	const [scheduleRemove, setScheduleRemove] = useState({
+		openRemoveModal: false,
+		canRemoveEdit: false,
+		removeEditScheduleId: "",
+	});
+
 	const [isNotificationSent, setIsNotificationSent] = useState(false);
 	const [disableCreateButton, setDisableCreateButton] = useState(false);
 	const [handleScheduleUpdates, setHandleScheduleUpdates] = useState({
@@ -109,6 +125,9 @@ function DayComponent({
 	const [hoverState, setHoverState] = useState(true);
 	const [errorLoadingPosts, setErrorLoadingPosts] = useState("");
 
+	const { openRemoveModal, removeEditScheduleId, canRemoveEdit } =
+		scheduleRemove;
+	const { openEditModal, editDisabled, isPaused, editId } = edit;
 	const {
 		removeMessage,
 		removeSuccess,
@@ -208,9 +227,17 @@ function DayComponent({
 			(doc) => {
 				const bizData = doc.data();
 				const weeklySchedules = bizData.weeklySchedules;
+				const pausedSchedules = bizData.pausedSchedules;
 				const dayIdxObj = weeklySchedules[dayOfWkIdx];
-				let isNotified;
+
+				let todayPaused;
+
+				if (pausedSchedules !== undefined) {
+					todayPaused = pausedSchedules[dayOfWkIdx];
+				}
+
 				let schedId;
+				let isNotified;
 
 				// * Regular schedule
 				const timeDisplayArr = [];
@@ -277,6 +304,27 @@ function DayComponent({
 				}
 
 				// * Set state for recur values
+				for (const pausedId in todayPaused) {
+					const currPaused = todayPaused[pausedId];
+					const timeObj = {
+						startTime: currPaused.startTime,
+						timeDisplay: currPaused.timeDisplay,
+						hourStart: currPaused.hourStart,
+						minStart: currPaused.minStart,
+					};
+
+					if (
+						!tempTimeDisplayArr.includes(currPaused.timeDisplay) &&
+						!tempTimeDisplayArrRecur.includes(currPaused.timeDisplay)
+					) {
+						timeDisplayArr.push(timeObj);
+						tempTimeDisplayArr.push(currPaused.timeDisplay);
+					}
+
+					schedArr.push(currPaused);
+					hasPost = true;
+				}
+
 				setTimeDisplaysRecur(timeDisplayArrRecur);
 				setHasPostOnDateComponentRecur(hasPostRecur);
 				setPostsRecur(schedArrRecur);
@@ -391,7 +439,6 @@ function DayComponent({
 			for (let i = 0; i < orderDataArr.length; i++) {
 				const currOrder = orderDataArr[i];
 				const { customerId, orderId } = currOrder;
-				console.log(customerId, orderId);
 				const reason = "Offer removed";
 
 				const resUpdateOrder = await updateOrder(
@@ -435,6 +482,32 @@ function DayComponent({
 		);
 
 		if (success) {
+			// setHandleScheduleUpdates({
+			// 	errorMessage: null,
+			// 	successMessage: "Removed.",
+			// 	isOpen: true,
+			// });
+			setShowRemoveModal(false);
+			handleCloseEdit();
+		} else {
+			setShowRemoveModal(false);
+			setIsScheduledRemoved({
+				removeSuccess: false,
+				showRemoveMessage: true,
+				removeMessage: message,
+			});
+		}
+	};
+
+	const handlePauseSchedule = async (scheduleId, dayIndex) => {
+		const { success, message } = await pauseSchedule(
+			bizId,
+			scheduleId,
+			dayIndex,
+			null
+		);
+
+		if (success) {
 			setShowRemoveModal(false);
 			setHandleScheduleUpdates({
 				errorMessage: null,
@@ -452,7 +525,7 @@ function DayComponent({
 	};
 
 	async function handleRemoveScheduleFlash(e, scheduleId, dayIndex) {
-		const event = "flash";
+		const event = "Flash";
 		const { success, message } = await removeSchedule(
 			bizId,
 			scheduleId,
@@ -527,6 +600,26 @@ function DayComponent({
 		}
 	};
 
+	const handleRemoveEdit = (schedule) => {
+		const currDate = new Date();
+		const currEpoch = Date.parse(currDate);
+
+		if (currEpoch > schedule.endTime) {
+			setScheduleRemove((prev) => ({
+				...prev,
+				openRemoveModal: true,
+				canRemoveEdit: false,
+			}));
+		} else {
+			setScheduleRemove((prev) => ({
+				...prev,
+				openRemoveModal: true,
+				canRemoveEdit: true,
+				removeEditScheduleId: schedule.id,
+			}));
+		}
+	};
+
 	const getOrders = async (scheduleId) => {
 		const ordersDocRef = collection(db, "biz", bizId, "orders");
 		const queryOrders = query(
@@ -557,6 +650,51 @@ function DayComponent({
 			console.log("Error getting orders", error);
 			return;
 		}
+	};
+
+	const handleEdit = (e, endTime, isPaused, scheduleId) => {
+		const currDate = new Date();
+		const currEpoch = Date.parse(currDate);
+
+		if (currEpoch < endTime) {
+			setEdit((prev) => ({
+				...prev,
+				openEditModal: true,
+				editDisabled: false,
+				isPaused: isPaused,
+				editId: scheduleId,
+			}));
+		} else {
+			setEdit((prev) => ({
+				...prev,
+				openEditModal: true,
+				editDisabled: true,
+				isPaused: isPaused,
+			}));
+		}
+	};
+
+	const handleCloseEdit = () => {
+		setEdit((prev) => ({
+			...prev,
+			openEditModal: false,
+			editId: "",
+			editDisabled: false,
+		}));
+		setScheduleRemove((prev) => ({
+			...prev,
+			openRemoveModal: false,
+			canRemoveEdit: false,
+			removeEditScheduleId: "",
+		}));
+	};
+
+	const handleCloseRemoveModal = () => {
+		setScheduleRemove((prev) => ({
+			...prev,
+			openRemoveModal: false,
+			removeScheduleId: "",
+		}));
 	};
 
 	return (
@@ -781,48 +919,52 @@ function DayComponent({
 																	aria-describedby="modal-modal-description"
 																>
 																	<Box sx={style}>
-																		<Typography
-																			id="modal-modal-title"
-																			variant="h6"
-																			component="h2"
+																		<div
+																			className={`${styles.RemoveConfirm__Container}`}
 																		>
-																			{canRemoveFlash
-																				? "Removing set schedule"
-																				: "Can't remove"}
-																		</Typography>
-																		<Typography
-																			id="modal-modal-description"
-																			sx={{ mt: 2, mb: 2 }}
-																		>
-																			{canRemoveFlash
-																				? "Are you sure you want to remove this post?"
-																				: "Cannot remove during pickup time, or if time has passed."}
-																		</Typography>
-																		<div>
-																			{canRemoveFlash && (
+																			<Typography
+																				id="modal-modal-title"
+																				variant="h6"
+																				component="h2"
+																			>
+																				{canRemoveFlash
+																					? "Removing set schedule"
+																					: "Can't remove"}
+																			</Typography>
+																			<Typography
+																				id="modal-modal-description"
+																				sx={{ mt: 5, mb: 5 }}
+																			>
+																				{canRemoveFlash
+																					? "Are you sure you want to remove this post?"
+																					: "Cannot remove during pickup time, or if time has passed."}
+																			</Typography>
+																			<div>
+																				{canRemoveFlash && (
+																					<Button
+																						variant="contained"
+																						color="error"
+																						sx={{ mr: 5 }}
+																						onClick={(e) =>
+																							handleRemoveScheduleFlash(
+																								e,
+																								removeFlashId,
+																								flash.dayOfWkIdx
+																							)
+																						}
+																					>
+																						Remove
+																					</Button>
+																				)}
 																				<Button
-																					variant="contained"
-																					color="error"
-																					sx={{ mr: 5 }}
-																					onClick={(e) =>
-																						handleRemoveScheduleFlash(
-																							e,
-																							removeFlashId,
-																							flash.dayOfWkIdx
-																						)
+																					variant="outlined"
+																					onClick={() =>
+																						setShowRemoveModalFlash(false)
 																					}
 																				>
-																					Remove
+																					Close
 																				</Button>
-																			)}
-																			<Button
-																				variant="outlined"
-																				onClick={() =>
-																					setShowRemoveModalFlash(false)
-																				}
-																			>
-																				Close
-																			</Button>
+																			</div>
 																		</div>
 																	</Box>
 																</Modal>
@@ -863,13 +1005,15 @@ function DayComponent({
 												if (schedule.timeDisplay === time.timeDisplay) {
 													return (
 														<div
-															key={schedule.id}
+															key={i}
 															className={styles.DayComponent__bodyDetailTrue}
 															style={
-																isToday || isTomorrow
-																	? schedule.endTime > Date.parse(new Date())
-																		? schedule.numAvailable > 0
-																			? keyGreen
+																!schedule.isPaused
+																	? isToday || isTomorrow
+																		? schedule.endTime > Date.parse(new Date())
+																			? schedule.numAvailable > 0
+																				? keyGreen
+																				: keyGray
 																			: keyGray
 																		: keyGray
 																	: keyGray
@@ -881,24 +1025,27 @@ function DayComponent({
 																}
 																style={{
 																	color: "white",
-																	backgroundColor:
-																		isToday || isTomorrow
+																	backgroundColor: !schedule.isPaused
+																		? isToday || isTomorrow
 																			? schedule.endTime >
 																			  Date.parse(new Date())
 																				? schedule.numAvailable > 0
 																					? "var(--light-green)"
 																					: "var(--light-red)"
 																				: "var(--gray)"
-																			: "var(--gray)",
+																			: "var(--gray)"
+																		: "var(--gray)",
 																}}
 															>
-																{isToday || isTomorrow
-																	? schedule.endTime > Date.parse(new Date())
-																		? schedule.numAvailable > 0
-																			? "Live"
-																			: "Sold out"
-																		: "Past"
-																	: "Scheduled"}
+																{!schedule.isPaused
+																	? isToday || isTomorrow
+																		? schedule.endTime > Date.parse(new Date())
+																			? schedule.numAvailable > 0
+																				? "Live"
+																				: "Sold out"
+																			: "Past"
+																		: "Scheduled"
+																	: "Pause"}
 															</p>
 															<p>{schedule.itemPrice}</p>
 															<div className={styles.bodyDetailTrue__item}>
@@ -926,22 +1073,53 @@ function DayComponent({
 																	RECUR
 																</p>
 															)}
-
-															<Button
-																variant="text"
-																color="error"
-																// disabled={
-																// 	schedule.numAvailable <
-																// 	schedule.numAvailableStart
-																// 		? true
-																// 		: false
-																// }
-																onClick={() =>
-																	handleRemoveClick("regular", schedule)
-																}
-															>
-																remove
-															</Button>
+															{schedule.recurring ? (
+																<Button
+																	variant="text"
+																	color="info"
+																	onClick={(e) =>
+																		handleEdit(
+																			e,
+																			schedule.endTime,
+																			schedule.isPaused,
+																			schedule.id
+																		)
+																	}
+																>
+																	edit
+																</Button>
+															) : (
+																<Button
+																	variant="text"
+																	color="error"
+																	onClick={() =>
+																		handleRemoveClick("regular", schedule)
+																	}
+																>
+																	remove
+																</Button>
+															)}
+															{openEditModal && (
+																<EditScheduleModal
+																	isPaused={isPaused}
+																	bizId={bizId}
+																	isOpen={openEditModal}
+																	close={handleCloseEdit}
+																	handleRemoveSchedule={removeScheduleRegular}
+																	handlePauseSchedule={handlePauseSchedule}
+																	dayIdx={dayOfWkIdx}
+																	scheduleId={editId}
+																	editDisabled={editDisabled}
+																	handleRemove={handleRemoveEdit}
+																	openRemove={openRemoveModal}
+																	closeRemove={handleCloseRemoveModal}
+																	canRemove={canRemoveEdit}
+																	openErrorModal={showRemoveMessage}
+																	errorMessage={removeMessage}
+																	destination={"schedule"}
+																	schedule={schedule}
+																/>
+															)}
 															<Modal
 																open={showRemoveModal}
 																onClose={() => setShowRemoveModal(false)}
@@ -949,81 +1127,90 @@ function DayComponent({
 																aria-describedby="modal-modal-description"
 															>
 																<Box sx={style}>
-																	<Typography
-																		id="modal-modal-title"
-																		variant="h6"
-																		component="h2"
+																	<div
+																		className={`${styles.RemoveConfirm__Container}`}
 																	>
-																		{canRemove
-																			? "Removing set schedule"
-																			: "Can't remove"}
-																	</Typography>
+																		<Typography
+																			id="modal-modal-title"
+																			variant="h6"
+																			component="h2"
+																		>
+																			{canRemove
+																				? "Removing set schedule"
+																				: "Can't remove"}
+																		</Typography>
 
-																	{canRemove ? (
-																		numberOfOrdersRegular > 0 ? (
-																			<div className={`${styles.RemovePost}`}>
-																				<p
-																					className={`${styles.RemovePost__numReservered}`}
-																				>
-																					🛑{" "}
-																					<b>
-																						{" "}
-																						{numberOfOrdersRegular}{" "}
-																						reserveration(s)
-																					</b>
-																				</p>
-																				<p
-																					className={`${styles.RemovePost__description}`}
-																				>
-																					Removing this post will decline all
-																					reservations.
-																				</p>
+																		<div style={{ margin: "30px 0 40px 0" }}>
+																			{canRemove ? (
+																				numberOfOrdersRegular > 0 ? (
+																					<div
+																						className={`${styles.RemovePost}`}
+																					>
+																						<p
+																							className={`${styles.RemovePost__numReservered}`}
+																						>
+																							🛑{" "}
+																							<b>
+																								{" "}
+																								{numberOfOrdersRegular}{" "}
+																								reserveration(s)
+																							</b>
+																						</p>
+																						<p
+																							className={`${styles.RemovePost__description}`}
+																						>
+																							Removing this post will decline
+																							all reservations.
+																						</p>
 
-																				<p
-																					className={`${styles.RemovePost__note}`}
-																				>
-																					Note: customers can pre-reserve orders
-																					for the next day.
+																						<p
+																							className={`${styles.RemovePost__note}`}
+																						>
+																							Note: customers can pre-reserve
+																							orders for the next day.
+																						</p>
+																					</div>
+																				) : (
+																					<p
+																						className={`${styles.RemovePost__noOrders}`}
+																					>
+																						Are you sure you want to remove the
+																						schedule?
+																					</p>
+																				)
+																			) : (
+																				<p>
+																					Cannot remove after scheduled time.
 																				</p>
-																			</div>
-																		) : (
-																			<p
-																				className={`${styles.RemovePost__noOrders}`}
-																			>
-																				Are you sure you want to remove the
-																				schedule?
-																			</p>
-																		)
-																	) : (
-																		<p>
-																			Cannot remove during pickup time, or if
-																			time has passed.
-																		</p>
-																	)}
+																			)}
+																		</div>
 
-																	<div>
-																		{canRemove && (
+																		<div>
+																			{canRemove && (
+																				<Button
+																					variant="contained"
+																					color="error"
+																					sx={{ mr: 5 }}
+																					onClick={(e) =>
+																						handleRemoveSchedule(
+																							e,
+																							removeScheduleId,
+																							schedule.dayOfWkIdx
+																						)
+																					}
+																				>
+																					Remove
+																				</Button>
+																			)}
 																			<Button
-																				variant="contained"
-																				color="error"
-																				sx={{ mr: 5 }}
-																				onClick={(e) =>
-																					handleRemoveSchedule(
-																						e,
-																						removeScheduleId,
-																						schedule.dayOfWkIdx
-																					)
+																				variant="outlined"
+																				onClick={() =>
+																					setShowRemoveModal(false)
 																				}
 																			>
-																				Remove
+																				Close
 																			</Button>
-																		)}
-																		<Button
-																			variant="outlined"
-																			onClick={() => setShowRemoveModal(false)}
-																		>
-																			Close
-																		</Button>
+																		</div>
 																	</div>
 																</Box>
 															</Modal>
@@ -1042,37 +1229,6 @@ function DayComponent({
 						)}
 					</div>
 				</div>
-				{/* {(isToday || isTomorrow) && (
-					<div className={styles.DayComponent__postHeaderFooter}>
-						<div className={styles.DayComponent__titles}>
-							<h4 className={styles.DayComponent__bodyTitle}>Orders:</h4>
-
-							{hasOrders.length !== 0 ? (
-								pendingCount !== 0 && (
-									<div className={styles.DayComponent__orderStatus}>
-										<h5
-											className={styles.DayComponent__bodyOrderTrue}
-											style={{ color: "var(--dark-gray)", fontSize: "14px" }}
-										>
-											{pendingCount}x
-										</h5>
-										<h5 style={keyOrange}>Pending</h5>
-									</div>
-								)
-							) : (
-								<p className={styles.DayComponent__bodyOrderFalse}>No Orders</p>
-							)}
-						</div>
-
-						<Link href={`/dashboard/${uid}/orders/incoming-orders`}>
-							<a>
-								<Button size="small" variant="outlined">
-									View
-								</Button>
-							</a>
-						</Link>
-					</div>
-				)} */}
 			</div>
 		</div>
 	);

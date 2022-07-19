@@ -1,13 +1,12 @@
 .RemoveScheduleTab {
 	background-color: white;
 	display: grid;
-	grid-template-columns: 1.5fr 1fr 2fr 1fr 1fr;
+	grid-template-columns: 1fr 2fr 1fr 1fr;
 	justify-items: center;
 	align-items: center;
 	margin: 5px 0 0 10px;
 	border: 1px solid rgb(187, 187, 187);
 	box-shadow: rgba(33, 35, 38, 0.1) 0px 10px 10px -10px;
-	/* padding: 5px 0; */
 	border-radius: 5px;
 	height: 40px;
 }
@@ -25,6 +24,9 @@
 	display: flex;
 	align-items: center;
 	gap: 3px;
+	overflow: scroll;
+	white-space: nowrap;
+	width: 100%;
 }
 
 .Quantity p:first-child {
@@ -35,6 +37,10 @@
 }
 
 @media screen and (max-width: 768px) {
+	.ConfirmRemove__Container {
+		width: 300px;
+	}
+
 	.RemoveScheduleTab {
 		height: 60px;
 	}
@@ -45,6 +51,10 @@
 }
 
 @media screen and (max-width: 480px) {
+	.ConfirmRemove__Container {
+		width: 250px;
+	}
+
 	.RemoveScheduleTab {
 		height: 40px;
 	}
