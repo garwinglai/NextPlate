@@ -18,10 +18,8 @@ import {
 	setDoc,
 	deleteField,
 } from "firebase/firestore";
-import { getAuth, updateEmail } from "firebase/auth";
 import { db, increment, decrement } from "../../firebase/fireConfig";
 import _, { update } from "lodash";
-import { getLocalStorage, setLocalStorage } from "../auth/auth";
 
 async function getProducts(bizId) {
 	const productsDocRef = collection(db, "biz", bizId, "products");
@@ -62,9 +60,96 @@ async function createNewProduct(bizId, newItemValues) {
 async function updateProduct(bizId, productId, newItemValues) {
 	const productDocRef = doc(db, "biz", bizId, "products", productId);
 	const bizDocRef = doc(db, "biz", bizId);
-	const isDefault = newItemValues.isDefault;
+	const {
+		itemName,
+		itemDescription,
+		originalPrice,
+		defaultPrice,
+		allergens,
+		isDefault,
+		itemImgLink,
+		itemLrgImgLink,
+	} = newItemValues;
 
 	const batch = writeBatch(db);
+
+	// TODO: update scheduled product
+	const weeklySchedules = await getWeeklySchedules(bizDocRef);
+	const pausedSchedules = await getPausedSchedules(bizDocRef);
+
+	if (weeklySchedules === null && pausedSchedules === null) {
+		return;
+	}
+
+	if (weeklySchedules !== null) {
+		const daysSchedArr = Object.keys(weeklySchedules);
+
+		for (let i = 0; i < daysSchedArr.length; i++) {
+			const day = daysSchedArr[i];
+			const schedIdPerDayArr = Object.keys(weeklySchedules[day]);
+
+			for (let j = 0; j < schedIdPerDayArr.length; j++) {
+				const schedId = schedIdPerDayArr[j];
+				const currSchedule = weeklySchedules[day][schedId];
+				const currProductId = currSchedule.productId;
+				const itemPriceNoDollarSign = defaultPrice.slice(1);
+				const itemPriceDoubleConvert = parseFloat(itemPriceNoDollarSign);
+				const itemPricePennyConvert = itemPriceDoubleConvert * 100;
+				const itemPricePennyInt = parseInt(itemPricePennyConvert);
+
+				currSchedule.itemName = itemName;
+				currSchedule.itemDescription = itemDescription;
+				currSchedule.originalPrice = originalPrice;
+				currSchedule.itemPrice = defaultPrice;
+				currSchedule.itemPriceDouble = itemPriceDoubleConvert;
+				currSchedule.itemPricePenny = itemPricePennyInt;
+				currSchedule.itemPrice = defaultPrice;
+				currSchedule.itemImgLink = itemImgLink;
+				currSchedule.itemLrgImgLink = itemLrgImgLink;
+
+				if (currProductId === productId) {
+					batch.update(bizDocRef, {
+						[`weeklySchedules.${day}.${schedId}`]: currSchedule,
+					});
+				}
+			}
+		}
+	}
+
+	if (pausedSchedules !== null) {
+		const daysSchedArr = Object.keys(pausedSchedules);
+
+		for (let i = 0; i < daysSchedArr.length; i++) {
+			const day = daysSchedArr[i];
+			const schedIdPerDayArr = Object.keys(pausedSchedules[day]);
+
+			for (let j = 0; j < schedIdPerDayArr.length; j++) {
+				const schedId = schedIdPerDayArr[j];
+				const currSchedule = pausedSchedules[day][schedId];
+				const currProductId = currSchedule.productId;
+				const itemPriceNoDollarSign = defaultPrice.slice(1);
+				const itemPriceDoubleConvert = parseFloat(itemPriceNoDollarSign);
+				const itemPricePennyConvert = itemPriceDoubleConvert * 100;
+				const itemPricePennyInt = parseInt(itemPricePennyConvert);
+
+				currSchedule.itemName = itemName;
+				currSchedule.itemDescription = itemDescription;
+				currSchedule.originalPrice = originalPrice;
+				currSchedule.itemPrice = defaultPrice;
+				currSchedule.itemPriceDouble = itemPriceDoubleConvert;
+				currSchedule.itemPricePenny = itemPricePennyInt;
+				currSchedule.itemPrice = defaultPrice;
+				currSchedule.itemImgLink = itemImgLink;
+				currSchedule.itemLrgImgLink = itemLrgImgLink;
+
+				if (currProductId === productId) {
+					batch.update(bizDocRef, {
+						[`pausedSchedules.${day}.${schedId}`]: currSchedule,
+					});
+				}
+			}
+		}
+	}
 
 	if (isDefault) {
 		batch.update(productDocRef, newItemValues);
@@ -79,6 +164,42 @@ async function updateProduct(bizId, productId, newItemValues) {
 	} catch (error) {
 		console.log(error);
 		return { success: false, message: `Couldn't update product.` };
+	}
+}
+
+async function getWeeklySchedules(bizDocRef) {
+	const bizSnapshot = await getDoc(bizDocRef);
+
+	if (bizSnapshot.exists()) {
+		const bizData = bizSnapshot.data();
+		const weeklySchedules = bizData.weeklySchedules;
+
+		if (
+			weeklySchedules === undefined ||
+			Object.keys(weeklySchedules).length === 0
+		) {
+			return null;
+		}
+
+		return weeklySchedules;
+	}
+}
+
+async function getPausedSchedules(bizDocRef) {
+	const bizSnapshot = await getDoc(bizDocRef);
+
+	if (bizSnapshot.exists()) {
+		const bizData = bizSnapshot.data();
+		const pausedSchedules = bizData.pausedSchedules;
+
+		if (
+			pausedSchedules === undefined ||
+			Object.keys(pausedSchedules).length === 0
+		) {
+			return null;
+		}
+
+		return pausedSchedules;
 	}
 }
 

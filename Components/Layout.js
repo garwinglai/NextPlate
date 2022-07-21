@@ -213,10 +213,10 @@ function Layout({ children, currentPage, subPage, uid }) {
 
 	async function updateVersion() {
 		const currVersion = JSON.parse(getLocalStorage("version"));
-		// console.log("hi");
-
+		
 		if (document.visibilityState === "visible") {
-			if (!currVersion || currVersion !== versionNumber) {
+			console.log(currVersion);
+			if (!currVersion || currVersion !== versionNumber || currVersion === "") {
 				setLocalStorage("version", versionNumber);
 				router.reload();
 			}

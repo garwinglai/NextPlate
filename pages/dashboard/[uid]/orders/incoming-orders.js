@@ -200,19 +200,7 @@ function IncomingOrders() {
 		hasConfirmedTomorrow,
 		confirmedCount,
 	} = ordersConfirmedValues;
-	const arrayOfTwenty = [
-		"1",
-		"2",
-		"3",
-		"4",
-		"5",
-		"6",
-		"7",
-		"8",
-		"9",
-		"10",
-		"20",
-	];
+	const arrayOfTwenty = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 
 	const router = useRouter();
 	const uid = router.query.uid;
@@ -242,7 +230,7 @@ function IncomingOrders() {
 		loadProducts(bizIdTemp);
 		loadUserData(bizIdTemp);
 		updatePast(bizIdTemp);
-		// updateYdayPaused(bizIdTemp);
+		updateYdayPaused(bizIdTemp);
 		const unsubscribePendingOrders = loadPendingOrdersData(bizIdTemp);
 		const unsubscribeConfirmedOrders = loadConfirmedOrdersData(bizIdTemp);
 		const unsubscribeSchedules = loadSchedules(bizIdTemp);

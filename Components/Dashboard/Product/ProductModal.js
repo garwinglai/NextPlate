@@ -22,19 +22,6 @@ const modalStyle = {
 	overflow: "scroll",
 };
 
-// let style = {
-// 	position: "absolute",
-// 	top: "50%",
-// 	left: "50%",
-// 	transform: "translate(-50%, -50%)",
-// 	width: "max-content",
-// 	bgcolor: "background.paper",
-// 	border: "2px solid #000",
-// 	boxShadow: 24,
-// 	borderRadius: "5px",
-// 	p: 4,
-// };
-
 function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 	const [style, setStyle] = useState({
 		position: "absolute",
@@ -62,6 +49,16 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 				? product.isDefault
 				: false
 			: false,
+		itemImgLink: product
+			? product.itemImgLink
+				? product.itemImgLink
+				: ""
+			: "",
+		itemLrgImgLink: product
+			? product.itemLrgImgLink
+				? product.itemLrgImgLink
+				: ""
+			: "",
 	});
 	const [handleResponse, setHandleResponse] = useState({
 		loading: false,
@@ -75,6 +72,8 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 		defaultPrice,
 		allergens,
 		isDefault,
+		itemImgLink,
+		itemLrgImgLink,
 	} = newItemValues;
 	const { loading, errorMessage, isAlertOpen } = handleResponse;
 
@@ -125,6 +124,8 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 			defaultPrice: `$${defaultPrice}`,
 			allergens,
 			isDefault,
+			itemImgLink,
+			itemLrgImgLink,
 		};
 
 		// * Edit

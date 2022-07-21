@@ -105,19 +105,7 @@ function Schedule() {
 	const { month, actualDate, shortDate, dayOfWeek, dayOfWkIdx } = sevenDays;
 	const { loading, userData, message, ordersDataArr, emoji } = userDataValues;
 	const { storedUser, bizId } = user;
-	const arrayOfTwenty = [
-		"1",
-		"2",
-		"3",
-		"4",
-		"5",
-		"6",
-		"7",
-		"8",
-		"9",
-		"10",
-		"20",
-	];
+	const arrayOfTwenty = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 
 	const router = useRouter();
 	const uid = router.query.uid;

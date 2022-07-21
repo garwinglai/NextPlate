@@ -1,4 +1,4 @@
-export const versionNumber = "V 1.2.7";
+export const versionNumber = "V 1.2.9";
 
 /*
  * 1.1.3 -
@@ -100,4 +100,10 @@ export const versionNumber = "V 1.2.7";
  * 1.2.8 -
  * 1. Pause language changed to "pause".
  * 2. Automatically unpause the next day.
+ */
+
+/*
+ * 1.2.9 -
+ * 1. Edit Product updates weekly & paused Schedules
+ * 2. Removed 20
  */
