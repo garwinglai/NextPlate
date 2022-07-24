@@ -77,9 +77,8 @@ async function updateProduct(bizId, productId, newItemValues) {
 	const weeklySchedules = await getWeeklySchedules(bizDocRef);
 	const pausedSchedules = await getPausedSchedules(bizDocRef);
 
-	if (weeklySchedules === null && pausedSchedules === null) {
-		return;
-	}
+	// console.log("week", weeklySchedules);
+	// console.log("pause", pausedSchedules);
 
 	if (weeklySchedules !== null) {
 		const daysSchedArr = Object.keys(weeklySchedules);
@@ -160,9 +159,10 @@ async function updateProduct(bizId, productId, newItemValues) {
 
 	try {
 		await batch.commit();
+
 		return { success: true };
 	} catch (error) {
-		console.log(error);
+		console.log("error updating", error);
 		return { success: false, message: `Couldn't update product.` };
 	}
 }

@@ -28,10 +28,7 @@ import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Collapse from "@mui/material/Collapse";
 import { getBiz } from "../../../../actions/crud/bizUser";
-import {
-	createFlashSchedule,
-	updateYdaySchedPaused,
-} from "../../../../actions/dashboard/scheduleCrud";
+import { createFlashSchedule } from "../../../../actions/dashboard/scheduleCrud";
 import SuccessError from "../../../../Components/Dashboard/Orders/SuccessError";
 import getProducts from "../../../../actions/dashboard/productsCrud";
 import playNotificationSound from "../../../../helper/PlayAudio";
@@ -230,7 +227,6 @@ function IncomingOrders() {
 		loadProducts(bizIdTemp);
 		loadUserData(bizIdTemp);
 		updatePast(bizIdTemp);
-		updateYdayPaused(bizIdTemp);
 		const unsubscribePendingOrders = loadPendingOrdersData(bizIdTemp);
 		const unsubscribeConfirmedOrders = loadConfirmedOrdersData(bizIdTemp);
 		const unsubscribeSchedules = loadSchedules(bizIdTemp);
@@ -262,10 +258,6 @@ function IncomingOrders() {
 	async function updatePast(bizIdTemp) {
 		const res = await updatePastOrders(bizIdTemp);
 	}
-
-	const updateYdayPaused = async (bizIdTemp) => {
-		const res = await updateYdaySchedPaused(bizIdTemp);
-	};
 
 	async function loadProducts(bizId) {
 		const productRes = await getProducts(bizId);

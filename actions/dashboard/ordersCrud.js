@@ -462,6 +462,7 @@ async function updateOrder(
 	endTime
 ) {
 	const adminUid = "6IUWvD23ayVkRlxaO2wtSM2faNB3";
+	console.log("updateOrder function ran");
 
 	// * Order doc ref
 	const bizOrderDocRef = doc(db, "biz", bizId, "orders", orderId);
@@ -563,6 +564,8 @@ async function updateOrder(
 				null,
 				endTime,
 				null,
+				null,
+				null,
 				null
 			);
 			if (resNotification.success) {
@@ -580,6 +583,7 @@ async function updateOrder(
 
 	// * If declined, add reason update status and numAvail decrease
 	if (getStatus === "Declined") {
+		console.log("declined order");
 		// * Update Admin Order
 		batch.set(
 			orderDocRefAdmin,
@@ -642,6 +646,8 @@ async function updateOrder(
 				null,
 				null,
 				null,
+				null,
+				null,
 				null
 			);
 			if (resNotification.success) {
@@ -652,7 +658,7 @@ async function updateOrder(
 			}
 		} catch (err) {
 			// * return success true because schedule was posted, just notifications was not sent.
-			console.log(err);
+			console.log("notification not sent decline", err);
 			return { success: true, message: "Successfully declined" };
 		}
 	}
@@ -720,6 +726,7 @@ async function updateOrder(
 
 		try {
 			await batch.commit();
+			console.log("commited");
 		} catch (error) {
 			return {
 				success: false,
@@ -741,9 +748,12 @@ async function updateOrder(
 				null,
 				null,
 				null,
+				null,
+				null,
 				null
 			);
 			if (resNotification.success) {
+				console.log("success");
 				return { success: true, paymentMessage };
 			} else {
 				// * notification error, still send success because flash was created.
@@ -751,7 +761,7 @@ async function updateOrder(
 			}
 		} catch (err) {
 			// * return success true because schedule was posted, just notifications was not sent.
-			console.log(err);
+			console.log("notification error", err);
 			return { success: true, paymentMessage };
 		}
 	}

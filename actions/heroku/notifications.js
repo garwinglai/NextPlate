@@ -26,9 +26,7 @@ async function sendNotification(
 	emoji,
 	originalPrice
 ) {
-	const percentDiscountStr = calculateDiscount(defaultPrice, originalPrice);
-
-	// return;
+	return;
 	// * URL for sending notifications to heroku
 	const baseUrl = "https://restoq.herokuapp.com/";
 	const notificationEndPoint = "sendNotification";
@@ -38,6 +36,7 @@ async function sendNotification(
 	if (event === "flash" || event === "regular") {
 		const customerFavesRef = collection(db, "biz", bizId, "customerFaves");
 		const customerFavesSnap = await getDocs(customerFavesRef);
+		const percentDiscountStr = calculateDiscount(defaultPrice, originalPrice);
 		let customerIdArr = [];
 		let usersTokenArr = [];
 

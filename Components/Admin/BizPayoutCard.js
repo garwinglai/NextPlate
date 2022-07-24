@@ -9,8 +9,11 @@ function BizPayoutCard({ payout }) {
 		endDateEpoch,
 		startDateShort,
 		endDateShort,
+		totalSubTotalStr,
+		totalSubTotalDouble,
 		totalSalesStr,
 		totalSalesDouble,
+		isBizFeesPct,
 		bizFeesStr,
 		bizFeesDouble,
 		totalBizFeesStr,
@@ -46,6 +49,7 @@ function BizPayoutCard({ payout }) {
 					<p>To: {endDateShort}</p>
 					<p>Payment date: {paymentDateShort}</p>
 					<p>Customer fees: {customerFeesString}</p>
+					<p>Business Total SubTotal: {totalSubTotalStr}</p>
 				</div>
 				<div className={`${styles.flexCol}`}>
 					<p>Number of orders: {numOrders}</p>

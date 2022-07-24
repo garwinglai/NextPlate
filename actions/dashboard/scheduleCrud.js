@@ -1153,6 +1153,7 @@ async function updatePastSchedules(bizId) {
 }
 
 const updateYdaySchedPaused = async (bizId) => {
+	console.log("ydayupdate");
 	const yesterdayIdx = getYesterdayIdx();
 
 	const bizDocRef = doc(db, "biz", bizId);
@@ -1164,7 +1165,8 @@ const updateYdaySchedPaused = async (bizId) => {
 
 		if (
 			pausedSchedules === undefined ||
-			Object.keys(pausedSchedules).length === 0
+			Object.keys(pausedSchedules).length === 0 ||
+			pausedSchedules[yesterdayIdx] === undefined
 		) {
 			return;
 		} else {
@@ -1173,7 +1175,18 @@ const updateYdaySchedPaused = async (bizId) => {
 
 			for (let i = 0; i < scheduleIdArray.length; i++) {
 				const currId = scheduleIdArray[i];
-				ydaySchedulePaused[currId].isPaused = false;
+				const currPausedObj = ydaySchedulePaused[currId];
+				const scheduleStartTime = currPausedObj.startTime;
+				const scheduleEndTime = currPausedObj.endTime;
+				const scheduleNumAvailStart = currPausedObj.numAvailableStart;
+				const oneWeekMiliSec = 604800000;
+				const nextWeekStartTime = scheduleStartTime + oneWeekMiliSec;
+				const nextWeekEndTime = scheduleEndTime + oneWeekMiliSec;
+
+				currPausedObj.numAvailable = scheduleNumAvailStart;
+				currPausedObj.startTime = nextWeekStartTime;
+				currPausedObj.endTime = nextWeekEndTime;
+				currPausedObj.isPaused = false;
 			}
 
 			const removeYdyPaused = await removeYdayPaused(bizDocRef, yesterdayIdx);
@@ -1181,6 +1194,7 @@ const updateYdaySchedPaused = async (bizId) => {
 			if (removeYdyPaused) {
 				await saveWeeklySchedules(
 					ydaySchedulePaused,
+					bizSnapshot,
 					bizDocRef,
 					yesterdayIdx,
 					scheduleIdArray,
@@ -1206,18 +1220,71 @@ const removeYdayPaused = async (bizDocRef, yesterdayIdx) => {
 
 const saveWeeklySchedules = async (
 	ydaySchedulePaused,
+	bizSnapshot,
 	bizDocRef,
 	yesterdayIdx,
 	scheduleIdArray,
 	bizId
 ) => {
-	try {
-		await updateDoc(bizDocRef, {
-			[`weeklySchedules.${yesterdayIdx}`]: ydaySchedulePaused,
-		});
-	} catch (error) {
-		console.log("problem saving weeklySchedule", error);
-		return false;
+	const bizSnap = bizSnapshot.data();
+
+	const weeklySchedules = bizSnap.weeklySchedules;
+	const ydayWeekSchedule = weeklySchedules[yesterdayIdx];
+
+	console.log("weekly", weeklySchedules);
+	console.log("ydaysched", ydayWeekSchedule);
+
+	for (const schedId in ydayWeekSchedule) {
+		const currSched = ydayWeekSchedule[schedId];
+		const scheduleStartTime = currSched.startTime;
+		const scheduleEndTime = currSched.endTime;
+		const scheduleNumAvailStart = currSched.numAvailableStart;
+		const oneWeekMiliSec = 604800000;
+		const nextWeekStartTime = scheduleStartTime + oneWeekMiliSec;
+		const nextWeekEndTime = scheduleEndTime + oneWeekMiliSec;
+		console.log(nextWeekStartTime, nextWeekEndTime);
+
+		currSched.startTime = nextWeekStartTime;
+		currSched.endTime = nextWeekEndTime;
+		currSched.numAvailable = scheduleNumAvailStart;
+		currSched.isPaused = false;
+	}
+
+	let updatedWeeklySched = {};
+
+	if (ydayWeekSchedule) {
+		updatedWeeklySched = {
+			...ydayWeekSchedule,
+			...ydaySchedulePaused,
+		};
+
+		console.log("updatedWeekly", updatedWeeklySched);
+
+		try {
+			await updateDoc(
+				bizDocRef,
+				{
+					[`weeklySchedules.${yesterdayIdx}`]: updatedWeeklySched,
+				},
+				{ merge: true }
+			);
+		} catch (error) {
+			console.log("problem saving weeklySchedule", error);
+			return false;
+		}
+	} else {
+		try {
+			await updateDoc(
+				bizDocRef,
+				{
+					[`weeklySchedules.${yesterdayIdx}`]: ydaySchedulePaused,
+				},
+				{ merge: true }
+			);
+		} catch (error) {
+			console.log("problem saving weeklySchedule", error);
+			return false;
+		}
 	}
 
 	for (let i = 0; i < scheduleIdArray.length; i++) {
@@ -1225,13 +1292,17 @@ const saveWeeklySchedules = async (
 		const openHistoryRef = doc(db, "biz", bizId, "openHistory", currScheduleId);
 
 		try {
-			await updateDoc(openHistoryRef, {
-				recurring: true,
-				status: "Regular",
-				statusIndex: 0,
-				pausedBy: "",
-				pausedAt: null,
-			});
+			await updateDoc(
+				openHistoryRef,
+				{
+					recurring: true,
+					status: "Regular",
+					statusIndex: 0,
+					pausedBy: "",
+					pausedAt: null,
+				},
+				{ merge: true }
+			);
 		} catch (error) {
 			console.log("problem updating paused openHistory", error);
 			return false;

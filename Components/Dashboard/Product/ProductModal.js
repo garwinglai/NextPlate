@@ -136,6 +136,7 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 				productId,
 				newItemsVal
 			);
+			// return;
 			const { success, message } = productUpdateRes;
 
 			if (success) {
@@ -207,6 +208,16 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 					? product.isDefault
 					: false
 				: false,
+			itemImgLink: product
+				? product.itemImgLink
+					? product.itemImgLink
+					: ""
+				: "",
+			itemLrgImgLink: product
+				? product.itemLrgImgLink
+					? product.itemLrgImgLink
+					: ""
+				: "",
 		}));
 		close();
 	};

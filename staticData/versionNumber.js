@@ -1,4 +1,4 @@
-export const versionNumber = "V 1.2.9";
+export const versionNumber = "V 1.3.0";
 
 /*
  * 1.1.3 -
@@ -106,4 +106,10 @@ export const versionNumber = "V 1.2.9";
  * 1.2.9 -
  * 1. Edit Product updates weekly & paused Schedules
  * 2. Removed 20
+ */
+
+/*
+ * 1.3.0 -
+ * 1. Automatic unpause schedule updated
+ * 2. Percentage payouts calculation
  */

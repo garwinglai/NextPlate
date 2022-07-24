@@ -45,33 +45,51 @@ function Payouts() {
 				clientName,
 			} = currObj;
 
-			const { bizFeesDble, lastPayoutDate, bizAddress, customerFeesDble } =
-				await getBizFeesAndDates(bizId);
-			const { numOrders, totalSales, totalStripeFees } =
+			const {
+				bizFeesDble,
+				lastPayoutDate,
+				bizAddress,
+				customerFeesDble,
+				isBizFeesPercent,
+			} = await getBizFeesAndDates(bizId);
+			const { numOrders, totalSales, totalStripeFees, totalSubTotal } =
 				await getTotalRevenueAndNumOrders(
 					bizId,
 					lastPayoutDate,
 					currPayoutEndDate
 				);
-			const totalCanceledStripeFees = await getTotalCancelledFees(
+			const totalCanceledStripeFees = await getTotalCanceledFees(
 				bizId,
 				lastPayoutDate,
 				currPayoutEndDate
 			);
 			const profit = calculateProfits(
+				isBizFeesPercent,
+				totalSubTotal,
 				bizFeesDble,
 				numOrders,
 				totalSales,
 				totalCanceledStripeFees
 			);
-			const totalBizFees = bizFeesDble * numOrders;
-			const roundedStripeFees = bankersRound(totalStripeFees, 2);
+			let totalBizFeesUnRounded;
+
+			if (isBizFeesPercent) {
+				totalBizFeesUnRounded = (totalSubTotal * bizFeesDble) / 100;
+			} else {
+				totalBizFeesUnRounded = bizFeesDble * numOrders;
+			}
+			const totalBizFees = stripeRound(totalBizFeesUnRounded);
+			const roundedStripeFees = stripeRound(totalStripeFees);
+			totalSubTotal = stripeRound(totalSubTotal);
+			totalSales = stripeRound(totalSales);
+			totalCanceledStripeFees = stripeRound(totalCanceledStripeFees);
 
 			showPayouts(
 				bizId,
 				lastPayoutDate,
 				currPayoutEndDate,
 				bizFeesDble,
+				totalSubTotal,
 				profit,
 				totalSales,
 				totalBizFees,
@@ -82,7 +100,8 @@ function Payouts() {
 				numOrders,
 				roundedStripeFees,
 				totalCanceledStripeFees,
-				customerFeesDble
+				customerFeesDble,
+				isBizFeesPercent
 			);
 		}
 		setIsCalculating(false);
@@ -155,6 +174,7 @@ function Payouts() {
 
 			let lastPayoutDate;
 			let bizFeesDble;
+			let isBizFeesPercent = false;
 			let bizAddress;
 			let customerFeesDble;
 
@@ -165,26 +185,44 @@ function Payouts() {
 				const bizData = bizSnapshot.data();
 				const address = bizData.address;
 				const { bizFees, createdAt, customerFees } = bizData;
-				const { feesAsDouble } = bizFees;
+				const { feesAsDouble, pctFeesAsDouble } = bizFees;
 				const { seconds, nanoseconds } = createdAt;
 				const createdAtEpoch = (seconds + nanoseconds * 0.000000001) * 1000;
 
 				bizAddress = address;
 				lastPayoutDate = createdAtEpoch;
-				bizFeesDble = feesAsDouble;
+				if (pctFeesAsDouble) {
+					bizFeesDble = pctFeesAsDouble;
+					isBizFeesPercent = true;
+				} else {
+					bizFeesDble = feesAsDouble;
+				}
+
 				customerFeesDble = customerFees.feesAsDouble;
 			} else {
 				// * If has payouts before, use the last payout time
-				const { endDateEpoch, bizFeesDouble, address, customerFeesDouble } =
-					lastPayout;
+				const {
+					endDateEpoch,
+					bizFeesDouble,
+					isBizFeesPct,
+					address,
+					customerFeesDouble,
+				} = lastPayout;
 
 				bizAddress = address;
 				lastPayoutDate = endDateEpoch;
 				bizFeesDble = bizFeesDouble;
 				customerFeesDble = customerFeesDouble;
+				isBizFeesPercent = isBizFeesPct;
 			}
 
-			return { bizFeesDble, lastPayoutDate, bizAddress, customerFeesDble };
+			return {
+				bizFeesDble,
+				lastPayoutDate,
+				bizAddress,
+				customerFeesDble,
+				isBizFeesPercent,
+			};
 		} catch (error) {
 			console.log("admin get biz fees error", error);
 			// Todo: handle error
@@ -220,21 +258,27 @@ function Payouts() {
 		);
 		try {
 			let salesPerOrderArr = [];
+			let subTotalAmtArr = [];
 			let stripeFeesArr = [];
+			let bizTaxArr = [];
 			let numOrders = 0;
 			let totalSales = 0;
 			let totalStripeFees = 0;
+			let totalSubTotal = 0;
+			let totalBizTax = 0;
 
 			const ordersSnapshot = await getDocs(q);
 			ordersSnapshot.forEach((doc) => {
 				const ordersData = doc.data();
 				const totalPerOrder = ordersData.bizTotalPriceDouble;
-				// TODO: add in subtotal to minus profits?
-				// const bizSubTotal = ordersData.subtotalAmt;
+				const bizSubTotal = ordersData.subtotalAmt;
+				const bizTaxAmt = ordersData.bizTaxAmt;
 				const stripeFee = totalPerOrder * 0.029 + 0.3;
 
 				salesPerOrderArr.push(totalPerOrder);
+				subTotalAmtArr.push(bizSubTotal);
 				stripeFeesArr.push(stripeFee);
+				bizTaxArr.push(bizTaxAmt);
 			});
 
 			const salesArrLength = salesPerOrderArr.length;
@@ -243,16 +287,24 @@ function Payouts() {
 				numOrders = salesArrLength;
 				totalSales = salesPerOrderArr.reduce((sum, val) => (sum += val));
 				totalStripeFees = stripeFeesArr.reduce((sum, val) => (sum += val));
+				totalSubTotal = subTotalAmtArr.reduce((sum, val) => (sum += val));
+				totalBizTax = bizTaxArr.reduce((sum, val) => (sum += val));
 			}
 
-			return { numOrders, totalSales, totalStripeFees };
+			return {
+				numOrders,
+				totalSales,
+				totalStripeFees,
+				totalSubTotal,
+				totalBizTax,
+			};
 		} catch (error) {
 			console.log("error admin getTotalRev&NumOrders", error);
 			// TODO: handle error
 		}
 	};
 
-	const getTotalCancelledFees = async (
+	const getTotalCanceledFees = async (
 		bizId,
 		lastPayoutDate,
 		currPayoutEndDate
@@ -294,17 +346,30 @@ function Payouts() {
 	};
 
 	const calculateProfits = (
+		isBizFeesPercent,
+		totalSubTotal,
 		bizFeesDble,
 		numOrders,
 		totalSales,
 		totalCanceledStripeFees
 	) => {
-		const profit =
-			totalSales - numOrders * bizFeesDble - totalCanceledStripeFees;
-		const roundedProfit = bankersRound(profit, 2);
+		let profit;
+
+		if (isBizFeesPercent) {
+			const nextPlateFees = totalSubTotal * (bizFeesDble / 100);
+			profit = totalSales - nextPlateFees - totalCanceledStripeFees;
+		} else {
+			const nextPlateFees = bizFeesDble * numOrders;
+			profit = totalSales - nextPlateFees - totalCanceledStripeFees;
+		}
+		const roundedProfit = stripeRound(profit);
 
 		return roundedProfit;
 	};
+
+	function stripeRound(num) {
+		return +(Math.round(num + "e+2") + "e-2");
+	}
 
 	function bankersRound(profit, decimalPlaces) {
 		var decimalPlace = decimalPlaces || 0;
@@ -323,6 +388,7 @@ function Payouts() {
 		lastPayoutDate,
 		currPayoutEndDate,
 		bizFeesDble,
+		totalSubTotal,
 		profit,
 		totalSales,
 		totalBizFees,
@@ -333,7 +399,8 @@ function Payouts() {
 		numOrders,
 		roundedStripeFees,
 		totalCanceledStripeFees,
-		customerFeesDble
+		customerFeesDble,
+		isBizFeesPercent
 	) => {
 		const date = new Date();
 		const endDateEpoch = currPayoutEndDate;
@@ -341,10 +408,15 @@ function Payouts() {
 		const startDateEpoch = lastPayoutDate;
 		const startDateShort = new Date(lastPayoutDate).toLocaleDateString();
 		const createdAt = new serverTimestamp();
-		const totalSalesStr = `$${totalSales.toFixed(2).toString()}`;
-		const totalSalesDouble = parseFloat(totalSales.toFixed(2));
-		const bizFeesStr = `$${bizFeesDble.toString()}`;
+		const totalSubTotalStr = `$${totalSubTotal.toString()}`;
+		const totalSubTotalDouble = totalSubTotal;
+		const totalSalesStr = `$${totalSales.toString()}`;
+		const totalSalesDouble = totalSales;
+		const bizFeesStr = isBizFeesPercent
+			? `${bizFeesDble.toString()}%`
+			: `$${bizFeesDble.toString()}`;
 		const bizFeesDouble = bizFeesDble;
+		const isBizFeesPct = isBizFeesPercent;
 		const totalBizFeesStr = `$${totalBizFees.toString()}`;
 		const totalBizFeesDouble = totalBizFees;
 		const payoutAmtStr = `$${profit.toString()}`;
@@ -355,22 +427,17 @@ function Payouts() {
 		const address = bizAddress;
 		const totalStripeFeesDouble = roundedStripeFees;
 		const totalStripeFeesStr = `$${roundedStripeFees.toString()}`;
-		const nextPlateRevenueDouble =
+		let nextPlateRevenueDouble =
 			numOrders * customerFeesDble + totalBizFeesDouble;
-		const nextPlateRevenueStr = `$${nextPlateRevenueDouble
-			.toFixed(2)
-			.toString()}`;
+		nextPlateRevenueDouble = stripeRound(nextPlateRevenueDouble);
+		const nextPlateRevenueStr = `$${nextPlateRevenueDouble.toString()}`;
 		const totalCanceledStripeFeesDouble = totalCanceledStripeFees;
 		const totalCanceledStripeFeesStr = `$${totalCanceledStripeFees.toString()}`;
 		const customerFeesString = `$${customerFeesDble.toString()}`;
 		const customerFeesDouble = customerFeesDble;
-		const nextPlateProfitDouble =
-			nextPlateRevenueDouble -
-			totalStripeFeesDouble +
-			totalCanceledStripeFeesDouble;
-		const nextPlateProfitString = `$${nextPlateProfitDouble
-			.toFixed(2)
-			.toString()}`;
+		let nextPlateProfitDouble = nextPlateRevenueDouble - totalStripeFeesDouble;
+		nextPlateProfitDouble = stripeRound(nextPlateProfitDouble);
+		const nextPlateProfitString = `$${nextPlateProfitDouble.toString()}`;
 
 		const payoutData = {
 			bizId,
@@ -379,8 +446,11 @@ function Payouts() {
 			endDateEpoch,
 			startDateShort,
 			endDateShort,
+			totalSubTotalStr,
+			totalSubTotalDouble,
 			totalSalesStr,
 			totalSalesDouble,
+			isBizFeesPct,
 			bizFeesStr,
 			bizFeesDouble,
 			totalBizFeesStr,

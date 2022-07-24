@@ -68,6 +68,7 @@ function RemoveScheduleTab({ bizId, schedule }) {
 	const handleEdit = () => {
 		const currDate = new Date();
 		const currEpoch = Date.parse(currDate);
+		console.log("endTime", endTime);
 
 		if (currEpoch < endTime) {
 			setEdit((prev) => ({

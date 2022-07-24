@@ -228,9 +228,12 @@ function DayComponent({
 				const bizData = doc.data();
 				const weeklySchedules = bizData.weeklySchedules;
 				const pausedSchedules = bizData.pausedSchedules;
-				const dayIdxObj = weeklySchedules[dayOfWkIdx];
-
 				let todayPaused;
+				let dayIdxObj;
+
+				if (weeklySchedules !== undefined) {
+					dayIdxObj = weeklySchedules[dayOfWkIdx];
+				}
 
 				if (pausedSchedules !== undefined) {
 					todayPaused = pausedSchedules[dayOfWkIdx];
@@ -655,7 +658,7 @@ function DayComponent({
 	const handleEdit = (e, endTime, isPaused, scheduleId) => {
 		const currDate = new Date();
 		const currEpoch = Date.parse(currDate);
-
+		console.log("endTime", endTime);
 		if (currEpoch < endTime) {
 			setEdit((prev) => ({
 				...prev,

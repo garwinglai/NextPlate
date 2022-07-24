@@ -22,7 +22,10 @@ import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
 import { useRouter } from "next/router";
 import { versionNumber } from "../staticData/versionNumber";
-import { updatePastSchedules } from "../actions/dashboard/scheduleCrud";
+import {
+	updatePastSchedules,
+	updateYdaySchedPaused,
+} from "../actions/dashboard/scheduleCrud";
 import playNotificationSound from "../helper/PlayAudio";
 
 const style = {
@@ -91,6 +94,7 @@ function Layout({ children, currentPage, subPage, uid }) {
 		}
 
 		updateOldSchedules(bizIdTemp);
+		updateYdayPaused(bizIdTemp);
 		const ninetyMin = 90 * 60 * 1000;
 		const interval = setInterval(() => checkInterval(bizIdTemp), ninetyMin);
 		setLocalStorage("interval", interval);
@@ -119,6 +123,10 @@ function Layout({ children, currentPage, subPage, uid }) {
 			console.log("update past schedule error", message);
 		}
 	}
+
+	const updateYdayPaused = async (bizIdTemp) => {
+		const res = await updateYdaySchedPaused(bizIdTemp);
+	};
 
 	// Check if any schedules by interval. Shut down screen if no schedules
 	async function checkInterval(bizId) {
@@ -213,7 +221,7 @@ function Layout({ children, currentPage, subPage, uid }) {
 
 	async function updateVersion() {
 		const currVersion = JSON.parse(getLocalStorage("version"));
-		
+
 		if (document.visibilityState === "visible") {
 			console.log(currVersion);
 			if (!currVersion || currVersion !== versionNumber || currVersion === "") {
