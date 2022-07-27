@@ -841,7 +841,7 @@ async function removeSchedule(bizId, scheduleId, dayIndex, event) {
 }
 
 async function pauseSchedule(bizId, scheduleId, dayIndex, event) {
-	console.log(bizId, scheduleId, dayIndex, event);
+	// console.log(bizId, scheduleId, dayIndex, event);
 	const bizDocRef = doc(db, "biz", bizId);
 	const openHistoryRef = doc(db, "biz", bizId, "openHistory", scheduleId);
 
@@ -1153,7 +1153,6 @@ async function updatePastSchedules(bizId) {
 }
 
 const updateYdaySchedPaused = async (bizId) => {
-	console.log("ydayupdate");
 	const yesterdayIdx = getYesterdayIdx();
 
 	const bizDocRef = doc(db, "biz", bizId);

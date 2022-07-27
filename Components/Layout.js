@@ -186,10 +186,10 @@ function Layout({ children, currentPage, subPage, uid }) {
 		try {
 			wakeLock = await navigator.wakeLock.request("screen");
 			wakeLock.addEventListener("release", () => {
-				console.log("Wake Lock was released");
+				// console.log("Wake Lock was released");
 			});
 			// window.alert("Wake Lock is active");
-			console.log("Wake Lock is active");
+			// console.log("Wake Lock is active");
 		} catch (err) {
 			console.error(`${err.name}, ${err.message}`);
 		}
@@ -223,7 +223,7 @@ function Layout({ children, currentPage, subPage, uid }) {
 		const currVersion = JSON.parse(getLocalStorage("version"));
 
 		if (document.visibilityState === "visible") {
-			console.log(currVersion);
+			// console.log(currVersion);
 			if (!currVersion || currVersion !== versionNumber || currVersion === "") {
 				setLocalStorage("version", versionNumber);
 				router.reload();

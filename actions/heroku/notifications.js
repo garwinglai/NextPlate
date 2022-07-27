@@ -26,7 +26,6 @@ async function sendNotification(
 	emoji,
 	originalPrice
 ) {
-	return;
 	// * URL for sending notifications to heroku
 	const baseUrl = "https://restoq.herokuapp.com/";
 	const notificationEndPoint = "sendNotification";

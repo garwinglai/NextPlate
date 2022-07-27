@@ -82,7 +82,7 @@ async function updateProduct(bizId, productId, newItemValues) {
 
 	if (weeklySchedules !== null) {
 		const daysSchedArr = Object.keys(weeklySchedules);
-
+		console.log("productId", productId);
 		for (let i = 0; i < daysSchedArr.length; i++) {
 			const day = daysSchedArr[i];
 			const schedIdPerDayArr = Object.keys(weeklySchedules[day]);
