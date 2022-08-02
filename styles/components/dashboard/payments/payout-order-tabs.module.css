@@ -7,17 +7,26 @@
 	font-size: 12px;
 }
 
+.orderId {
+	word-wrap: break-word;
+}
+
 .gridSix {
 	display: grid;
-	grid-template-columns: repeat(7, 1fr);
+	grid-template-columns: 1fr 1fr 2fr 1fr 1fr 1fr 1fr;
+	justify-items: center;
 }
 
 .gridItem {
-	justify-self: center;
+	text-align: center;
 }
 
 @media screen and (max-width: 480px) {
 	.payoutOrderTabs p {
-		font-size: 120px;
+		font-size: 10px;
+	}
+
+	.gridSix {
+		grid-template-columns: 1fr 2fr 2fr 1fr 1fr 1fr 1fr;
 	}
 }

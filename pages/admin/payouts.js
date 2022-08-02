@@ -114,7 +114,7 @@ function Payouts() {
 			const bizAccountSnapshot = await getDocs(bizAccountDocRef);
 			const bizArr = [];
 
-			// * Admin test restuarnats, remove from list of paid restaurants
+			// * Admin test restaurants, remove from list of paid restaurants
 			const blackListRestaurants = [
 				// Rabalais santa paula
 				"7C2CJXCuRohmhJYVpoGq",
@@ -128,8 +128,6 @@ function Payouts() {
 				"bmILh3RBrTj6cpn41fSx",
 				// Dulce
 				"ZL0JdKSRXHZkrspZXSWq",
-				// Bird's Nest
-				"XtM3KOPJhzygG4F5enLt",
 			];
 
 			// ! Rabalais for payment (testing)
@@ -182,23 +180,28 @@ function Payouts() {
 				const bizDocRef = doc(db, "biz", bizId);
 				// * If no payouts yet, use createdAt biz as a standard for payout dates
 				const bizSnapshot = await getDoc(bizDocRef);
-				const bizData = bizSnapshot.data();
-				const address = bizData.address;
-				const { bizFees, createdAt, customerFees } = bizData;
-				const { feesAsDouble, pctFeesAsDouble } = bizFees;
-				const { seconds, nanoseconds } = createdAt;
-				const createdAtEpoch = (seconds + nanoseconds * 0.000000001) * 1000;
 
-				bizAddress = address;
-				lastPayoutDate = createdAtEpoch;
-				if (pctFeesAsDouble) {
-					bizFeesDble = pctFeesAsDouble;
-					isBizFeesPercent = true;
+				if (bizSnapshot.exists()) {
+					const bizData = bizSnapshot.data();
+					const address = bizData.address;
+					const { bizFees, createdAt, customerFees } = bizData;
+					const { feesAsDouble, pctFeesAsDouble } = bizFees;
+					const { seconds, nanoseconds } = createdAt;
+					const createdAtEpoch = (seconds + nanoseconds * 0.000000001) * 1000;
+
+					bizAddress = address;
+					lastPayoutDate = createdAtEpoch;
+					if (pctFeesAsDouble) {
+						bizFeesDble = pctFeesAsDouble;
+						isBizFeesPercent = true;
+					} else {
+						bizFeesDble = feesAsDouble;
+					}
+
+					customerFeesDble = customerFees.feesAsDouble;
 				} else {
-					bizFeesDble = feesAsDouble;
+					// TODO: Handle Error for business does not exist
 				}
-
-				customerFeesDble = customerFees.feesAsDouble;
 			} else {
 				// * If has payouts before, use the last payout time
 				const {
@@ -236,7 +239,12 @@ function Payouts() {
 		const payoutsSnapshot = await getDocs(q);
 
 		if (payoutsSnapshot.size > 0) {
-			const payoutData = payoutsSnapshot.data();
+			let payoutData;
+
+			payoutsSnapshot.forEach((doc) => {
+				payoutData = doc.data();
+			});
+
 			return payoutData;
 		} else {
 			// * No payouts made yet, return null in order to grab biz started date to use as start period for payout.
@@ -501,6 +509,8 @@ function Payouts() {
 			const profit = currBizPayoutData.payoutAmtDouble;
 
 			const { success, message } = await payoutHeroku(profit, stripeId);
+
+			console.log({ name, stripeId, success, message });
 
 			if (success) {
 				// * Save successful payouts to biz

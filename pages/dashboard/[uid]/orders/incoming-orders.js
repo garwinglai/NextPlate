@@ -334,8 +334,12 @@ function IncomingOrders() {
 				let posts = 0;
 				let paused = 0;
 				let todayPaused;
+				let todaySchedules;
 
-				const todaySchedules = weeklySchedules[dayOne];
+				if (weeklySchedules !== undefined) {
+					todaySchedules = weeklySchedules[dayOne];
+				}
+
 				if (pausedSchedules !== undefined) {
 					todayPaused = pausedSchedules[dayOne];
 				}

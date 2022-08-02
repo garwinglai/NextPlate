@@ -56,11 +56,13 @@
 
 .gridSix {
 	display: grid;
-	grid-template-columns: repeat(7, 1fr);
+	grid-template-columns: 1fr 1fr 2fr 1fr 1fr 1fr 1fr;
+	justify-items: center;
 }
 
 .gridItem {
-	justify-self: center;
+	text-align: center;
+	/* background-color: rebeccapurple; */
 }
 
 .gridBorder {
@@ -106,6 +108,12 @@
 }
 
 @media screen and (max-width: 480px) {
+	.gridSix {
+		
+		grid-template-columns: 1fr 2fr 2fr 1fr 1fr 1fr 1fr;
+		
+	}
+
 	.container {
 		width: 280px;
 	}

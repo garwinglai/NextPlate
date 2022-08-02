@@ -67,21 +67,23 @@ function PayoutModal({ open, close, payout, bizId }) {
 
 	const getOrders = async (bizId) => {
 		const ordersDocRef = collection(db, "biz", bizId, "orders");
+
 		const q = query(
 			ordersDocRef,
-			where("createdAt", ">", startDateEpoch),
-			where("createdAt", "<=", endDateEpoch),
-			orderBy("createdAt", "asc")
+			where("startTime", ">", startDateEpoch),
+			where("startTime", "<=", endDateEpoch),
+			orderBy("startTime", "asc")
 		);
 		try {
 			const ordersSnapshot = await getDocs(q);
 			const ordersArr = [];
+
 			ordersSnapshot.forEach((doc) => {
 				const data = doc.data();
 				data.id = doc.id;
 				ordersArr.push(data);
 			});
-
+			console.log(ordersArr);
 			setOrders(ordersArr);
 		} catch (error) {
 			console.log("getOrders error", error);

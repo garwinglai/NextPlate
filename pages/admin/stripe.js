@@ -109,6 +109,7 @@ function Stripe() {
 	return (
 		<Layout currentPage="admin">
 			<button onClick={handleFetchStripe}>Fetch stripe accounts</button>
+
 			{stripeAcc.map((biz) => {
 				return (
 					<div key={biz.bizId}>
@@ -122,3 +123,5 @@ function Stripe() {
 }
 
 export default Stripe;
+
+// 1Js4EOxrx3WR0LgXYAv0fdYf09w1

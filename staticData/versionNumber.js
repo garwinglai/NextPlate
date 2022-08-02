@@ -1,4 +1,4 @@
-export const versionNumber = "V 1.3.0";
+export const versionNumber = "V 1.3.1";
 
 /*
  * 1.1.3 -
@@ -112,4 +112,12 @@ export const versionNumber = "V 1.3.0";
  * 1.3.0 -
  * 1. Automatic unpause schedule updated
  * 2. Percentage payouts calculation
+ */
+
+/*
+ * 1.3.1 -
+ * 1. Removed customer from favorites of biz's
+ * 2. Updated save product Id's for each biz weeklySchedule
+ * 3. Updated Timer for Notifications - 20 min buffer time
+ * 4. Fixed payoutModal page.
  */

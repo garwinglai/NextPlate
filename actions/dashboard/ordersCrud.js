@@ -552,7 +552,7 @@ async function updateOrder(
 
 		// * Send Notifications Flash
 		try {
-			const resNotification = await sendNotification(
+			sendNotification(
 				bizId,
 				bizName,
 				"response",
@@ -568,12 +568,8 @@ async function updateOrder(
 				null,
 				null
 			);
-			if (resNotification.success) {
-				return { success: true, paymentMessage };
-			} else {
-				// * notification error, still send success because flash was created.
-				return { success: true, paymentMessage };
-			}
+
+			return { success: true, paymentMessage };
 		} catch (err) {
 			// * return success true because schedule was posted, just notifications was not sent.
 			console.log(err);
@@ -634,7 +630,7 @@ async function updateOrder(
 
 		// * Send Notifications Flash
 		try {
-			const resNotification = await sendNotification(
+			sendNotification(
 				bizId,
 				bizName,
 				"response",
@@ -650,12 +646,8 @@ async function updateOrder(
 				null,
 				null
 			);
-			if (resNotification.success) {
-				return { success: true, message: "Successfully declined" };
-			} else {
-				// * notification error, still send success because flash was created.
-				return { success: true, message: "Successfully declined" };
-			}
+
+			return { success: true, message: "Successfully declined" };
 		} catch (err) {
 			// * return success true because schedule was posted, just notifications was not sent.
 			console.log("notification not sent decline", err);
@@ -736,7 +728,7 @@ async function updateOrder(
 
 		// * Send Notifications Flash
 		try {
-			const resNotification = await sendNotification(
+			sendNotification(
 				bizId,
 				bizName,
 				"response",
@@ -752,13 +744,8 @@ async function updateOrder(
 				null,
 				null
 			);
-			if (resNotification.success) {
-				console.log("success");
-				return { success: true, paymentMessage };
-			} else {
-				// * notification error, still send success because flash was created.
-				return { success: true, paymentMessage };
-			}
+
+			return { success: true, paymentMessage };
 		} catch (err) {
 			// * return success true because schedule was posted, just notifications was not sent.
 			console.log("notification error", err);

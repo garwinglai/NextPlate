@@ -42,4 +42,21 @@ async function getAllUsers() {
 	}
 }
 
+const getCustomerPhone = async (bizId, orderId) => {
+	console.log(bizId, orderId);
+	const bizOrderRef = doc(db, "biz", bizId, "orders", orderId);
+	const bizOrderSnap = await getDoc(bizOrderRef);
+
+	if (bizOrderSnap.exists()) {
+		const bizOrderData = bizOrderSnap.data();
+		const phone = bizOrderData.customerPhone;
+		const customerPhone = phone.slice(1);
+
+		return { isSuccess: true, customerPhone };
+	} else {
+		return { isSuccess: false };
+	}
+};
+
 export default getAllUsers;
+export { getCustomerPhone };

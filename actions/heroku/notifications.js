@@ -5,10 +5,12 @@ import {
 	getDoc,
 	doc,
 	writeBatch,
+	updateDoc,
 } from "firebase/firestore";
 import { db } from "../../firebase/fireConfig";
 import fetch from "isomorphic-fetch";
 import getNearbyUserId from "../../helper/GeoHash";
+import { getCustomerPhone } from "../crud/user";
 
 async function sendNotification(
 	bizId,
@@ -33,6 +35,24 @@ async function sendNotification(
 
 	// * Handle sending out notifications for flash schedule
 	if (event === "flash" || event === "regular") {
+		//* Check if notification has been recently sent
+		const lastNotifSent = await getRecentNotif(bizId);
+
+		if (lastNotifSent) {
+			const date = new Date();
+			const epochTime = Date.parse(date);
+			const twentyMinInMili = 20 * 60 * 1000;
+			const bufferNotifTime = lastNotifSent + twentyMinInMili;
+
+			if (epochTime <= bufferNotifTime) {
+				console.log("epoch", epochTime);
+				console.log("bufferNotifTime", bufferNotifTime);
+				return;
+			}
+		}
+
+		console.log("hi");
+
 		const customerFavesRef = collection(db, "biz", bizId, "customerFaves");
 		const customerFavesSnap = await getDocs(customerFavesRef);
 		const percentDiscountStr = calculateDiscount(defaultPrice, originalPrice);
@@ -57,6 +77,7 @@ async function sendNotification(
 		// * Loop through customerIdArr to find userTokens of each customer.
 		for (let i = 0; i < customerIdArr.length; i++) {
 			const currId = customerIdArr[i];
+			// console.log(currId);
 			const userDocRef = doc(db, "userTokens", currId);
 			const userSnap = await getDoc(userDocRef);
 			const data = userSnap.data();
@@ -122,6 +143,10 @@ async function sendNotification(
 		})
 			.then((data) => {
 				const status = data.status;
+				console.log("here");
+
+				updateLastNotifSent(bizId);
+
 				return { success: true };
 			})
 			.catch((error) => {
@@ -168,8 +193,29 @@ async function sendNotification(
 			};
 		}
 
-		// * Push notification for declining order
-		if (action === "Declined") {
+		// * SMS for Declined or Canceled order
+		if (action === "Declined" || action === "Canceled") {
+			// const { isSuccess, customerPhone } = await getCustomerPhone(
+			// 	bizId,
+			// 	orderId
+			// );
+
+			// if (isSuccess) {
+			// 	const smsRes = await sendSMS(
+			// 		action,
+			// 		customerPhone,
+			// 		bizName,
+			// 		reasonsDeclineCancel
+			// 	);
+			// 	const { success } = smsRes;
+			// 	if (success) {
+			// 		return true;
+			// 	} else {
+			// 		return false;
+			// 	}
+			// } else {
+			// 	return false;
+			// }
 			data = {
 				tokens: userTokens,
 				title: "NextPlate Order Declined",
@@ -215,6 +261,40 @@ async function sendNotification(
 	}
 }
 
+const getRecentNotif = async (bizId) => {
+	const docRef = doc(db, "biz", bizId);
+	const snapShot = await getDoc(docRef);
+
+	if (!snapShot.exists()) {
+		return null;
+	}
+
+	const data = snapShot.data();
+	const lastNotifSent = data.lastNotifSent;
+
+	if (!lastNotifSent) {
+		return null;
+	}
+
+	return lastNotifSent;
+};
+
+const updateLastNotifSent = async (bizId) => {
+	const docRef = doc(db, "biz", bizId);
+	const date = new Date();
+	const epoch = Date.parse(date);
+
+	console.log("updateLastNotif");
+
+	updateDoc(
+		docRef,
+		{
+			lastNotifSent: epoch,
+		},
+		{ merge: true }
+	);
+};
+
 const calculateDiscount = (defaultPrice, originalPrice) => {
 	const defaultPriceNoDollar = defaultPrice.substring(1);
 	const originalPriceNoDollar = originalPrice.substring(1);
@@ -228,4 +308,59 @@ const calculateDiscount = (defaultPrice, originalPrice) => {
 	return percentDiscountStr;
 };
 
+const sendSMS = async (
+	action,
+	customerPhone,
+	bizName,
+	reasonsDeclineCancel
+) => {
+	const baseUrl = "https://ness-twilio.herokuapp.com/";
+	const endPoint = "sendSMS";
+	const smsUrl = baseUrl.concat(endPoint);
+	let smsData = {};
+
+	switch (action) {
+		case "Declined":
+			smsData = {
+				recipient: customerPhone,
+				msg: `${bizName} has declined your order. You were not charged for this order. Reason for decline: (${reasonsDeclineCancel})`,
+			};
+			break;
+		case "Canceled":
+			smsData = {
+				recipient: customerPhone,
+				msg: `${bizName} has canceled your order. You were not charged for this order.`,
+			};
+			break;
+
+		default:
+			break;
+	}
+	console.log("smsData", smsData);
+
+	return fetch(smsUrl, {
+		method: "POST",
+		headers: {
+			Accept: "application/json",
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(smsData),
+	})
+		.then((data) => {
+			console.log("success data", data);
+			const status = data.status;
+
+			if (status === 200) {
+				return { success: true, status };
+			} else {
+				return { success: false, status };
+			}
+		})
+		.catch((error) => {
+			console.log("error data", error);
+			return { success: false, error };
+		});
+};
+
 export default sendNotification;
+export { sendSMS };
