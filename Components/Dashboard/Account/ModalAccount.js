@@ -65,17 +65,22 @@ function ModalAccount({
 				// * Handle new email update
 				if (modalName === "email") {
 					const oldLoginEmail = storedUser.email;
+					const newEmailLowerCase = _.toLower(productLoginInfo.loginEmail);
 					let additionalChange;
 
 					if (oldLoginEmail !== productLoginInfo.loginEmail) {
 						additionalChange = true;
 					}
 
+					const productInfo = {
+						loginEmail: newEmailLowerCase,
+					};
+
 					const res = await updateBizDataUser(
 						uid,
 						bizId,
 						"form2",
-						productLoginInfo,
+						productInfo,
 						additionalChange,
 						oldLoginEmail,
 						storedUser

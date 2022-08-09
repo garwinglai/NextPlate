@@ -1,4 +1,4 @@
-export const versionNumber = "V 1.3.1";
+export const versionNumber = "V 1.3.2";
 
 /*
  * 1.1.3 -
@@ -120,4 +120,16 @@ export const versionNumber = "V 1.3.1";
  * 2. Updated save product Id's for each biz weeklySchedule
  * 3. Updated Timer for Notifications - 20 min buffer time
  * 4. Fixed payoutModal page.
+ */
+
+/*
+ * 1.3.2 -
+ * 1. schedule functions for payment each month
+ * 2. schedule functions for notiications
+ */
+
+/*
+ * 1.3.3 -
+ * 1. When updating email, force email to all lower case then save.
+ * 2. Removed onChange defaultPrice listener - now you can enter any number when creating products, and it only shows error after clicking save if less than 20% off.
  */

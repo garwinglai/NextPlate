@@ -14,9 +14,14 @@ exports.nextServer = https.onRequest((req, res) => {
 	return server.prepare().then(() => nextjsHandle(req, res));
 });
 
-// exports.scheduledNotification = pubsub
-// 	.schedule("every 5 minutes")
+// exports.scheduledMonthlyPayout = pubsub
+// 	.schedule("0 1 1 * *")
 // 	.onRun((context) => {
-// 		console.log("will run each 5 minutes", context);
+// 		logger.info("This first of the month at 1AM", context);
+
+
+
+
+
 // 		return null;
 // 	});

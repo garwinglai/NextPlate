@@ -102,6 +102,19 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 		e.preventDefault();
 
 		// * Check if price is 20% off original price. defaultPrice should be undefined, return error.
+		const intDefaultPrice = parseFloat(defaultPrice);
+		const intOriginalPrice = parseFloat(originalPrice);
+		const twentyOffOriginal = intOriginalPrice * 0.8;
+
+		if (intDefaultPrice > twentyOffOriginal) {
+			setHandleResponse((prev) => ({
+				...prev,
+				loading: false,
+				errorMessage: "List price should be at least 20% off.",
+				isAlertOpen: true,
+			}));
+			return;
+		}
 
 		if (!defaultPrice) {
 			setHandleResponse((prev) => ({
@@ -340,20 +353,7 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 									decimalScale={2}
 									decimalsLimit={2}
 									onValueChange={(value, name) => {
-										const intDefaultPrice = parseFloat(value);
-										const intOriginalPrice = parseFloat(originalPrice);
-										const twentyOffOriginal = intOriginalPrice * 0.8;
-
-										if (intDefaultPrice > twentyOffOriginal) {
-											setHandleResponse((prev) => ({
-												...prev,
-												loading: false,
-												errorMessage: "List price should be at least 20% off.",
-												isAlertOpen: true,
-											}));
-										} else {
-											setNewItemValues((prev) => ({ ...prev, [name]: value }));
-										}
+										setNewItemValues((prev) => ({ ...prev, [name]: value }));
 									}}
 									style={{
 										width: "100%",

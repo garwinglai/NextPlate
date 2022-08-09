@@ -167,6 +167,7 @@ async function signUpBiz({ email, password }) {
 }
 
 async function signInBiz({ email, password, rememberMe }) {
+	console.log("email", email);
 	const auth = getAuth();
 	const docRef = doc(db, "bizEmailsInUse", email);
 	const docSnap = await getDoc(docRef);
@@ -200,6 +201,7 @@ async function signInBiz({ email, password, rememberMe }) {
 				};
 			});
 	} else {
+		console.log("false, doc not found");
 		return {
 			success: false,
 			message: "Email not found.",
