@@ -31,8 +31,3 @@ exports.nextServer = https.onRequest((req, res) => {
 
 // 		return null;
 // 	});
-
-// BizIds with no commission until Sept 1st
-// L27Fa9DmUzXmpLJr5BFz: Funculo
-// mMVqwtl3jmPm3vU2SuMG: Knead Noods Pasta Bar
-// PkSfV8QqS3frbO4kK5aZ: Civilization
