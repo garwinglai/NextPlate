@@ -106,6 +106,7 @@ export default function SignIn() {
 			const resBizUser = await getBizUserNew(uid);
 			if (resBizUser.success) {
 				const userData = resBizUser.userData;
+				console.log("userData", userData);
 				const bizOwnedKeys = Object.keys(userData.bizOwned);
 				userData.bizId = userData.bizOwned[bizOwnedKeys[0]].id;
 				userData.bizName = userData.bizOwned[bizOwnedKeys[0]].name;

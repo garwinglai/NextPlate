@@ -53,7 +53,7 @@ export const categoriesData = [
 ];
 export const categoriesDataTwo = [
 	"Brazilian",
-	"Flipino",
+	"Filipino",
 	"Dim Sum",
 	"Crepes",
 	"Tex-Mex",
@@ -99,6 +99,8 @@ export const categoriesDataTwo = [
 	"Hot Dogs",
 	"Bakery",
 	"Taiwanese",
+	"Market",
+	"International",
 ];
 
 export const filterCategoryArr = [

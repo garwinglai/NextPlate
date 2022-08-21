@@ -90,6 +90,8 @@ export default function BizInfoForm({
 	useEffect(() => {
 		const tempBizInfo = JSON.parse(getSessionStorage("tempBizInfo"));
 		const tempLoginInfo = JSON.parse(getSessionStorage("tempLoginInfo"));
+		console.log("tempBizInfo", tempBizInfo);
+		console.log("tempLoginInfo", tempLoginInfo);
 		if (tempLoginInfo) {
 			const emailTemp = tempLoginInfo.email;
 
@@ -109,6 +111,8 @@ export default function BizInfoForm({
 		if (tempBizInfo) {
 			const storeNum = "1" + tempBizInfo.storeContact.phoneNumber;
 			const ownerNum = "1" + tempBizInfo.ownerContact.phoneNumber;
+			const emailTemp = tempBizInfo.ownerContact.email;
+
 			setBizValues((prev) => ({
 				...prev,
 				...tempBizInfo,

@@ -133,3 +133,8 @@ export const versionNumber = "V 1.3.2";
  * 1. When updating email, force email to all lower case then save.
  * 2. Removed onChange defaultPrice listener - now you can enter any number when creating products, and it only shows error after clicking save if less than 20% off.
  */
+
+/*
+ * 1.3.4 -
+ * 1. Auto payout to biz every monday at 1 AM.
+ */
