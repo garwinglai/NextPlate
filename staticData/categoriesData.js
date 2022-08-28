@@ -52,6 +52,7 @@ export const categoriesData = [
 	"Bagel",
 ];
 export const categoriesDataTwo = [
+	"Caribbean",
 	"Brazilian",
 	"Filipino",
 	"Dim Sum",

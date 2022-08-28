@@ -12,6 +12,7 @@ import {
 	setDoc,
 	writeBatch,
 } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { db } from "../../firebase/fireConfig";
 import Layout from "../../Components/Layout";
 import BizPayoutCard from "../../Components/Admin/BizPayoutCard";
@@ -35,6 +36,11 @@ function Payouts() {
 		const date = new Date();
 		date.setDate(date.getDate() - 1);
 		const currPayoutEndDate = date.setHours(23, 59, 59, 999);
+		// const newDate = new Date(2022, 7, 21, 23, 59, 59, 999);
+		// const currPayoutEndDate = Date.parse(newDate);
+
+		// console.log(currPayoutEndDate);
+		// return;
 
 		for (let i = 0; i < bizAccountArray.length; i++) {
 			const currObj = bizAccountArray[i];
@@ -247,19 +253,18 @@ function Payouts() {
 		}
 	};
 
-	const getPayouts = async (bizId) => {
-		const payoutsDocRef = collection(db, "biz", bizId, "payouts");
+	const getPayouts = async (bizUid) => {
+		const payoutsDocRef = collection(db, "bizAccount", bizUid, "payouts");
 		const q = query(payoutsDocRef, orderBy("createdAt", "desc"), limit(1));
 
 		const payoutsSnapshot = await getDocs(q);
-
 		if (payoutsSnapshot.size > 0) {
 			let payoutData;
 
 			payoutsSnapshot.forEach((doc) => {
 				payoutData = doc.data();
 			});
-
+			console.log("payoutData", payoutData);
 			return payoutData;
 		} else {
 			// * No payouts made yet, return null in order to grab biz started date to use as start period for payout.
@@ -543,8 +548,6 @@ function Payouts() {
 			nextPlateProfitString,
 		};
 
-		console.log("payoutData", payoutData);
-
 		setBizPayouts((prev) => [...prev, payoutData]);
 	};
 
@@ -569,49 +572,83 @@ function Payouts() {
 			const bizUid = currBizPayoutData.bizUid;
 			const profit = currBizPayoutData.payoutAmtDouble;
 
+			// * Used to help save payout data to biz and admin if auto doesn't work
+			// const bizAccountSpud = "NUxPVSnDWPUK9PzkEpDZJxbKZYL2";
+			// const spudId = "23ZmuiVcKKqD5439wq3w";
+
+			// console.log("curr biz id payout", bizId);
+
+			// if (bizId == spudId) {
+			// 	// TODO add to bizAccount payouts & admin payouts
+			// 	console.log("spudnuts currpayout", currBizPayoutData);
+			// 	const success = true;
+			// 	let message;
+
+			// 	const bizPayoutId = await savePayoutBiz(
+			// 		currBizPayoutData,
+			// 		bizUid,
+			// 		batch,
+			// 		success,
+			// 		message
+			// 	);
+
+			// 	console.log("payoutId", bizPayoutId);
+
+			// 	await savePayoutAdmin(
+			// 		currBizPayoutData,
+			// 		batch,
+			// 		success,
+			// 		message,
+			// 		bizPayoutId
+			// 	);
+
+			// 	continue;
+			// }
+
 			const { success, message } = await payoutHeroku(profit, stripeId);
 
-			if (success) {
-				// * Save successful payouts to biz
-				const bizPayoutId = await savePayoutBiz(
-					currBizPayoutData,
-					bizUid,
-					batch,
-					success,
-					message
-				);
+			// if (success) {
+			// * Save successful payouts to biz
+			const bizPayoutId = await savePayoutBiz(
+				currBizPayoutData,
+				bizUid,
+				batch,
+				success,
+				message
+			);
 
-				await savePayoutAdmin(
-					currBizPayoutData,
-					batch,
-					success,
-					message,
-					bizPayoutId
-				);
-			} else {
-				// console.log(`Error paying out biz: ${name}. BizId: ${bizId}`, message);
-				// * Save unsuccessful payouts to biz
-				const bizPayoutId = await savePayoutBiz(
-					currBizPayoutData,
-					bizUid,
-					batch,
-					success,
-					message
-				);
-				await savePayoutAdmin(
-					currBizPayoutData,
-					batch,
-					success,
-					message,
-					bizPayoutId
-				);
-			}
+			await savePayoutAdmin(
+				currBizPayoutData,
+				batch,
+				success,
+				message,
+				bizPayoutId
+			);
+			// } else {
+			// console.log(`Error paying out biz: ${name}. BizId: ${bizId}`, message);
+			// * Save unsuccessful payouts to biz
+			// 	const bizPayoutId = await savePayoutBiz(
+			// 		currBizPayoutData,
+			// 		bizUid,
+			// 		batch,
+			// 		success,
+			// 		message
+			// 	);
+			// 	await savePayoutAdmin(
+			// 		currBizPayoutData,
+			// 		batch,
+			// 		success,
+			// 		message,
+			// 		bizPayoutId
+			// 	);
+			// }
 		}
 
 		try {
 			await batch.commit();
 			setPaidAll(true);
 			setShowPayoutBtn(false);
+			// console.log("saved to biz & admin");
 		} catch (error) {
 			console.log("error commiting payment batch", error);
 			return;
@@ -669,6 +706,7 @@ function Payouts() {
 		message,
 		bizPayoutId
 	) => {
+		console.log("admin entered");
 		const adminUid = "6IUWvD23ayVkRlxaO2wtSM2faNB3";
 		const adminPayoutDocRef = doc(
 			db,

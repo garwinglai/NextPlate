@@ -93,6 +93,7 @@ function Layout({ children, currentPage, subPage, uid }) {
 			return;
 		}
 
+		testCode();
 		updateOldSchedules(bizIdTemp);
 		updateYdayPaused(bizIdTemp);
 		const ninetyMin = 90 * 60 * 1000;
@@ -113,6 +114,11 @@ function Layout({ children, currentPage, subPage, uid }) {
 
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
+
+	const testCode = () => {
+		const ctx = new (window.AudioContext || window.webkitAudioContext)();
+		console.log("ctx", ctx.state);
+	};
 
 	// * Check for old schedules in weeklySchedules
 	async function updateOldSchedules(bizId) {
