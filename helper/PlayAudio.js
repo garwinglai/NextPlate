@@ -1,4 +1,4 @@
-function playNotificationSound(audio, action) {
+const playNotificationSound = (audio, action) => {
 	if (!audio) {
 		return;
 	}
@@ -11,6 +11,24 @@ function playNotificationSound(audio, action) {
 		audio.pause();
 		audio.currentTime = 0;
 	}
-}
+};
+
+const isSoundEnabled = async (audio, action) => {
+	let hasSound = false;
+
+	if (action === "start") {
+		audio.muted = true;
+		await audio
+			.play()
+			.then(() => {
+				hasSound = true;
+			})
+			.catch((e) => {
+				hasSound = false;
+			});
+		return hasSound;
+	}
+};
 
 export default playNotificationSound;
+export { isSoundEnabled };

@@ -1,0 +1,19 @@
+.enableSoundModal {
+	z-index: 2000;
+}
+
+.mainContainer {
+	width: 30%;
+}
+
+.textContainer {
+	display: flex;
+	gap: 10px;
+	margin-bottom: 25px;
+}
+
+@media screen and (max-width: 768px) {
+	.mainContainer {
+		width: 70%;
+	}
+}

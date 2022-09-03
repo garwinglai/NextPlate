@@ -18,9 +18,9 @@ const redirectAppDownload = (router) => {
 	const opSystem = checkScreenSize();
 
 	if (opSystem == "iOS") {
-		window.open("https://apps.apple.com/us/app/nextplate/id1608079261");
+		router.push("https://apps.apple.com/us/app/nextplate/id1608079261");
 	} else if (opSystem == "Android") {
-		window.open(
+		router.push(
 			"https://play.google.com/store/apps/details?id=co.sponty.ness.nextplate&hl=en_US&gl=US"
 		);
 	} else {

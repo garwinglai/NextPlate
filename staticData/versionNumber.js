@@ -1,4 +1,4 @@
-export const versionNumber = "V 1.3.4";
+export const versionNumber = "V 1.3.6";
 
 /*
  * 1.1.3 -
@@ -136,8 +136,20 @@ export const versionNumber = "V 1.3.4";
 
 /*
  * 1.3.4 -
- * 1. Auto payout to biz every monday at 1 AM.
+ * 1. Auto payout to biz every monday at 1 AM - Code written, not deployed
  * 2. Added Caribbean category
  * 3. Corrected payouts to Spudnuts
  * 4. Updated QR code redirect to app store
+ * 5. PWA
+ */
+
+/*
+ * 1.3.5 -
+ * 1. AdapterDateFns - moved folder
+ * 2. Notification sound fix
+ */
+
+/*
+ * 1.3.6 -
+ * 1. Added 20 to quantity of scheduled items
  */

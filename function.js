@@ -1,6 +1,6 @@
 const { https, pubsub } = require("firebase-functions");
 const { default: next } = require("next");
-import runBizPayouts from "./helper/CalculatePayout";
+// const runBizPayouts = require("./helper/CalculatePayout");
 
 const isDev = process.env.NODE_ENV !== "production";
 

@@ -197,8 +197,9 @@ function Nav({ currentPage, notifications, notificationsConfirmed }) {
 									width: "30px",
 									height: "30px",
 									position: "absolute",
-									bottom: "30px",
-									right: "30px",
+									bottom: "50px",
+									right: "45px",
+									zIndex: "modal",
 								}}
 							>
 								{count}

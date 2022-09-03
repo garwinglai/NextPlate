@@ -1097,7 +1097,7 @@ async function updatePastSchedules(bizId) {
 									{ merge: true }
 								);
 
-								dayIdxObjLen -= 1;
+								// dayIdxObjLen -= 1;
 							} catch (error) {
 								console.log("delete schedule", error);
 								return {

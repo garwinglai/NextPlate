@@ -26,7 +26,8 @@ import {
 	updatePastSchedules,
 	updateYdaySchedPaused,
 } from "../actions/dashboard/scheduleCrud";
-import playNotificationSound from "../helper/PlayAudio";
+import playNotificationSound, { isSoundEnabled } from "../helper/PlayAudio";
+import EnableSound from "./Misc/EnableSound";
 
 const style = {
 	position: "absolute",
@@ -39,6 +40,7 @@ const style = {
 
 function Layout({ children, currentPage, subPage, uid }) {
 	const [audio, setAudio] = useState(null);
+	const [isAudioEnabled, setIsAudioEnabled] = useState(true);
 	const [open, setOpen] = React.useState(false);
 	const [notificationsConfirmed, setNotificationsConfirmed] = useState({
 		numOrdersConfirmed: 0,
@@ -93,7 +95,8 @@ function Layout({ children, currentPage, subPage, uid }) {
 			return;
 		}
 
-		testCode();
+		// testCode();
+		testSoundOnLaunch("start");
 		updateOldSchedules(bizIdTemp);
 		updateYdayPaused(bizIdTemp);
 		const ninetyMin = 90 * 60 * 1000;
@@ -108,6 +111,7 @@ function Layout({ children, currentPage, subPage, uid }) {
 			unsubscribeNotice();
 			releaseWakeLock();
 			clearInterval(interval);
+			// testSoundOnLaunch("end");
 			document.removeEventListener("visibilitychange", onVisibilityChange);
 			document.removeEventListener("visibilitychange", updateVersion);
 		};
@@ -115,9 +119,16 @@ function Layout({ children, currentPage, subPage, uid }) {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	const testCode = () => {
-		const ctx = new (window.AudioContext || window.webkitAudioContext)();
-		console.log("ctx", ctx.state);
+	// const testCode = () => {
+	// 	const ctx = new (window.AudioContext || window.webkitAudioContext)();
+	// 	console.log("ctx", ctx.state);
+	// };
+
+	const testSoundOnLaunch = async (action) => {
+		const testAudio = new Audio("/sounds/smsTone.mp3");
+		const hasSound = await isSoundEnabled(testAudio, action);
+		console.log("returned function", hasSound);
+		setIsAudioEnabled(hasSound);
 	};
 
 	// * Check for old schedules in weeklySchedules
@@ -336,6 +347,10 @@ function Layout({ children, currentPage, subPage, uid }) {
 		return unsubscribe;
 	};
 
+	const closeEnableSoundModal = () => {
+		setIsAudioEnabled(true);
+	};
+
 	// * DISPLAY ----------------------------------------------------------------------
 
 	function showIncomingOrderModal() {
@@ -398,6 +413,10 @@ function Layout({ children, currentPage, subPage, uid }) {
 	} else {
 		return (
 			<React.Fragment>
+				<EnableSound
+					isAudioEnabled={isAudioEnabled}
+					closeEnableSoundModal={closeEnableSoundModal}
+				/>
 				<div className={styles.Layout}>
 					{showIncomingOrderModal()}
 					<Nav

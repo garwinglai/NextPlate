@@ -7,7 +7,7 @@ import styles from "../../../styles/components/dashboard/schedule/manualcreatesc
 import getProducts from "../../../actions/dashboard/productsCrud";
 import { CircularProgress } from "@mui/material";
 import TextField from "@mui/material/TextField";
-import AdapterDateFns from "@mui/lab/AdapterDateFns";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import Stack from "@mui/material/Stack";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import TimePicker from "@mui/lab/TimePicker";
@@ -71,7 +71,19 @@ function ManualCreateSchedule({
 		openAlert,
 	} = values;
 	const { monthDay, dayOfWeek, actualDate, shortDate, dayOfWkIdx } = date;
-	const arrayOfTwenty = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+	const arrayOfTwenty = [
+		"1",
+		"2",
+		"3",
+		"4",
+		"5",
+		"6",
+		"7",
+		"8",
+		"9",
+		"10",
+		"20",
+	];
 
 	useEffect(() => {
 		loadProducts(bizId);

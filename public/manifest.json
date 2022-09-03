@@ -1,0 +1,38 @@
+{
+	"theme_color": "#051330",
+	"background_color": "#f0e8e8",
+	"display": "fullscreen",
+	"scope": "/",
+	"start_url": "/business/signin",
+	"name": "NextPlate",
+	"short_name": "NextPlate",
+	"description": "Download the NextPlate business app.",
+	"icons": [
+		{
+			"src": "/images/icon-192x192.png",
+			"sizes": "192x192",
+			"type": "image/png"
+		},
+		{
+			"src": "/images/icon-256x256.png",
+			"sizes": "256x256",
+			"type": "image/png"
+		},
+		{
+			"src": "/images/icon-384x384.png",
+			"sizes": "384x384",
+			"type": "image/png"
+		},
+		{
+			"src": "/images/icon-512x512.png",
+			"sizes": "512x512",
+			"type": "image/png"
+		},
+		{
+			"src": "/images/maskable_icon_x192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "maskable"
+		}
+	]
+}
