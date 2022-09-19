@@ -139,11 +139,12 @@ const payoutStripe = async (amount, account) => {
 		// console.log("resJson", resJson);
 		// console.log("res", res);
 		// console.log("status", status);
+		console.log("try", account);
 
 		if (status === 200) {
 			return { success: true };
 		} else {
-			console.log("error 500 status: bank account not setup", status);
+			console.log("error 500 status: bank account not setup", status, account);
 			return {
 				success: false,
 				message:
@@ -151,10 +152,10 @@ const payoutStripe = async (amount, account) => {
 			};
 		}
 	} catch (error) {
-		console.log("Error posting to stripe/heroku:", error);
+		console.log("Error posting to stripe/heroku:", error, account);
 		return {
 			success: false,
-			message: `Error posting to stripe/heroku: ${error}`,
+			message: `Error posting to stripe/heroku: ${error}, ${account}`,
 		};
 	}
 };

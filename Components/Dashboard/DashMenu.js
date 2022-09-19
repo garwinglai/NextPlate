@@ -16,6 +16,7 @@ import Image from "next/image";
 import LoadingBar from "react-top-loading-bar";
 import CategoryIcon from "@mui/icons-material/Category";
 import ScienceIcon from "@mui/icons-material/Science";
+import StoreIcon from "@mui/icons-material/Store";
 import Version from "../Misc/Version";
 
 function DashMenu({ currentPage }) {
@@ -115,7 +116,12 @@ function DashMenu({ currentPage }) {
 					}
 				>
 					<Link href={`/dashboard/${routerUid}/schedule`}>
-						<a onClick={(e) => startProgressBar(e, "schedule")}>
+						<a
+							onClick={(e) => {
+								console.log("click");
+								startProgressBar(e, "schedule");
+							}}
+						>
 							<IconButton>
 								<EventNoteIcon sx={{ color: "var(--gray)" }} />
 							</IconButton>
@@ -214,6 +220,33 @@ function DashMenu({ currentPage }) {
 				</div>
 				<div
 					style={
+						currentPage === "Stores"
+							? {
+									backgroundColor: "var(--dark-blue)",
+									borderRadius: "5px",
+							  }
+							: undefined
+					}
+				>
+					<Link href={`/dashboard/${routerUid}/stores`}>
+						<a onClick={(e) => startProgressBar(e, "stores")}>
+							<IconButton>
+								<StoreIcon sx={{ color: "var(--gray)" }} />
+							</IconButton>
+						</a>
+					</Link>
+					<Link href={`/dashboard/${routerUid}/stores`}>
+						<a
+							className={styles.DashMenu_MenuItems}
+							onClick={startProgressBar}
+							name="stores"
+						>
+							Stores
+						</a>
+					</Link>
+				</div>
+				<div
+					style={
 						currentPage === "Settings"
 							? {
 									backgroundColor: "var(--dark-blue)",
@@ -239,6 +272,7 @@ function DashMenu({ currentPage }) {
 						</a>
 					</Link>
 				</div>
+
 				<div
 					style={
 						currentPage === "Test mode"

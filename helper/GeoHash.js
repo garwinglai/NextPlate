@@ -14,7 +14,7 @@ import * as geofire from "geofire-common";
 
 const getNearbyUserId = async (bizId, customerIdArr) => {
 	const center = await getBizCoordinates(bizId);
-	const radiumInMiles = 2 * 1000;
+	const radiumInMiles = 3 * 1000;
 
 	if (center === null) {
 		return;
@@ -69,7 +69,7 @@ const getUsersInBounds = async (
 		const q = query(
 			tokenCollectionRef,
 			orderBy("geohash"),
-			limit(50),
+			// limit(50),
 			startAt(currBound[0]),
 			endAt(currBound[1])
 		);

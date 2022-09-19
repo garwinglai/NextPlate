@@ -4,7 +4,14 @@ import { Button } from "@mui/material";
 import { deleteProduct } from "../../../actions/dashboard/productsCrud";
 import ProductModal from "./ProductModal";
 
-function ProductCard({ product, loadProducts, setResponseError, bizId }) {
+function ProductCard({
+	product,
+	bizId,
+	bizIdArr,
+	bizOwned,
+	loadProducts,
+	setResponseError,
+}) {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const {
 		itemName,
@@ -22,7 +29,7 @@ function ProductCard({ product, loadProducts, setResponseError, bizId }) {
 			const deleteProductRes = await deleteProduct(bizId, id);
 			const { success, message } = deleteProductRes;
 			if (success) {
-				await loadProducts(bizId);
+				await loadProducts(bizIdArr, bizOwned);
 			} else {
 				setResponseError(message);
 			}
@@ -43,6 +50,8 @@ function ProductCard({ product, loadProducts, setResponseError, bizId }) {
 				isOpen={isModalOpen}
 				close={closeModal}
 				bizId={bizId}
+				bizIdArr={bizIdArr}
+				bizOwned={bizOwned}
 				loadProducts={loadProducts}
 				product={product}
 			/>

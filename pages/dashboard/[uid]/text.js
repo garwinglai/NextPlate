@@ -41,7 +41,7 @@ const modalStyle = {
 	gap: "10px",
 };
 
-function Settings() {
+function Text() {
 	const [isSaveAlertOpen, setIsSaveAlertOpen] = useState(false);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -556,4 +556,4 @@ function Settings() {
 	);
 }
 
-export default Settings;
+export default Text;

@@ -23,6 +23,7 @@ import { db, increment, decrement } from "../../firebase/fireConfig";
 import _, { update } from "lodash";
 import { getLocalStorage, setLocalStorage } from "../auth/auth";
 import createStripeAccount from "../heroku/stripeAccount";
+import { CurrencyYenOutlined } from "@mui/icons-material";
 
 // * CRUD --------------------------------------------------
 
@@ -58,14 +59,13 @@ async function createBizAccount(newBusiness, defaultProduct, uid) {
 		// * Create auto ID for biz
 		const bizDocRef = doc(collection(db, "biz"));
 		const bizId = bizDocRef.id;
-		const lowerBizId = _.toLower(bizId);
 
 		// * Create auto ID for products
 		const productsDocRef = doc(collection(db, "biz", bizId, "products"));
 		const productId = productsDocRef.id;
 
 		// Add bizId to keywords array for search and add default productId
-		newBusiness.keywords = [...newBusiness.keywords, lowerBizId];
+		newBusiness.keywords = [...newBusiness.keywords, bizId];
 		newBusiness.productId = productId;
 
 		// Create new stripe account for user
@@ -130,6 +130,85 @@ async function createBizAccount(newBusiness, defaultProduct, uid) {
 	}
 }
 
+async function createAdditionalBiz(
+	newBusiness,
+	defaultProduct,
+	uid,
+	existingBiz
+) {
+	const {
+		name,
+		login: { email, password },
+		ownerContact: { firstName, lastName },
+	} = newBusiness;
+
+	const batch = writeBatch(db);
+
+	// * Create id for biz
+	const bizDocRef = doc(collection(db, "biz"));
+	const bizId = bizDocRef.id;
+
+	// * Create id for products
+	const productsDocRef = doc(collection(db, "biz", bizId, "products"));
+	const productId = productsDocRef.id;
+
+	// * Add bizId to keywords array for search and add default productId
+	newBusiness.keywords = [...newBusiness.keywords, bizId];
+	newBusiness.productId = productId;
+
+	let stripeId;
+
+	const bIdArr = Object.keys(existingBiz);
+
+	for (let i = 0; i < bIdArr.length; i++) {
+		const currId = bIdArr[i];
+		const bizInfo = existingBiz[currId];
+		stripeId = bizInfo.stripeAccountId;
+		break;
+	}
+
+	// * New Business
+	const addBizInfo = {
+		...existingBiz,
+		[bizId]: {
+			id: bizId,
+			name,
+			stripeAccountId: stripeId,
+		},
+	};
+
+	// * Create bizAccount doc for biz
+	const userRef = doc(db, "bizAccount", uid);
+	batch.update(userRef, {
+		bizOwned: addBizInfo,
+	});
+
+	// * Set/create biz document
+	const bizRef = doc(db, "biz", bizId);
+	batch.set(bizRef, newBusiness);
+
+	// * Set/create products collection for biz
+	defaultProduct.id = productId;
+	batch.set(productsDocRef, defaultProduct, { merge: true });
+
+	// * Commit the batch
+	try {
+		await batch.commit();
+		// TODO: resave new biz to localStorage
+		const user = JSON.parse(getLocalStorage("user"));
+		user.bizOwned = addBizInfo;
+		setLocalStorage("user", user);
+
+		return {
+			success: true,
+			message: "Business created successfully",
+		};
+	} catch (error) {
+		console.log(error);
+		return { success: false, message: "Error batch commit: ", error };
+	}
+}
+
 async function updateBizUserAdmin(
 	uid,
 	bizId,
@@ -182,7 +261,6 @@ async function updateBizDataUser(
 	oldLoginEmail,
 	storedUser
 ) {
-	const bizDataDocRef = doc(db, "biz", bizId);
 	const userRef = doc(db, "bizAccount", uid);
 
 	const batch = writeBatch(db);
@@ -199,12 +277,17 @@ async function updateBizDataUser(
 				lastName: lastNameCapFirst,
 			});
 
-			// * Update bizData
-			batch.update(bizDataDocRef, {
-				"ownerContact.firstName": firstNameCapFirst,
-				"ownerContact.lastName": lastNameCapFirst,
-				"ownerContact.phoneNumber": ownerPhoneNumber,
-			});
+			for (let i = 0; i < bizId.length; i++) {
+				const currBizId = bizId[i];
+				const bizDataDocRef = doc(db, "biz", currBizId);
+
+				// * Update bizData
+				batch.update(bizDataDocRef, {
+					"ownerContact.firstName": firstNameCapFirst,
+					"ownerContact.lastName": lastNameCapFirst,
+					"ownerContact.phoneNumber": ownerPhoneNumber,
+				});
+			}
 
 			// * Update localStorage
 			storedUser.firstName = firstNameCapFirst;
@@ -212,10 +295,15 @@ async function updateBizDataUser(
 
 			setLocalStorage("user", storedUser);
 		} else {
-			batch.update(bizDataDocRef, {
-				"ownerContact.lastName": lastNameCapFirst,
-				"ownerContact.phoneNumber": ownerPhoneNumber,
-			});
+			for (let i = 0; i < bizId.length; i++) {
+				const currBizId = bizId[i];
+				const bizDataDocRef = doc(db, "biz", currBizId);
+
+				batch.update(bizDataDocRef, {
+					"ownerContact.lastName": lastNameCapFirst,
+					"ownerContact.phoneNumber": ownerPhoneNumber,
+				});
+			}
 
 			batch.update(userRef, {
 				lastName: lastNameCapFirst,
@@ -231,7 +319,7 @@ async function updateBizDataUser(
 		const { loginEmail } = updatedData;
 
 		// * Update loginEmail
-
+		console.log("loginEmail", loginEmail);
 		// * Check if email exists
 		const bizEmailsDocRef = doc(db, "bizEmailsInUse", loginEmail);
 		const emailDocSnap = await getDoc(bizEmailsDocRef);
@@ -240,24 +328,33 @@ async function updateBizDataUser(
 			return { success: false, message: `Email already exists.` };
 		}
 
-		const oldBizEmailDocRef = doc(db, "bizEmailsInUse", oldLoginEmail);
 		const auth = getAuth();
 		return updateEmail(auth.currentUser, loginEmail)
 			.then(() => {
-				batch.update(bizDataDocRef, {
-					"login.email": loginEmail,
-					"storeContact.email": loginEmail,
-					"ownerContact.email": loginEmail,
-				});
+				const oldBizEmailDocRef = doc(db, "bizEmailsInUse", oldLoginEmail);
 
-				batch.delete(oldBizEmailDocRef);
+				for (let i = 0; i < bizId.length; i++) {
+					const currBizId = bizId[i];
+
+					console.log("currBizId");
+
+					const bizDataDocRef = doc(db, "biz", currBizId);
+
+					batch.update(bizDataDocRef, {
+						"login.email": loginEmail,
+						"storeContact.email": loginEmail,
+						"ownerContact.email": loginEmail,
+					});
+				}
 
 				batch.update(userRef, {
-					email: loginEmail,
 					"login.email": loginEmail,
 					"ownerContact.email": loginEmail,
 				});
+
 				batch.set(bizEmailsDocRef, { createdAt: new serverTimestamp() });
+
+				batch.delete(oldBizEmailDocRef);
 			})
 			.then(() => batch.commit())
 			.then(() => {
@@ -267,7 +364,7 @@ async function updateBizDataUser(
 					setLocalStorage("rememberedEmail", loginEmail);
 				}
 
-				storedUser.email = loginEmail;
+				storedUser.login.email = loginEmail;
 				setLocalStorage("user", storedUser);
 
 				return { success: true };
@@ -279,6 +376,7 @@ async function updateBizDataUser(
 	}
 
 	if (name === "form3") {
+		const bizDataDocRef = doc(db, "biz", bizId);
 		const { bizName, bizPhoneNumber, website, address } = updatedData;
 
 		if (additionalChange) {
@@ -381,6 +479,21 @@ async function deleteBizUser(bizId) {
 	}
 }
 
+const getBizCollection = async () => {
+	const bizCollection = collection(db, "biz");
+	const bizSnapshot = await getDocs(bizCollection);
+	const bizArr = [];
+
+	bizSnapshot.forEach((doc) => {
+		const bizData = doc.data();
+		bizData.id = doc.id;
+
+		bizArr.push(bizData);
+	});
+
+	return bizArr;
+};
+
 async function getAllBizUserInfo() {
 	try {
 		const bizArr = [];
@@ -444,6 +557,7 @@ async function getBiz(bizId, dateArr) {
 
 	if (docSnap.exists()) {
 		const docData = docSnap.data();
+		docData.id = docSnap.id;
 		return { success: true, docData, ordersArr };
 	} else {
 		return {
@@ -592,4 +706,6 @@ export {
 	updateBizTextNumbers,
 	addBankNumber,
 	removeBankNumber,
+	createAdditionalBiz,
+	getBizCollection,
 };

@@ -1,0 +1,147 @@
+.ScheduleModal__container {
+	gap: 30px;
+	width: 350px;
+}
+
+.BizName {
+	color: var(--light-green);
+	border-bottom: 2px solid var(--light-green);
+	margin-bottom: 10px;
+	padding-bottom: 5px;
+}
+
+.hourTitleGroup {
+	align-items: center;
+	gap: 20px;
+}
+
+.Description {
+	font-size: 12px;
+	color: var(--gray);
+}
+
+.titleGap {
+	margin-bottom: 10px;
+}
+
+.mealLabels {
+	border: 1px solid var(--btn-blue);
+	color: var(--dark-blue);
+	white-space: nowrap;
+	font-size: 16px;
+	border-radius: 5px;
+	display: inline-block;
+	width: 45px;
+	text-align: center;
+	padding: 5px 0;
+	margin: 5px 10px 5px 10px;
+}
+
+.radios {
+	display: none;
+}
+
+.itemGroup {
+	/* flex-wrap: wrap; */
+	overflow-x: scroll;
+}
+
+.labels {
+	border: 1px solid var(--btn-blue);
+	color: var(--dark-blue);
+	white-space: nowrap;
+	font-size: 16px;
+	padding: 10px;
+	border-radius: 5px;
+	margin: 5px 10px 5px 10px;
+}
+
+.ScheduleModal__container input[type="radio"]:checked ~ .labelsChecked {
+	background-color: var(--light-btn-blue);
+	color: white;
+	font-weight: 500;
+}
+
+.flexCol {
+	display: flex;
+	flex-direction: column;
+}
+
+.flexRow {
+	display: flex;
+}
+
+.ScheduleModal__container > button {
+	height: 35px;
+	width: 100%;
+	margin: 0 auto;
+}
+
+.hourDisabled {
+	background-color: var(--light-gray);
+	border: none;
+	color: var(--dark-gray);
+}
+
+@media screen and (max-width: 768px) {
+	/* Titles and hour radio font */
+	.ScheduleModal__container {
+		width: 450px;
+		gap: 30px;
+	}
+
+	.ScheduleModal__container h3 {
+		font-size: 25px;
+	}
+
+	.titleGap {
+		margin-bottom: 15px;
+	}
+
+	.mealLabels {
+		font-size: 30px;
+		width: 70px;
+		margin: 10px;
+	}
+
+	.labels {
+		font-size: 30px;
+		margin: 10px;
+	}
+
+	.ScheduleModal__container > button {
+		height: 50px;
+		width: 100%;
+		font-size: 20px;
+		margin: 0 auto;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.ScheduleModal__container {
+		width: 250px;
+		gap: 20px;
+	}
+
+	.ScheduleModal__container h3 {
+		font-size: 16px;
+	}
+
+	.mealLabels {
+		font-size: 14px;
+		width: 40px;
+		margin: 5px;
+	}
+
+	.labels {
+		font-size: 14px;
+		margin: 5px;
+	}
+
+	.ScheduleModal__container > button {
+		height: 35px;
+		width: 100%;
+		font-size: 12px;
+		margin: 0 auto;
+	}
+}

@@ -22,7 +22,15 @@ const modalStyle = {
 	overflow: "scroll",
 };
 
-function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
+function ProductModal({
+	isOpen,
+	close,
+	bizId,
+	bizIdArr,
+	bizOwned,
+	loadProducts,
+	product,
+}) {
 	const [style, setStyle] = useState({
 		position: "absolute",
 		top: "50%",
@@ -153,7 +161,7 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 			const { success, message } = productUpdateRes;
 
 			if (success) {
-				await loadProducts(bizId);
+				await loadProducts(bizIdArr, bizOwned);
 				setHandleResponse((prev) => ({
 					...prev,
 					loading: false,
@@ -177,7 +185,7 @@ function ProductModal({ isOpen, close, bizId, loadProducts, product }) {
 			const { success, message } = productRes;
 
 			if (success) {
-				await loadProducts(bizId);
+				await loadProducts(bizIdArr, bizOwned);
 				setHandleResponse((prev) => ({
 					...prev,
 					loading: false,

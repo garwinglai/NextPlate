@@ -7,7 +7,7 @@ import PaymentHistoryTab from "./PaymentHistoryTab";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../../firebase/fireConfig";
 
-function PaymentHistory({ bizId }) {
+function PaymentHistory({ uid, bizIdArr }) {
 	const [selectedDates, setSelectedDates] = useState({
 		startDate: new Date(),
 		endDate: new Date(),
@@ -18,13 +18,13 @@ function PaymentHistory({ bizId }) {
 	const { startDate, endDate } = selectedDates;
 
 	useEffect(() => {
-		getPayouts(bizId);
+		getPayouts(uid);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [bizId]);
+	}, [uid]);
 
-	const getPayouts = async (bizId) => {
-		const payoutDocRef = collection(db, "biz", bizId, "payouts");
+	const getPayouts = async (uid) => {
 		try {
+			const payoutDocRef = collection(db, "bizAccount", uid, "payouts");
 			const payoutSnapshot = await getDocs(payoutDocRef);
 			let payoutArr = [];
 			let totalPayout = 0;
@@ -72,16 +72,16 @@ function PaymentHistory({ bizId }) {
 		const correctedStartDate = new Date(startDate).setHours(0, 0, 0, 0);
 		const correctedEndDate = new Date(endDate).setHours(23, 59, 59, 999);
 
-		await getPayoutsInPeriod(bizId, correctedStartDate, correctedEndDate);
+		await getPayoutsInPeriod(uid, correctedStartDate, correctedEndDate);
 	};
 
 	const getPayoutsInPeriod = async (
-		bizId,
+		uid,
 		correctedStartDate,
 		correctedEndDate
 	) => {
 		console.log(correctedStartDate, correctedEndDate);
-		const payoutsDocRef = collection(db, "biz", bizId, "payouts");
+		const payoutsDocRef = collection(db, "bizAccount", uid, "payouts");
 		const q = query(
 			payoutsDocRef,
 			where("endDateEpoch", ">=", correctedStartDate),
@@ -115,7 +115,7 @@ function PaymentHistory({ bizId }) {
 					<h5>Total payout</h5>
 					<h1>${payoutAmount}</h1>
 				</div>
-				<div className={`${styles.flexRow} ${styles.dateGroup}`}>
+				<div className={`${styles.dateGroup}`}>
 					<div className={`${styles.flexRow} ${styles.datePair}`}>
 						{" "}
 						<p>From:</p>
@@ -168,23 +168,28 @@ function PaymentHistory({ bizId }) {
 						<h5>Date paid</h5>
 					</div>
 					<div className={`${styles.justifyCenter}`}>
-						<h5>Total sales</h5>
+						<h5>Total sales + tax</h5>
 					</div>
 					<div>
-						<h5>Tax & fees</h5>
+						<h5>Fees</h5>
 					</div>
 					<div className={`${styles.justifyCenter}`}>
 						<h5>Payout</h5>
 					</div>
 				</div>
-
+				{/* <h4>
+					Message from NextPlate : Payouts have been paid. If you have connected
+					your bank account, please check your account. Payment history currenty
+					under construction and will be live by 9/17. Apologies for the delays,
+					and thank you for understanding.
+				</h4> */}
 				{payouts.length > 0 ? (
 					payouts.map((payout) => {
 						return (
 							<PaymentHistoryTab
 								key={payout.id}
 								payout={payout}
-								bizId={bizId}
+								bizIdArr={bizIdArr}
 							/>
 						);
 					})

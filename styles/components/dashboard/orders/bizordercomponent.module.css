@@ -1,0 +1,40 @@
+.Box {
+	width: 100%;
+	margin: 0 auto 10px;
+	background-color: white;
+	/* border-radius: 5px; */
+	padding: 20px 0 100px;
+	border-top: 5px solid purple;
+	/* box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px; */
+}
+
+.Box h3 {
+	padding-bottom: 5px;
+	/* border-bottom: 1px solid var(--gray); */
+	color: var(--dark-blue);
+	font-size: 25px;
+}
+
+.flexRow {
+	display: flex;
+	justify-content: space-between;
+}
+
+.orderGroup > p {
+	font-size: 20px;
+	font-weight: 400;
+	color: black;
+	border-radius: 5px;
+	border-right: 3px solid var(--flash);
+	border-left: 3px solid var(--flash);
+	background-color: var(--light-red);
+	width: fit-content;
+	padding: 5px 10px;
+	margin: 20px 0 0 0;
+}
+
+.noData {
+	color: gray;
+	text-align: center;
+	margin-top: 40px;
+}

@@ -5,6 +5,14 @@
 
 .PickupTime {
 	margin: 20px 0 10px 0;
+	font-weight: 400;
+	color: black;
+	border-radius: 5px;
+	border-right: 3px solid var(--flash);
+	border-left: 3px solid var(--flash);
+	background-color: var(--light-red);
+	width: fit-content;
+	padding: 5px;
 }
 
 .RemoveSchedule {

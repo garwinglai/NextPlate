@@ -10,6 +10,7 @@ import {
 	getCookie,
 	forgotPassword,
 } from "../../actions/auth/auth";
+import { getAuth } from "firebase/auth";
 import CircularProgress from "@mui/material/CircularProgress";
 import { getBizUserNew } from "../../actions/crud/bizUser";
 import { setLocalStorage } from "../../actions/auth/auth";
@@ -80,6 +81,7 @@ export default function SignIn() {
 		} else {
 			setSignInLoading(true);
 			const uid = getCookie("uid");
+
 			router.push(`/dashboard/${uid}/orders/incoming-orders`);
 		}
 
@@ -107,16 +109,28 @@ export default function SignIn() {
 			if (resBizUser.success) {
 				const userData = resBizUser.userData;
 				const bizOwnedKeys = Object.keys(userData.bizOwned);
-				userData.bizId = userData.bizOwned[bizOwnedKeys[0]].id;
-				userData.bizName = userData.bizOwned[bizOwnedKeys[0]].name;
-				userData.email = userData.login.email;
-				userData.login = "";
+				const bizOwned = userData.bizOwned;
+				const bizOwnedLength = bizOwnedKeys.length;
+				userData.login.password = "";
 				userData.ownerContact = "";
-				// const version = userData.bizOwned[bizOwnedKeys[0]].version;
 
+				// if (bizOwnedLength > 1) {
+				// 	// setLocalStorage("bizOwnedIds", bizOwnedKeys);
+				// } else {
+				// 	userData.bizId = userData.bizOwned[bizOwnedKeys[0]].id;
+				// 	userData.bizName = userData.bizOwned[bizOwnedKeys[0]].name;
+				// 	userData.email = userData.login.email;
+				// 	userData.login = "";
+				// 	userData.ownerContact = "";
+
+				// 	// setLocalStorage("bizId", userData.bizId);
+				// }
+
+				// setLocalStorage("bizOwned", bizOwned);
 				setLocalStorage("version", versionNumber);
 				setLocalStorage("user", userData);
 				setLocalStorage("uid", uid);
+
 				router.push(`/dashboard/${uid}/orders/incoming-orders`);
 			} else {
 				setOpen(true);

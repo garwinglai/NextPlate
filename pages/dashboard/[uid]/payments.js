@@ -38,29 +38,40 @@ export default function Payments() {
 	useEffect(() => {
 		const storedUserInfo = JSON.parse(getLocalStorage("user"));
 		const tempUid = JSON.parse(getLocalStorage("uid"));
-		let bizIdTemp;
+		const bizOwned = storedUserInfo.bizOwned;
+		const numBizOwned = Object.keys(bizOwned).length;
+
+		let bizIdArr = [];
+
 		if (storedUserInfo) {
-			const bizOwned = storedUserInfo.bizOwned;
-			const bizIdArray = Object.keys(bizOwned);
-			bizIdTemp = bizIdArray[0];
-			setUser({ storedUser: storedUserInfo, bizId: bizIdTemp });
+			if (numBizOwned > 1) {
+				bizIdArr = Object.keys(bizOwned);
+
+				setUser({ storedUser: storedUserInfo, bizId: bizIdArr });
+			} else {
+				const localStorageBizId = Object.keys(bizOwned).pop();
+				bizIdArr.push(localStorageBizId);
+
+				setUser({ storedUser: storedUserInfo, bizId: bizIdArr });
+			}
 		}
 
-		if (!bizIdTemp) {
+		if (bizIdArr.length === 0) {
 			return;
 		}
 
 		// * Get stripe account on load to determine if need to onboard or can cash out
-		fetchStripeBankAcc(tempUid, bizIdTemp);
+		fetchStripeBankAcc(tempUid, bizIdArr);
 	}, []);
 
 	// * UseEffect Actions ------------------------------------------
-	async function fetchStripeBankAcc(uid, bizId) {
+	const fetchStripeBankAcc = async (uid, bizIdArr) => {
 		setHandleRes((prev) => ({ ...prev, loading: true }));
 		const bizAccRes = await getBizAccount(uid);
 		if (bizAccRes.success) {
 			const bizAccData = bizAccRes.bizAccData;
-			const stripeAccId = bizAccData.bizOwned[bizId].stripeAccountId;
+			// ! All under same stripeAcc Id
+			const stripeAccId = bizAccData.bizOwned[bizIdArr[0]].stripeAccountId;
 
 			let resStripe = await fetchStripeAccount(stripeAccId);
 			if (resStripe.success) {
@@ -88,7 +99,7 @@ export default function Payments() {
 				errMsg: bizAccRes.message,
 			}));
 		}
-	}
+	};
 
 	// * Actions ------------------------------------------
 	function handleTabsChange(e, newValue) {
@@ -123,7 +134,7 @@ export default function Payments() {
 						</>
 					) : (
 						<BankInfo
-							bizId={bizId}
+							bizIdArr={bizId}
 							stripeAccId={stripeAccId}
 							detailsSubmitted={detailsSubmitted}
 							errMsg={errMsg}
@@ -132,7 +143,7 @@ export default function Payments() {
 					)}
 				</TabPanel>
 				<TabPanel value={tabValue} index={1}>
-					<PaymentHistory bizId={bizId} />
+					<PaymentHistory uid={uid} bizIdArr={bizId} />
 				</TabPanel>
 			</Box>
 		</Layout>

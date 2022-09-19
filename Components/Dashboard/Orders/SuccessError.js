@@ -1,10 +1,8 @@
-import React, { useEffect } from "react";
+import React from "react";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
-import { Button, Grid } from "@mui/material";
+import { Grid } from "@mui/material";
 import Alert from "@mui/material/Alert";
-import AlertTitle from "@mui/material/AlertTitle";
 import Collapse from "@mui/material/Collapse";
 
 const style = {
@@ -18,12 +16,6 @@ const style = {
 
 function SuccessError({ handleOrderUpdate, setHandleOrderUpdates }) {
 	const { errorMessage, successMessage, isOpen } = handleOrderUpdate;
-
-	useEffect(() => {
-		setTimeout(() => {
-			setHandleOrderUpdates({ isOpen: false });
-		}, 2000);
-	}, [setHandleOrderUpdates]);
 
 	if (errorMessage) {
 		return (

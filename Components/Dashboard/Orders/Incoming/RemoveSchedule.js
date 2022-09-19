@@ -19,7 +19,14 @@ const style = {
 	borderRadius: "5px",
 };
 
-function RemoveSchedule({ bizId, open, close, schedules, timeDisplay }) {
+function RemoveSchedule({
+	bizId,
+	open,
+	close,
+	activeSchedules,
+	pausedSchedules,
+	timeDisplay,
+}) {
 	return (
 		<Modal
 			open={open}
@@ -32,36 +39,23 @@ function RemoveSchedule({ bizId, open, close, schedules, timeDisplay }) {
 					className={`${styles.marginBottom} ${styles.BoxHeight} ${styles.RemoveSchedule__Container}`}
 				>
 					<h1>Current schedules</h1>
-					{timeDisplay
-						.sort((a, b) => {
-							if (a.hourStart === b.hourStart) {
-								return a.minStart - b.minStart;
-							} else {
-								return a.hourStart - b.hourStart;
-							}
-						})
-						.map((time, i) => {
-							return (
-								<div className={`${styles.RemoveSchedule}`} key={i}>
-									<p className={`${styles.PickupTime}`}>{time.timeDisplay}</p>
-									{schedules.length !== 0 ? (
-										schedules.map((schedule) => {
-											if (schedule.timeDisplay === time.timeDisplay) {
-												return (
-													<RemoveScheduleTab
-														bizId={bizId}
-														schedule={schedule}
-														key={schedule.id}
-													/>
-												);
-											}
-										})
-									) : (
-										<p className={`${styles.NoPosts}`}>No posts.</p>
-									)}
-								</div>
-							);
-						})}
+					{activeSchedules.concat(pausedSchedules).length === 0 ? (
+						<p className={`${styles.NoPosts}`}>No posts.</p>
+					) : (
+						activeSchedules
+							.concat(pausedSchedules)
+							.sort((a, b) => a.endTime - b.endTime)
+							.map((schedule) => {
+								return (
+									<div className={`${styles.RemoveSchedule}`} key={schedule.id}>
+										<p className={`${styles.PickupTime}`}>
+											{schedule.timeDisplay}
+										</p>
+										<RemoveScheduleTab bizId={bizId} schedule={schedule} />
+									</div>
+								);
+							})
+					)}
 				</div>
 			</Box>
 		</Modal>

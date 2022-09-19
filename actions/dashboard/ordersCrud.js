@@ -263,7 +263,7 @@ async function getOrderHistory(bizId, round, prevEndTime) {
 			orderCollectionRef,
 			where("endTime", "<", todayStartEpoch),
 			orderBy("endTime", "desc"),
-			endAt(prevEndTime),
+			endBefore(prevEndTime),
 			limitToLast(10)
 		);
 	} else if (round === "next") {
@@ -279,7 +279,7 @@ async function getOrderHistory(bizId, round, prevEndTime) {
 			orderCollectionRef,
 			where("endTime", "<", todayStartEpoch),
 			orderBy("endTime", "desc"),
-			endAt(prevEndTime),
+			endBefore(prevEndTime),
 			limitToLast(10)
 		);
 	}
@@ -328,7 +328,7 @@ async function getSearchOrderHistory(
 			orderBy("startTime", "desc"),
 			where("startTime", ">=", startDate),
 			where("startTime", "<=", endDate),
-			endAt(prevDoc),
+			endBeore(prevDoc),
 			limitToLast(10)
 		);
 	} else if (round === "next") {
@@ -346,7 +346,7 @@ async function getSearchOrderHistory(
 			orderBy("startTime", "desc"),
 			where("startTime", ">=", startDate),
 			where("startTime", "<=", endDate),
-			endAt(prevDoc),
+			endBefore(prevDoc),
 			limitToLast(10)
 		);
 	}
@@ -417,7 +417,7 @@ async function getSearchOrderHistoryAdmin(
 				adminOrdersDocRef,
 				orderBy("createdAt", "desc"),
 				where("keywords", "array-contains-any", searchArr),
-				endAt(prevDoc),
+				endBefore(prevDoc),
 				limitToLast(10)
 			);
 		}
@@ -454,8 +454,6 @@ async function updateOrder(
 	getStatus,
 	getStatusIndex,
 	reason,
-	dayIndex,
-	pickupWindowId,
 	bizTotalPriceDouble,
 	chargeId,
 	payMethod,
@@ -965,7 +963,7 @@ async function getAdminOrdersPaginate(round, lastDoc, adminUid) {
 		queryRound = query(
 			adminOrdersRef,
 			orderBy("createdAt", "desc"),
-			endAt(lastDoc),
+			endBefore(lastDoc),
 			limitToLast(10)
 		);
 	} else if (round === "next") {
@@ -979,7 +977,7 @@ async function getAdminOrdersPaginate(round, lastDoc, adminUid) {
 		queryRound = query(
 			adminOrdersRef,
 			orderBy("createdAt", "desc"),
-			endAt(lastDoc),
+			endBefore(lastDoc),
 			limitToLast(10)
 		);
 	}

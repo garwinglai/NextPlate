@@ -14,12 +14,14 @@
 
 .gridHeader {
 	display: grid;
-	grid-template-columns: repeat(7, 1fr);
+	grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
 	justify-items: center;
 	align-items: center;
 	width: 100%;
-	height: 40px;
+	height: min-content;
 	border-bottom: 1px solid var(--light-gray);
+	gap: 10px;
+	padding: 15px 0;
 }
 
 .gridHeader p {
@@ -56,7 +58,19 @@
 }
 
 @media screen and (max-width: 480px) {
+	/* .css-19kzrtu {
+		padding: 0;
+		margin: 0;
+		box-sizing: none;
+	} */
+
+	.gridHeader {
+		gap: 0;
+	}
+
 	.gridHeader p {
-		font-size: 10px;
+		font-size: 8px;
+		width: min-content;
+		text-align: center;
 	}
 }

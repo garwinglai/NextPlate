@@ -64,7 +64,7 @@ function ModalAccount({
 			if (resVerify.success) {
 				// * Handle new email update
 				if (modalName === "email") {
-					const oldLoginEmail = storedUser.email;
+					const oldLoginEmail = storedUser.login.email;
 					const newEmailLowerCase = _.toLower(productLoginInfo.loginEmail);
 					let additionalChange;
 
@@ -94,6 +94,7 @@ function ModalAccount({
 							isVerified: false,
 						});
 					} else {
+						setOpen(true);
 						setHandleResponse({
 							loading: false,
 							message: res.message,

@@ -167,7 +167,6 @@ async function signUpBiz({ email, password }) {
 }
 
 async function signInBiz({ email, password, rememberMe }) {
-	console.log("email", email);
 	const auth = getAuth();
 	const docRef = doc(db, "bizEmailsInUse", email);
 	const docSnap = await getDoc(docRef);
@@ -219,6 +218,9 @@ async function signOutUser() {
 			removeLocalStorage("incOrder");
 			removeLocalStorage("uid");
 			removeLocalStorage("admin");
+			removeLocalStorage("bizOwned");
+			removeLocalStorage("bizOwnedIds");
+			removeLocalStorage("bizId");
 			return { success: true };
 		})
 		.catch((error) => {
@@ -258,13 +260,18 @@ async function updateSignInPassword(password, uid, bizId) {
 	const newPassword = password;
 
 	const bizAccDocRef = doc(db, "bizAccount", uid);
-	const bizDocRef = doc(db, "biz", bizId);
 	const recoveryDocRef = doc(db, "recovery", uid);
 
 	return updatePassword(user, newPassword)
 		.then(() => {
+			for (let i = 0; i < bizId.length; i++) {
+				const currBizId = bizId[i];
+
+				const bizDocRef = doc(db, "biz", currBizId);
+				batch.update(bizDocRef, { "login.password": password });
+			}
+
 			batch.update(bizAccDocRef, { "login.password": password });
-			batch.update(bizDocRef, { "login.password": password });
 			batch.update(recoveryDocRef, { info: password });
 		})
 		.then(() => batch.commit())

@@ -11,7 +11,11 @@ import Alert from "@mui/material/Alert";
 import Collapse from "@mui/material/Collapse";
 
 function Products() {
-	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [modalOpen, setIsModalOpen] = useState({
+		isModalOpen: false,
+		currBizId: "",
+		businessesOwned: {},
+	});
 	const [user, setUser] = useState({
 		storedUser: {},
 		bizId: "",
@@ -23,6 +27,7 @@ function Products() {
 	});
 	const [products, setProducts] = useState([]);
 
+	const { isModalOpen, currBizId, businessesOwned } = modalOpen;
 	const { storedUser, bizId } = user;
 	const { loading, errorMessage, isAlertOpen } = handlingResponse;
 
@@ -31,42 +36,73 @@ function Products() {
 
 	useEffect(() => {
 		const storedUserInfo = JSON.parse(getLocalStorage("user"));
-		let bizIdTemp;
+		const bizOwned = storedUserInfo.bizOwned;
+		const numBizOwned = Object.keys(bizOwned).length;
+
+		let bizIdArr = [];
+
 		if (storedUserInfo) {
-			const bizOwned = storedUserInfo.bizOwned;
-			const bizIdArray = Object.keys(bizOwned);
-			bizIdTemp = bizIdArray[0];
-			setUser({ storedUser: storedUserInfo, bizId: bizIdTemp });
+			if (numBizOwned > 1) {
+				bizIdArr = Object.keys(bizOwned);
+
+				setUser({ storedUser: storedUserInfo, bizId: bizIdArr });
+			} else {
+				const localStorageBizId = Object.keys(bizOwned).pop();
+				bizIdArr.push(localStorageBizId);
+
+				setUser({ storedUser: storedUserInfo, bizId: bizIdArr });
+			}
+
+			setIsModalOpen((prev) => ({ ...prev, businessesOwned: bizOwned }));
 		}
 
-		if (!bizIdTemp) {
+		if (bizIdArr.length === 0) {
 			return;
 		}
 
-		loadProducts(bizIdTemp);
+		loadProducts(bizIdArr, bizOwned);
 	}, []);
 
-	async function loadProducts(bizId) {
+	const loadProducts = async (bizIdArr, bizOwned) => {
 		setHandlingResponse({ loading: true });
-		const productRes = await getProducts(bizId);
-		const { success, message, productsArr } = productRes;
 
-		if (success) {
-			setHandlingResponse({
-				loading: false,
-				errorMessage: "",
-				isAlertOpen: false,
-			});
-			setProducts(productsArr);
-		} else {
-			setHandlingResponse((prev) => ({
-				...prev,
-				loading: false,
-				errorMessage: message,
-				isAlertOpen: true,
-			}));
+		const allProducts = [];
+
+		for (let i = 0; i < bizIdArr.length; i++) {
+			const businessId = bizIdArr[i];
+			const bizName = bizOwned[businessId].name;
+			const productRes = await getProducts(businessId);
+			const { success, message, productsArr } = productRes;
+
+			if (success) {
+				const bizProducts = {
+					bizName,
+					businessId,
+					products: productsArr,
+				};
+
+				allProducts.push(bizProducts);
+			} else {
+				console.log("error loading products");
+				setHandlingResponse((prev) => ({
+					...prev,
+					loading: false,
+					errorMessage: message,
+					isAlertOpen: true,
+				}));
+
+				return;
+			}
 		}
-	}
+
+		setHandlingResponse({
+			loading: false,
+			errorMessage: "",
+			isAlertOpen: false,
+		});
+
+		setProducts(allProducts);
+	};
 
 	function setResponseError(message) {
 		setHandlingResponse((prev) => ({
@@ -76,8 +112,12 @@ function Products() {
 		}));
 	}
 
-	const handleClickCreate = () => {
-		setIsModalOpen((prev) => !prev);
+	const handleClickCreate = (e, currBusinessId) => {
+		setIsModalOpen((prev) => ({
+			...prev,
+			isModalOpen: !prev.isModalOpen,
+			currBizId: currBusinessId ? currBusinessId : "",
+		}));
 	};
 
 	return (
@@ -86,11 +126,68 @@ function Products() {
 				<ProductModal
 					isOpen={isModalOpen}
 					close={handleClickCreate}
-					bizId={bizId}
+					bizId={currBizId}
+					bizIdArr={bizId}
+					bizOwned={businessesOwned}
 					loadProducts={loadProducts}
+					product={null}
 				/>
 			)}
-			<div className={`${styles.products}`}>
+			{products.map((product) => {
+				return (
+					<div className={`${styles.products}`} key={product.businessId}>
+						<div className={`${styles.header} ${styles.flexRow}`}>
+							<div>
+								<h2>{product.bizName}</h2>
+								<h4>({product.products.length} items)</h4>
+							</div>
+
+							{errorMessage && (
+								<Collapse in={isAlertOpen}>
+									<Alert
+										severity="error"
+										onClose={() => {
+											setHandlingResponse((prev) => ({
+												...prev,
+												isAlertOpen: false,
+											}));
+										}}
+										sx={{ width: "90%" }}
+									>
+										<p style={{ wordBreak: "break-word" }}> {errorMessage}</p>
+									</Alert>
+								</Collapse>
+							)}
+							<div className={`${styles.btn__container}`}>
+								<Button
+									variant="contained"
+									onClick={(e) => {
+										handleClickCreate(e, product.businessId);
+									}}
+								>
+									+ Create
+								</Button>
+							</div>
+						</div>
+						<div className={`${styles.body} ${styles.flexRow}`}>
+							{product.products.map((item) => {
+								return (
+									<ProductCard
+										key={item.id}
+										product={item}
+										bizId={product.businessId}
+										bizIdArr={bizId}
+										bizOwned={businessesOwned}
+										loadProducts={loadProducts}
+										setResponseError={setResponseError}
+									/>
+								);
+							})}
+						</div>
+					</div>
+				);
+			})}
+			{/* <div className={`${styles.products}`}>
 				<div className={`${styles.header} ${styles.flexRow}`}>
 					<h2>{products.length} items</h2>
 					{errorMessage && (
@@ -128,7 +225,7 @@ function Products() {
 						);
 					})}
 				</div>
-			</div>
+			</div> */}
 		</Layout>
 	);
 }

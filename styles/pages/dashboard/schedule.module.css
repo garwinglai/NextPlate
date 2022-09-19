@@ -11,7 +11,10 @@
 
 .Schedule__header {
 	display: flex;
+	overflow-x: scroll;
+	margin: 0 20px;
 }
+
 .ScheduleModal__container {
 	gap: 30px;
 	width: 350px;
@@ -132,7 +135,7 @@
 
 @media screen and (max-width: 768px) {
 	.Schedule__header {
-		flex-direction: column;
+		/* flex-direction: column; */
 		align-items: center;
 		gap: 20px;
 		margin-top: 60px;
@@ -140,9 +143,10 @@
 	}
 
 	.Schedule__header button {
-		width: 90%;
-		height: 60px;
-		margin: 50px 0;
+		/* width: 90%; */
+		/* height: 60px; */
+		width: max-content;
+		margin: 0 0 30px 0;
 		font-size: 25px;
 	}
 
@@ -185,19 +189,11 @@
 }
 
 @media screen and (max-width: 480px) {
-	.Schedule__header {
-		flex-direction: column;
-		align-items: center;
-		gap: 20px;
-		margin-top: 60px;
-		font-size: 14px;
-	}
-
 	.Schedule__header button {
-		width: 90%;
+		/* width: 90%; */
 		margin: 20px 0 30px;
 		font-size: 14px;
-		height: 40px;
+		/* height: 40px; */
 	}
 
 	.DashHeader__schedulePage {

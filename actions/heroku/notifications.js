@@ -11,6 +11,240 @@ import { db } from "../../firebase/fireConfig";
 import fetch from "isomorphic-fetch";
 import getNearbyUserId from "../../helper/GeoHash";
 import { getCustomerPhone } from "../crud/user";
+import { getBizCollection } from "../crud/bizUser";
+
+const sendNotifAutomated = async () => {
+	const bizArr = await getBizCollection();
+	const bizHasRegArr = getBizWithRecur(bizArr);
+	const adminId = "6IUWvD23ayVkRlxaO2wtSM2faNB3";
+
+	sendOneNotif(adminId, bizHasRegArr);
+
+	// * Enable code to send every fifteen Min for each biz.
+	// for (let i = 0; i < bizHasRegArr.length; i++) {
+	// 	const currBiz = bizHasRegArr[i];
+	// 	const { id: bizId, name: bizName, emoji } = currBiz;
+	// 	const event = "regular";
+
+	// 	const fifteenMili = 15 * 60 * 1000;
+
+	// 	setTimeout(() => {
+	// 		sendNotifRecur(bizId, event, bizName, emoji);
+	// 	}, fifteenMili * i);
+	// }
+};
+
+const sendOneNotif = async (adminId, bizHasRegArr) => {
+	const baseUrl = "https://restoq.herokuapp.com/";
+	const notificationEndPoint = "sendNotification";
+	const notificationUrl = baseUrl + notificationEndPoint;
+	const sender = "NextPlate";
+	const event = "regular";
+
+	let customerIdArr = [];
+	let usersTokenArr = [];
+
+	for (let j = 0; j < bizHasRegArr.length; j++) {
+		const currBiz = bizHasRegArr[j];
+		const { id: bizId } = currBiz;
+
+		const customerFavesRef = collection(db, "biz", bizId, "customerFaves");
+		const customerFavesSnap = await getDocs(customerFavesRef);
+		console.log("in function send notif");
+
+		customerFavesSnap.forEach((doc) => {
+			const data = doc.data();
+			const docId = doc.id;
+
+			customerIdArr.push(docId);
+		});
+	}
+
+	// * Loop through customerIdArr to find userTokens of each customer.
+	for (let i = 0; i < customerIdArr.length; i++) {
+		const currId = customerIdArr[i];
+		// console.log(currId);
+		const userDocRef = doc(db, "userTokens", currId);
+		const userSnap = await getDoc(userDocRef);
+		const data = userSnap.data();
+		const tokenArr = data.tokens;
+		usersTokenArr = [...usersTokenArr, ...tokenArr];
+	}
+
+	console.log(usersTokenArr, customerIdArr);
+
+	if (usersTokenArr.length === 0) {
+		console.log("here");
+		return;
+	}
+
+	let shortenedUserTokens = [];
+
+	if (usersTokenArr.length >= 1000) {
+		shortenedUserTokens = usersTokenArr.slice(0, 999);
+	}
+
+	console.log(shortenedUserTokens);
+
+	let data = {
+		tokens: shortenedUserTokens,
+		title: "🍽 NextPlate",
+		msg: `⚡️ Thanks for being a hero. Don't miss a chance to rescue a delicious 🍔 today!`,
+		senderName: sender,
+		senderId: adminId,
+		dataType: event,
+	};
+
+	console.log("data", data);
+
+	// * Send push notifications
+	// return fetch(notificationUrl, {
+	// 	method: "POST",
+	// 	headers: {
+	// 		Accept: "application/json",
+	// 		"Content-Type": "application/json",
+	// 	},
+	// 	body: JSON.stringify(data),
+	// })
+	// 	.then((data) => {
+	// 		const status = data.status;
+	// 		console.log("notif sent", status);
+	// 	})
+	// 	.catch((error) => {
+	// 		console.log("notification", error);
+	// 	});
+};
+
+// * Send notif by each biz
+const sendNotifRecur = async (bizId, event, bizName, emoji) => {
+	const baseUrl = "https://restoq.herokuapp.com/";
+	const notificationEndPoint = "sendNotification";
+	const notificationUrl = baseUrl + notificationEndPoint;
+
+	const lastNotifSent = await getRecentNotif(bizId);
+
+	if (lastNotifSent) {
+		const date = new Date();
+		const epochTime = Date.parse(date);
+		const twentyMinInMili = 20 * 60 * 1000;
+		const bufferNotifTime = lastNotifSent + twentyMinInMili;
+
+		if (epochTime <= bufferNotifTime) {
+			console.log("epoch", epochTime);
+			console.log("bufferNotifTime", bufferNotifTime);
+			return;
+		}
+	}
+
+	const customerFavesRef = collection(db, "biz", bizId, "customerFaves");
+	const customerFavesSnap = await getDocs(customerFavesRef);
+	let customerIdArr = [];
+	let usersTokenArr = [];
+
+	customerFavesSnap.forEach((doc) => {
+		const data = doc.data();
+		const docId = doc.id;
+
+		customerIdArr.push(docId);
+	});
+
+	// * If favorited customers is less than 50, send to nearby 50.
+	const numOfCustomers = customerIdArr.length;
+
+	if (numOfCustomers < 51) {
+		const nearbyUserIdArr = await getNearbyUserId(bizId, customerIdArr);
+
+		customerIdArr = [...customerIdArr, ...nearbyUserIdArr];
+	}
+
+	// * Loop through customerIdArr to find userTokens of each customer.
+	for (let i = 0; i < customerIdArr.length; i++) {
+		const currId = customerIdArr[i];
+		// console.log(currId);
+		const userDocRef = doc(db, "userTokens", currId);
+		const userSnap = await getDoc(userDocRef);
+		const data = userSnap.data();
+		const tokenArr = data.tokens;
+		usersTokenArr = [...usersTokenArr, ...tokenArr];
+	}
+
+	if (usersTokenArr.length === 0) {
+		return;
+	}
+
+	let data = {
+		tokens: usersTokenArr,
+		title: "🍽 NextPlate",
+		msg: `Craving ${emoji}? ${bizName} has some sweet deals! Be a hero and rescue a meal.`,
+		senderName: bizName,
+		senderId: bizId,
+		dataType: event,
+	};
+
+	await updateLastNotifSent(bizId);
+
+	// * Send push notifications
+	return fetch(notificationUrl, {
+		method: "POST",
+		headers: {
+			Accept: "application/json",
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(data),
+	})
+		.then((data) => {
+			const status = data.status;
+			console.log("notif sent");
+
+			return { success: true };
+		})
+		.catch((error) => {
+			console.log("notification", error);
+			return { success: false, error };
+		});
+};
+
+const getBizWithRecur = (bizArr) => {
+	const bizHasRegSched = [];
+
+	for (let i = 0; i < bizArr.length; i++) {
+		const currBiz = bizArr[i];
+		const weeklySched = currBiz.weeklySchedules;
+
+		if (weeklySched || Object.keys(weeklySched).length !== 0) {
+			const dayIdxArr = Object.keys(weeklySched);
+			const todayDayIdx = getTodayDayIdx();
+
+			if (dayIdxArr.includes(todayDayIdx)) {
+				const schedsInDay = weeklySched[todayDayIdx];
+
+				if (schedsInDay || Object.keys(schedsInDay).length !== 0) {
+					const schedIdsArr = Object.keys(schedsInDay);
+
+					for (let k = 0; k < schedIdsArr.length; k++) {
+						const currId = schedIdsArr[k];
+						const schedule = schedsInDay[currId];
+						const statusIndex = schedule.statusIndex;
+
+						if (statusIndex === 0) {
+							bizHasRegSched.push(currBiz);
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return bizHasRegSched;
+};
+
+const getTodayDayIdx = () => {
+	const date = new Date();
+	const day = date.getDay() + 1;
+
+	return day.toString();
+};
 
 async function sendNotification(
 	bizId,
@@ -41,7 +275,7 @@ async function sendNotification(
 		if (lastNotifSent) {
 			const date = new Date();
 			const epochTime = Date.parse(date);
-			const twentyMinInMili = 20 * 60 * 1000;
+			const twentyMinInMili = 25 * 60 * 1000;
 			const bufferNotifTime = lastNotifSent + twentyMinInMili;
 
 			if (epochTime <= bufferNotifTime) {
@@ -51,13 +285,11 @@ async function sendNotification(
 			}
 		}
 
-		console.log("hi");
-
 		const customerFavesRef = collection(db, "biz", bizId, "customerFaves");
 		const customerFavesSnap = await getDocs(customerFavesRef);
 		const percentDiscountStr = calculateDiscount(defaultPrice, originalPrice);
 		let customerIdArr = [];
-		let usersTokenArr = [];
+		let usersTokenArrAll = [];
 
 		// * Loop through customerFaves collection to get array of customerId's who favorited
 		customerFavesSnap.forEach((doc) => {
@@ -67,6 +299,8 @@ async function sendNotification(
 			customerIdArr.push(docId);
 		});
 
+		console.log("customerIdArr", customerIdArr);
+
 		// * If favorited customers is less than 50, send to nearby 50.
 		const numOfCustomers = customerIdArr.length;
 		if (numOfCustomers < 51) {
@@ -74,85 +308,93 @@ async function sendNotification(
 			customerIdArr = [...customerIdArr, ...nearbyUserIdArr];
 		}
 
+		console.log("got customer idArr");
+
 		// * Loop through customerIdArr to find userTokens of each customer.
 		for (let i = 0; i < customerIdArr.length; i++) {
 			const currId = customerIdArr[i];
-			// console.log(currId);
 			const userDocRef = doc(db, "userTokens", currId);
 			const userSnap = await getDoc(userDocRef);
+
 			const data = userSnap.data();
 			const tokenArr = data.tokens;
-			usersTokenArr = [...usersTokenArr, ...tokenArr];
+			usersTokenArrAll = [...usersTokenArrAll, ...tokenArr];
 		}
 
-		if (usersTokenArr.length === 0) {
+		if (usersTokenArrAll.length === 0) {
 			return;
-		}
+		} else if (usersTokenArrAll.length >= 1000) {
+			const tokenArrSize = 999;
 
-		let data = {};
+			await updateLastNotifSent(bizId);
 
-		// * Data for push notifications
-		if (event === "flash") {
-			const pickupByTime = new Date(endTime).toLocaleTimeString("en-US", {
-				hour: "2-digit",
-				minute: "2-digit",
-			});
+			for (let i = 0; i < usersTokenArrAll.length; i += tokenArrSize) {
+				const usersTokenArr = usersTokenArrAll.slice(i, i + tokenArrSize);
 
-			var removeLeadingZeroTime = pickupByTime.replace(/^0(?:0:0?)?/, "");
+				let data = {};
 
-			data = {
-				tokens: usersTokenArr,
-				title: "NextPlate",
-				msg: `${emoji} ${bizName} has a ${itemName} for ${percentDiscountStr} off! Offer available until ${removeLeadingZeroTime}. Grab it before it's gone!`,
-				senderName: bizName,
-				senderId: bizId,
-				dataType: event,
-			};
-		}
+				// * Data for push notifications
+				if (event === "flash") {
+					const pickupByTime = new Date(endTime).toLocaleTimeString("en-US", {
+						hour: "2-digit",
+						minute: "2-digit",
+					});
 
-		if (event === "regular") {
-			if (recurring) {
-				data = {
-					tokens: usersTokenArr,
-					title: "NextPlate",
-					msg: `${emoji} ${bizName} has a ${itemName} for ${percentDiscountStr} off! Grab it before it's gone!`,
-					senderName: bizName,
-					senderId: bizId,
-					dataType: "flash",
-				};
-			} else {
-				data = {
-					tokens: usersTokenArr,
-					title: "NextPlate",
-					msg: `${emoji} ${bizName} has a ${itemName} for ${percentDiscountStr} off! Grab it before it's gone!`,
-					senderName: bizName,
-					senderId: bizId,
-					dataType: "flash",
-				};
+					var removeLeadingZeroTime = pickupByTime.replace(/^0(?:0:0?)?/, "");
+
+					data = {
+						tokens: usersTokenArr,
+						title: "NextPlate",
+						msg: `${emoji} ${bizName} has a ${itemName} for ${percentDiscountStr} off! Offer available until ${removeLeadingZeroTime}. Grab it before it's gone!`,
+						senderName: bizName,
+						senderId: bizId,
+						dataType: event,
+					};
+				}
+
+				if (event === "regular") {
+					if (recurring) {
+						data = {
+							tokens: usersTokenArr,
+							title: "NextPlate",
+							msg: `${emoji} ${bizName} has a ${itemName} for ${percentDiscountStr} off! Grab it before it's gone!`,
+							senderName: bizName,
+							senderId: bizId,
+							dataType: "flash",
+						};
+					} else {
+						data = {
+							tokens: usersTokenArr,
+							title: "NextPlate",
+							msg: `${emoji} ${bizName} has a ${itemName} for ${percentDiscountStr} off! Grab it before it's gone!`,
+							senderName: bizName,
+							senderId: bizId,
+							dataType: "flash",
+						};
+					}
+				}
+
+				// * Send push notifications
+				return fetch(notificationUrl, {
+					method: "POST",
+					headers: {
+						Accept: "application/json",
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify(data),
+				})
+					.then((data) => {
+						const status = data.status;
+						console.log("notifs sent");
+
+						return { success: true };
+					})
+					.catch((error) => {
+					console.log("notification", error);
+						return { success: false, error };
+					});
 			}
 		}
-
-		// * Send push notifications
-		return fetch(notificationUrl, {
-			method: "POST",
-			headers: {
-				Accept: "application/json",
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify(data),
-		})
-			.then((data) => {
-				const status = data.status;
-				console.log("here");
-
-				updateLastNotifSent(bizId);
-
-				return { success: true };
-			})
-			.catch((error) => {
-				console.log("notification", error);
-				return { success: false, error };
-			});
 	}
 
 	// * Handle push notifications for incoming orders
@@ -286,7 +528,7 @@ const updateLastNotifSent = async (bizId) => {
 
 	console.log("updateLastNotif");
 
-	updateDoc(
+	await updateDoc(
 		docRef,
 		{
 			lastNotifSent: epoch,
@@ -363,4 +605,4 @@ const sendSMS = async (
 };
 
 export default sendNotification;
-export { sendSMS };
+export { sendSMS, sendNotifAutomated };

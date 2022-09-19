@@ -30,7 +30,7 @@ const style = {
 	borderRadius: "5px",
 };
 
-function PayoutModal({ open, close, payout, bizId }) {
+function PayoutModal({ open, close, payout, bizIdArr }) {
 	const [openModal, setOpenModal] = useState(true);
 	const [orders, setOrders] = useState([]);
 
@@ -47,6 +47,7 @@ function PayoutModal({ open, close, payout, bizId }) {
 		bizFeesDouble,
 		totalBizFeesStr,
 		totalBizFeesDouble,
+		isBizFeesPct,
 		payoutAmtStr,
 		payoutAmtDouble,
 		paymentDateEpoch,
@@ -61,29 +62,53 @@ function PayoutModal({ open, close, payout, bizId }) {
 	const { address_1, address_2, city, state, zip } = address;
 
 	useEffect(() => {
-		getOrders(bizId);
+		getOrders(bizIdArr);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	const getOrders = async (bizId) => {
-		const ordersDocRef = collection(db, "biz", bizId, "orders");
-
-		const q = query(
-			ordersDocRef,
-			where("startTime", ">", startDateEpoch),
-			where("startTime", "<=", endDateEpoch),
-			orderBy("startTime", "asc")
-		);
+	const getOrders = async (bizIdArr) => {
 		try {
-			const ordersSnapshot = await getDocs(q);
 			const ordersArr = [];
 
-			ordersSnapshot.forEach((doc) => {
-				const data = doc.data();
-				data.id = doc.id;
-				ordersArr.push(data);
-			});
-			console.log(ordersArr);
+			for (let i = 0; i < bizIdArr.length; i++) {
+				const bizId = bizIdArr[i];
+
+				const ordersDocRef = collection(db, "biz", bizId, "orders");
+
+				const q = query(
+					ordersDocRef,
+					where("endTime", ">", startDateEpoch),
+					where("endTime", "<=", endDateEpoch),
+					// statusIndex 3 == Completed
+					where("statusIndex", "==", 3),
+					orderBy("endTime", "asc")
+				);
+
+				const q2 = query(
+					ordersDocRef,
+					where("endTime", ">", startDateEpoch),
+					where("endTime", "<=", endDateEpoch),
+					// statusIndex 5 == No Show
+					where("statusIndex", "==", 5),
+					orderBy("endTime", "asc")
+				);
+
+				const ordersSnapshotCompleted = await getDocs(q);
+				const ordersSnapshotNoShow = await getDocs(q2);
+
+				ordersSnapshotCompleted.forEach((doc) => {
+					const data = doc.data();
+					data.id = doc.id;
+					ordersArr.push(data);
+				});
+
+				ordersSnapshotNoShow.forEach((doc) => {
+					const data = doc.data();
+					data.id = doc.id;
+					ordersArr.push(data);
+				});
+			}
+
 			setOrders(ordersArr);
 		} catch (error) {
 			console.log("getOrders error", error);
@@ -148,9 +173,9 @@ function PayoutModal({ open, close, payout, bizId }) {
 							<h5 className={`${styles.gridItem}`}>#Id</h5>
 							<h5 className={`${styles.gridItem}`}>Date</h5>
 							<h5 className={`${styles.gridItem}`}>Item</h5>
-							<h5 className={`${styles.gridItem}`}>Item price</h5>
+							<h5 className={`${styles.gridItem}`}>Sale & Tax</h5>
 							<h5 className={`${styles.gridItem}`}>Qty</h5>
-							<h5 className={`${styles.gridItem}`}>Tax & fees</h5>
+							<h5 className={`${styles.gridItem}`}>Fees ({bizFeesStr})</h5>
 							<h5 className={`${styles.gridItem}`}>Total</h5>
 						</div>
 
@@ -159,6 +184,8 @@ function PayoutModal({ open, close, payout, bizId }) {
 								<PayoutOrderTabs
 									key={order.id}
 									order={order}
+									bizFeesDouble={bizFeesDouble}
+									isBizFeesPct={isBizFeesPct}
 									bizFeesStr={bizFeesStr}
 								/>
 							);
@@ -169,7 +196,7 @@ function PayoutModal({ open, close, payout, bizId }) {
 						>
 							<div className={`${styles.flexCol} ${styles.subtotalGap}`}>
 								<h5>Subtotal</h5>
-								<h5>Tax & Fees</h5>
+								<h5>Fees</h5>
 								<h5>Total Payout</h5>
 							</div>
 							<div

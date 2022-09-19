@@ -75,6 +75,7 @@ function EditScheduleModal({
 
 			// * UnPause
 			if (!isToggleOn) {
+				const daysWithPickUpArr = bizData.daysWithPickup;
 				const pausedSchedules = bizData.pausedSchedules;
 				let currPausedSchedule = pausedSchedules[dayIdx][scheduleId];
 				currPausedSchedule.isPaused = false;
@@ -90,7 +91,8 @@ function EditScheduleModal({
 					const isWeeklyScheduleSaved = await saveWeeklySchedule(
 						bizDocRef,
 						currPausedSchedule,
-						dayIdx
+						dayIdx,
+						daysWithPickUpArr
 					);
 
 					if (isWeeklyScheduleSaved) {
@@ -132,12 +134,25 @@ function EditScheduleModal({
 		}
 	};
 
-	const saveWeeklySchedule = async (bizDocRef, currPausedSchedule, dayIdx) => {
+	const saveWeeklySchedule = async (
+		bizDocRef,
+		currPausedSchedule,
+		dayIdx,
+		daysWithPickUpArr
+	) => {
 		const openHistoryRef = doc(db, "biz", bizId, "openHistory", scheduleId);
+		console.log("dayidx", dayIdx);
+		const updatedDaysWithPickupArr = daysWithPickUpArr.includes(dayIdx)
+			? [...daysWithPickUpArr]
+			: [...daysWithPickUpArr, dayIdx];
 
 		try {
 			await updateDoc(bizDocRef, {
 				[`weeklySchedules.${dayIdx}.${scheduleId}`]: currPausedSchedule,
+			});
+
+			await updateDoc(bizDocRef, {
+				daysWithPickup: updatedDaysWithPickupArr,
 			});
 		} catch (error) {
 			console.log("problem saving weeklySchedule", error);

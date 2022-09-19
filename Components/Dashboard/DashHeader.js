@@ -48,7 +48,7 @@ function DashHeader({
 	subPage,
 	notifications,
 	notificationsConfirmed,
-	bizId,
+	bizIdArr,
 }) {
 	const [showNotifications, setShowNotifications] = useState(false);
 

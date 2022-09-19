@@ -949,7 +949,7 @@ function Dashboard() {
 									<p>{twoDays[0].monthDay}</p>
 								</div>
 								<div className={styles.Dashboard__notificationsBodyContainer}>
-									{hasOrdersToday ? (
+									{/* {hasOrdersToday ? (
 										pickupToday.map((pickup, idx) => {
 											return (
 												<div
@@ -998,7 +998,7 @@ function Dashboard() {
 										>
 											No orders
 										</p>
-									)}
+									)} */}
 								</div>
 							</div>
 							<div className={styles.Dashboard__notificationsBodyDetail}>

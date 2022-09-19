@@ -18,6 +18,7 @@ export const categoriesData = [
 	"Tea",
 	"Baked Goods",
 	"Donuts",
+	"Colombian",
 	"Brunch",
 	"Indian",
 	"Pizza",

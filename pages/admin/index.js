@@ -34,6 +34,9 @@ function AdminDashboard() {
 						<Link href="/admin/stripe">
 							<a>Stripe</a>
 						</Link>
+						<Link href="/admin/notifications">
+							<a>Notifications</a>
+						</Link>
 					</menu>
 				</fieldset>
 			</div>

@@ -1,4 +1,4 @@
-export const versionNumber = "V 1.3.6";
+export const versionNumber = "V 1.4.0";
 
 /*
  * 1.1.3 -
@@ -152,4 +152,30 @@ export const versionNumber = "V 1.3.6";
 /*
  * 1.3.6 -
  * 1. Added 20 to quantity of scheduled items
+ */
+
+/*
+ * 1.3.7 -
+ * 1. Multi biz in bizAccount
+ * 2. Fixed Biz Id in all biz admin
+ */
+
+/*
+ * 1.3.8 -
+ * 1. LoadUser after closing flashSale in orders.
+ */
+
+/*
+ * 1.3.9 -
+ * 1. Flash and schedule notifications
+ * 2. Auto notif sent every Mon and Thurs at 11am. // code done but error with package when deploy.
+ */
+
+/*
+ * 1.4.0 -
+ * 1. Included PopPay Fee.
+ * 2. Fixed paymentHistory & orderHistory for multiple bizId
+ * 3. Notifcations over 1000, split userTokens array to be able to send notif.
+ * 4. Removed notifications for scheduling tomorrow
+ * 5. Fixed UI for paymenthistory mobile
  */

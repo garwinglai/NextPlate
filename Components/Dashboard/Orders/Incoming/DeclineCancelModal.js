@@ -25,15 +25,10 @@ const style = {
 };
 
 function DeclineCancelModal({
-	pendingCount,
-	audio,
 	timeEpoch,
 	endTimeEpoch,
-	handleSuccessError,
 	orderDetails,
 	bizId,
-	dayIndex,
-	setIsOpen,
 	setOnUpdateResponse,
 	setShowFilter,
 }) {
@@ -59,6 +54,8 @@ function DeclineCancelModal({
 		payMethod,
 		items,
 		status,
+		bizTotalPriceDouble,
+		statusIndex,
 		pickupWindowId,
 		customerId,
 		chargeId,
@@ -86,22 +83,17 @@ function DeclineCancelModal({
 				"No Show",
 				5,
 				null,
-				dayIndex,
-				pickupWindowId,
+				null,
 				null,
 				null,
 				null
 			);
-			if (resUpdate.success) {
-				handleSuccessError("Marked as No Show.", null);
-			} else {
-				// Open error message
-				setIsOpen(true);
+			if (!resUpdate.success) {
 				// Close Child Modal
 				setOpen(false);
 				setOnUpdateResponse({
 					loading: false,
-					success: false,
+					isOpen: true,
 					errMessage: resUpdate.message,
 				});
 			}
@@ -134,23 +126,19 @@ function DeclineCancelModal({
 				"Declined",
 				2,
 				declineReasons,
-				dayIndex,
-				pickupWindowId,
+				null,
 				null,
 				null,
 				null
 			);
-			if (resUpdate.success) {
-				playNotificationSound(audio, "end");
-				// handleSuccessError(null, "Declined.");
-			} else {
-				// Open error message
-				setIsOpen(true);
+			if (!resUpdate.success) {
 				// Close child modal
 				setOpen(false);
+
+				// Open error message
 				setOnUpdateResponse({
 					loading: false,
-					success: false,
+					isOpen: true,
 					errMessage: resUpdate.message,
 				});
 			}
@@ -162,21 +150,21 @@ function DeclineCancelModal({
 				"Canceled",
 				4,
 				declineReasons,
-				dayIndex,
-				pickupWindowId,
 				bizTotalPriceDouble,
-				chargeId
+				chargeId,
+				null,
+				null
 			);
 			if (resUpdate.success) {
 				// handleSuccessError(null, "Canceled.");
 			} else {
-				// Open error message
-				setIsOpen(true);
 				// Close child modal
 				setOpen(false);
+
+				// Open error message
 				setOnUpdateResponse({
 					loading: false,
-					success: false,
+					isOpen: true,
 					errMessage: resUpdate.message,
 				});
 			}
@@ -201,7 +189,7 @@ function DeclineCancelModal({
 				color="error"
 				variant="contained"
 				name={
-					status === "Confirmed"
+					statusIndex === 1
 						? timeEpoch > endTimeEpoch
 							? "no-show"
 							: "cancel"
@@ -209,7 +197,7 @@ function DeclineCancelModal({
 				}
 				onClick={handleOpen}
 			>
-				{status === "Confirmed"
+				{statusIndex === 1
 					? timeEpoch > endTimeEpoch
 						? "No Show"
 						: "Cancel"

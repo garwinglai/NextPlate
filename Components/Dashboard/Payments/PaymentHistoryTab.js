@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import styles from "../../../styles/components/dashboard/payments/payment-history-tab.module.css";
 import PayoutModal from "./PayoutModal";
 
-function PaymentHistoryTab({ payout, bizId }) {
+function PaymentHistoryTab({ payout, bizIdArr }) {
 	const [showPayoutModal, setShowPayoutModal] = useState(false);
 
 	const {
@@ -44,7 +44,7 @@ function PaymentHistoryTab({ payout, bizId }) {
 					open={showPayoutModal}
 					close={handleClick}
 					payout={payout}
-					bizId={bizId}
+					bizIdArr={bizIdArr}
 				/>
 			)}
 			<div

@@ -65,80 +65,13 @@ async function createNewSchedule(
 			message: "Please select an appropriate time. (12:00 am - 11:45 pm)",
 		};
 	}
-	// if (currShortDate === shortDate) {
-	// 	// * If the startTime is smaller than current time, return error.
-	// 	if (timeS < currTime) {
-	// 		return {
-	// 			success: false,
-	// 			message:
-	// 				"Please select an appropriate time. Start time has already passed.",
-	// 		};
-	// 	}
-	// }
 
 	if (docSnap.exists()) {
 		// * 1) Query for current dayOfWeek, where recurring is true in openHistory collection
 		// * 2) Check if scheduled time clashes with existing times
 		// * 3) If not, cont. If so, send error.
 
-		// * Removed recurring time overlap check
-		// const openHistoryRef = collection(db, "biz", bizId, "openHistory");
-		// const queryRecurring = query(
-		// 	openHistoryRef,
-		// 	where("dayOfWeek", "==", dayOfWeek),
-		// 	where("recurring", "==", true)
-		// );
-
 		let scheduledId;
-		// scheduleData.notificationSent = false;
-
-		// try {
-		// 	const recurringSchedulesArr = [];
-
-		// 	const openHistorySnaps = await getDocs(queryRecurring);
-
-		// 	openHistorySnaps.forEach((doc) => {
-		// 		const data = doc.data();
-		// 		recurringSchedulesArr.push(data);
-		// 	});
-
-		// 	for (let i = 0; i < recurringSchedulesArr.length; i++) {
-		// 		const currentSchedule = recurringSchedulesArr[i];
-
-		// 		const hourStartPickUp = currentSchedule.hourStart;
-		// 		const minStartPickUp = currentSchedule.minStart;
-		// 		const hourEndPickUp = currentSchedule.hourEnd;
-		// 		const minEndPickUp = currentSchedule.minEnd;
-
-		// 		const getTimeStartPickUp = hourStartPickUp * 60 + minStartPickUp;
-		// 		const getTimeEndPickUp = hourEndPickUp * 60 + minEndPickUp;
-
-		// 		const postTimeStartPickUp = hourStart * 60 + minStart;
-		// 		const postTimeEndPickUp = hourEnd * 60 + minEnd;
-
-		// 		if (
-		// 			(getTimeStartPickUp <= postTimeStartPickUp &&
-		// 				postTimeStartPickUp < getTimeEndPickUp) ||
-		// 			(getTimeStartPickUp < postTimeEndPickUp &&
-		// 				postTimeEndPickUp <= getTimeEndPickUp) ||
-		// 			(postTimeStartPickUp <= getTimeStartPickUp &&
-		// 				getTimeStartPickUp < postTimeEndPickUp) ||
-		// 			(postTimeStartPickUp < getTimeEndPickUp &&
-		// 				getTimeEndPickUp <= postTimeEndPickUp)
-		// 		) {
-		// 			return {
-		// 				success: false,
-		// 				message:
-		// 					"The selected time overlaps an existing schedule. Please select another time.",
-		// 			};
-		// 		}
-		// 	}
-		// } catch (error) {
-		// 	return {
-		// 		success: false,
-		// 		message: `Error fetching recurring docs: ${error}`,
-		// 	};
-		// }
 
 		// * Setting up variables to use for creating a new schedule
 		const openHistory = scheduleData;
@@ -229,51 +162,6 @@ async function createNewSchedule(
 			if (!recurringDaily) {
 				if (existingNextSchedule.hasOwnProperty(dayOfWeekIndex)) {
 					// * If weeklySchedules has dayIndex, check if there is overlapping times. If so, send error
-
-					// * Removed overlap time check
-					// const weeklySchedulesIdxArray = [];
-
-					// for (const key in schedulesPerDay) {
-					// 	if (schedulesPerDay[key].status === "Regular") {
-					// 		weeklySchedulesIdxArray.push(key);
-					// 	}
-					// }
-
-					// for (let i = 0; i < weeklySchedulesIdxArray.length; i++) {
-					// 	const key = weeklySchedulesIdxArray[i];
-					// 	const currentSchedule = schedulesPerDay[key];
-
-					// 	const hourStartPickUp = currentSchedule.hourStart;
-					// 	const minStartPickUp = currentSchedule.minStart;
-					// 	const hourEndPickUp = currentSchedule.hourEnd;
-					// 	const minEndPickUp = currentSchedule.minEnd;
-					// 	const postDate = currentSchedule.scheduledDate;
-
-					// 	if (postDate === actualDate) {
-					// 		const getTimeStartPickUp = hourStartPickUp * 60 + minStartPickUp;
-					// 		const getTimeEndPickUp = hourEndPickUp * 60 + minEndPickUp;
-
-					// 		const postTimeStartPickUp = hourStart * 60 + minStart;
-					// 		const postTimeEndPickUp = hourEnd * 60 + minEnd;
-
-					// 		if (
-					// 			(getTimeStartPickUp <= postTimeStartPickUp &&
-					// 				postTimeStartPickUp < getTimeEndPickUp) ||
-					// 			(getTimeStartPickUp < postTimeEndPickUp &&
-					// 				postTimeEndPickUp <= getTimeEndPickUp) ||
-					// 			(postTimeStartPickUp <= getTimeStartPickUp &&
-					// 				getTimeStartPickUp < postTimeEndPickUp) ||
-					// 			(postTimeStartPickUp < getTimeEndPickUp &&
-					// 				getTimeEndPickUp <= postTimeEndPickUp)
-					// 		) {
-					// 			return {
-					// 				success: false,
-					// 				message:
-					// 					"The selected time overlaps an existing schedule. Please select another time.",
-					// 			};
-					// 		}
-					// 	}
-					// }
 
 					const resOpenHistory = await addOpenHistory(bizId, openHistory);
 
@@ -381,10 +269,7 @@ async function createNewSchedule(
 			await batch.commit();
 
 			// * Check if today or tomorrow, if so send notification
-			if (
-				dayOfWeekIndex == todayDayPlusOne ||
-				dayOfWeekIndex == tomorrowDayPlusOne
-			) {
+			if (dayOfWeekIndex == todayDayPlusOne) {
 				sendNotification(
 					bizId,
 					bizName,

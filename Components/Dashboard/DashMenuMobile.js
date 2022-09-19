@@ -11,6 +11,7 @@ import { getLocalStorage, signOutUser } from "../../actions/auth/auth";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import CategoryIcon from "@mui/icons-material/Category";
 import ScienceIcon from "@mui/icons-material/Science";
+import StoreIcon from "@mui/icons-material/Store";
 import Version from "../Misc/Version";
 
 function DashMenuMobile({ currentPage, closeMenu }) {
@@ -40,27 +41,6 @@ function DashMenuMobile({ currentPage, closeMenu }) {
 	function showMenu() {
 		return (
 			<menu className={styles.DashMenuMobile_Menu}>
-				{/* <div
-					style={
-						currentPage === "Dashboard"
-							? {
-									backgroundColor: "var(--dark-blue)",
-									borderRadius: "5px",
-							  }
-							: undefined
-					}
-				>
-					<Link href={`/dashboard/${routerUid}`}>
-						<a>
-							<IconButton>
-								<GridViewIcon sx={{ color: "var(--gray)", fontSize: 35 }} />
-							</IconButton>
-						</a>
-					</Link>
-					<Link href={`/dashboard/${routerUid}`}>
-						<a className={styles.DashMenuMobile_MenuItems}>Dashboard</a>
-					</Link>
-				</div> */}
 				<div
 					style={
 						currentPage === "Schedule"
@@ -149,6 +129,27 @@ function DashMenuMobile({ currentPage, closeMenu }) {
 				</div>
 				<div
 					style={
+						currentPage === "Stores"
+							? {
+									backgroundColor: "var(--dark-blue)",
+									borderRadius: "5px",
+							  }
+							: undefined
+					}
+				>
+					<Link href={`/dashboard/${routerUid}/stores`}>
+						<a>
+							<IconButton>
+								<StoreIcon sx={{ color: "var(--gray)", fontSize: 35 }} />
+							</IconButton>
+						</a>
+					</Link>
+					<Link href={`/dashboard/${routerUid}/stores`}>
+						<a className={styles.DashMenuMobile_MenuItems}>Stores</a>
+					</Link>
+				</div>
+				<div
+					style={
 						currentPage === "Settings"
 							? {
 									backgroundColor: "var(--dark-blue)",
@@ -168,6 +169,7 @@ function DashMenuMobile({ currentPage, closeMenu }) {
 						<a className={styles.DashMenuMobile_MenuItems}>Settings</a>
 					</Link>
 				</div>
+
 				<div
 					style={
 						currentPage === "Test mode"

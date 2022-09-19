@@ -1226,9 +1226,11 @@ function DayComponent({
 								})
 						) : flash.postsFlash.length !== 0 &&
 						  flash.currShortDate === shortDate ? (
-							<p style={{ display: "none" }}>No Posts</p>
+							<p style={{ display: "none" }}>{bizName}: None</p>
 						) : (
-							<p className={styles.DayComponent__bodyDetailFalse}>No Posts</p>
+							<p className={styles.DayComponent__bodyDetailFalse}>
+								{bizName}: None
+							</p>
 						)}
 					</div>
 				</div>

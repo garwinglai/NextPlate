@@ -255,6 +255,7 @@ function Nav({ currentPage, notifications, notificationsConfirmed }) {
 					currentPage === "Orders" ||
 					currentPage === "Payments" ||
 					currentPage === "Products" ||
+					currentPage === "Stores" ||
 					currentPage === "Settings" ||
 					currentPage === "Test mode") &&
 					mobileDashboardNav(currentPage)}

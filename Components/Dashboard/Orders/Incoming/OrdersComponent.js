@@ -6,26 +6,9 @@ import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Collapse from "@mui/material/Collapse";
 import SuccessError from "../SuccessError";
+import BizOrdersComponent from "./BizOrdersComponent";
 
-function OrdersComponent({
-	pendingCount,
-	audio,
-	date,
-	tab,
-	uid,
-	bizId,
-	ordersPending,
-	pickupWindowsPending,
-	hasPendingToday,
-	hasPendingTomorrow,
-	ordersConfirmed,
-	pickupWindowsConfirmed,
-	hasConfirmedToday,
-	hasConfirmedTomorrow,
-	ordersPendingMessage,
-	ordersConfirmedMessage,
-}) {
-	const [isAlertOpen, setIsAlertOpen] = useState(true);
+function OrdersComponent({ tab, userData }) {
 	const [handleOrderUpdates, setHandleOrderUpdates] = useState({
 		errorMessage: "",
 		successMessage: "",
@@ -33,13 +16,6 @@ function OrdersComponent({
 	});
 
 	const { errorMessage, successMessage, isOpen } = handleOrderUpdates;
-	const {
-		weekDayNameShort,
-		shortDate,
-		statusTodayOrTomorrow,
-		actualDate,
-		dayIndex,
-	} = date;
 
 	function handleSuccessError(errorMessage, successMessage) {
 		setHandleOrderUpdates((prev) => ({
@@ -59,103 +35,35 @@ function OrdersComponent({
 						setHandleOrderUpdates={setHandleOrderUpdates}
 					/>
 				)}
-				{/* <h3>{actualDate}</h3> */}
-				{ordersPendingMessage && (
-					<Grid item xs={12} md={4}>
-						<Collapse in={isAlertOpen}>
-							<Alert severity="error">
-								<AlertTitle>Error</AlertTitle>
-								{ordersPendingMessage}
-							</Alert>
-						</Collapse>
-					</Grid>
-				)}
-				{ordersConfirmedMessage && (
-					<Grid item xs={12} md={4}>
-						<Collapse in={isAlertOpen}>
-							<Alert severity="error">
-								<AlertTitle>Error</AlertTitle>
-								{ordersConfirmedMessage}
-							</Alert>
-						</Collapse>
-					</Grid>
-				)}
 			</div>
-			<div className={`${styles.flexRow}`}>
-				{tab === 0 && (
-					<div className={`${styles.Box}`}>
-						<h3>Pending</h3>
-						{hasPendingToday ? (
-							ordersPending &&
-							ordersPending.length !== 0 &&
-							pickupWindowsPending.map((pickup, idx) => {
-								if (pickup.shortDate === shortDate) {
-									return (
-										<div className={styles.orderGroup} key={pickup.window}>
-											<p>{pickup.window}</p>
-											{ordersPending.map((pendingOrder, i) => {
-												if (
-													pendingOrder.shortDate === shortDate &&
-													pendingOrder.pickupWindow === pickup.window
-												) {
-													return (
-														<OrderTabComponent
-															handleSuccessError={handleSuccessError}
-															key={pendingOrder.orderId}
-															userOrderDetails={pendingOrder}
-															item={pendingOrder.items[0]}
-															bizId={bizId}
-														/>
-													);
-												}
-											})}
-										</div>
-									);
-								}
-							})
-						) : (
-							<p className={`${styles.noData}`}>No pending orders</p>
-						)}
-					</div>
-				)}
-				{tab === 1 && (
-					<div className={`${styles.Box}`}>
-						<h3>Pickup</h3>
-						{hasConfirmedToday ? (
-							ordersConfirmed &&
-							ordersConfirmed.length !== 0 &&
-							pickupWindowsConfirmed.map((pickup, idx) => {
-								if (pickup.shortDate === shortDate) {
-									return (
-										<div className={styles.orderGroup} key={pickup.window}>
-											<p>{pickup.window}</p>
-											{ordersConfirmed.map((confirmedOrder, i) => {
-												if (
-													confirmedOrder.shortDate === shortDate &&
-													confirmedOrder.pickupWindow === pickup.window
-												) {
-													return (
-														<OrderTabComponent
-															pendingCount={pendingCount}
-															audio={audio}
-															handleSuccessError={handleSuccessError}
-															key={confirmedOrder.orderId}
-															userOrderDetails={confirmedOrder}
-															item={confirmedOrder.items[0]}
-															bizId={bizId}
-														/>
-													);
-												}
-											})}
-										</div>
-									);
-								}
-							})
-						) : (
-							<p className={`${styles.noData}`}>No confirmed orders</p>
-						)}
-					</div>
-				)}
+
+			<div className={`${styles.flexCol} ${styles.BoxContainer}`}>
+				{tab === 0 &&
+					userData.map((user) => {
+						return (
+							<BizOrdersComponent
+								key={user.bizId}
+								bizId={user.bizId}
+								statusIndex={tab}
+								bizName={user.bizName}
+								handleSuccessError={handleSuccessError}
+							/>
+						);
+					})}
+			</div>
+			<div className={`${styles.flexCol} ${styles.BoxContainer}`}>
+				{tab === 1 &&
+					userData.map((user) => {
+						return (
+							<BizOrdersComponent
+								key={user.bizId}
+								bizId={user.bizId}
+								statusIndex={tab}
+								bizName={user.bizName}
+								handleSuccessError={handleSuccessError}
+							/>
+						);
+					})}
 			</div>
 		</div>
 	);

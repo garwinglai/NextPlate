@@ -94,12 +94,7 @@ function Test() {
 			dayIndex: "",
 		},
 	]);
-	const [user, setUser] = useState({
-		storedUser: {},
-		bizId: "",
-	});
 
-	const { storedUser, bizId } = user;
 	const {
 		numAvailable,
 		numHours,
@@ -121,19 +116,6 @@ function Test() {
 	useEffect(() => {
 		if (audio === null) {
 			setAudio(new Audio("/sounds/smsTone.mp3"));
-		}
-
-		const storedUserInfo = JSON.parse(getLocalStorage("user"));
-		let bizIdTemp;
-		if (storedUserInfo) {
-			const bizOwned = storedUserInfo.bizOwned;
-			const bizIdArray = Object.keys(bizOwned);
-			bizIdTemp = bizIdArray[0];
-			setUser({ storedUser: storedUserInfo, bizId: bizIdTemp });
-		}
-
-		if (!bizIdTemp) {
-			return;
 		}
 
 		loadDates();

@@ -4,7 +4,11 @@ import DashMenu from "./Dashboard/DashMenu";
 import styles from "../styles/components/layout.module.css";
 import DashHeader from "./Dashboard/DashHeader";
 import Private from "./Private/Private";
-import { getLocalStorage, setLocalStorage } from "../actions/auth/auth";
+import {
+	getLocalStorage,
+	removeLocalStorage,
+	setLocalStorage,
+} from "../actions/auth/auth";
 import { db } from "../firebase/fireConfig";
 import {
 	collection,
@@ -16,11 +20,13 @@ import {
 	doc,
 	updateDoc,
 } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
 import { useRouter } from "next/router";
+import Router from "next/router";
 import { versionNumber } from "../staticData/versionNumber";
 import {
 	updatePastSchedules,
@@ -38,26 +44,39 @@ const style = {
 	p: 4,
 };
 
-function Layout({ children, currentPage, subPage, uid }) {
+function Layout({ children, currentPage, subPage, uid, pendingCount }) {
 	const [audio, setAudio] = useState(null);
 	const [isAudioEnabled, setIsAudioEnabled] = useState(true);
-	const [open, setOpen] = React.useState(false);
-	const [notificationsConfirmed, setNotificationsConfirmed] = useState({
-		numOrdersConfirmed: 0,
-		ordersConfirmedErrorMessage: "",
-		ordersConfirmedData: [],
+	const [open, setOpen] = useState(false);
+
+	// const [pendingOrders, setPendingOrders] = useState({
+	// 	pendingCount: 0,
+	// });
+
+	const [confirmedOrders, setConfirmedOrders] = useState({
+		confirmedCount: 0,
 	});
+
 	const [notificationsNotice, setNotificationsNotice] = useState({
 		numOrdersUnnoticed: 0,
 		errorMessage: "",
 		orderData: [],
 	});
+
+	const [notificationsConfirmed, setNotificationsConfirmed] = useState({
+		numOrdersConfirmed: 0,
+		ordersConfirmedErrorMessage: "",
+		ordersConfirmedData: [],
+	});
+
 	const [user, setUser] = useState({
 		userData: {},
-		bizId: "",
+		bizId: [],
 		uid: "",
 	});
 
+	// const { pendingCount } = pendingOrders;
+	const { confirmedCount } = confirmedOrders;
 	const { numOrdersUnnoticed, errorMessage, orderData } = notificationsNotice;
 	const { userData, bizId } = user;
 
@@ -66,6 +85,10 @@ function Layout({ children, currentPage, subPage, uid }) {
 	let wakeLock = null;
 
 	useEffect(() => {
+		// const auth = getAuth();
+		// const user = auth.currentUser;
+		// console.log("user", user);
+
 		requestWakeLock();
 		updateVersion();
 		document.addEventListener("visibilitychange", onVisibilityChange);
@@ -81,34 +104,69 @@ function Layout({ children, currentPage, subPage, uid }) {
 		}
 		const storedUser = JSON.parse(getLocalStorage("user"));
 		const storedUid = JSON.parse(getLocalStorage("uid"));
+		const bizOwned = storedUser.bizOwned;
+		const numBizOwned = Object.keys(bizOwned).length;
 
-		let bizIdTemp;
+		let bizIdArr = [];
+
 		if (storedUser) {
-			// ! This only accounts for 1 biz, not multiple
-			const bizOwned = storedUser.bizOwned;
-			const bizIdArray = Object.keys(bizOwned);
-			bizIdTemp = bizIdArray[0];
-			setUser({ userData: storedUser, bizId: bizIdTemp, uid: storedUid });
+			if (numBizOwned > 1) {
+				bizIdArr = Object.keys(bizOwned);
+
+				setUser({ userData: storedUser, bizId: bizIdArr, uid: storedUid });
+			} else {
+				const localStorageBizId = Object.keys(bizOwned).pop();
+				bizIdArr.push(localStorageBizId);
+
+				setUser({ userData: storedUser, bizId: bizIdArr, uid: storedUid });
+			}
 		}
 
-		if (!bizIdTemp) {
+		if (bizIdArr.length === 0) {
 			return;
 		}
 
 		// testCode();
+		removeLocalStorage("incOrder");
 		testSoundOnLaunch("start");
-		updateOldSchedules(bizIdTemp);
-		updateYdayPaused(bizIdTemp);
+		updateOldSchedules(bizIdArr);
+		updateYdayPaused(bizIdArr);
 		const ninetyMin = 90 * 60 * 1000;
-		const interval = setInterval(() => checkInterval(bizIdTemp), ninetyMin);
+		const interval = setInterval(() => checkInterval(bizIdArr), ninetyMin);
 		setLocalStorage("interval", interval);
 
-		const unsubscribeConfirmed = liveNotificationsConfirmed(bizIdTemp);
-		const unsubscribeNotice = liveNotificationsNotice(bizIdTemp);
+		console.count("useEffect Layout");
+
+		const unsubPendArr = [];
+		const unsubConfirmArr = [];
+
+		for (let i = 0; i < bizIdArr.length; i++) {
+			const bizId = bizIdArr[i];
+
+			const unsubPending = pendingNotif(bizId);
+
+			unsubPendArr.push(unsubPending);
+		}
+
+		for (let j = 0; j < bizIdArr.length; j++) {
+			const bizId = bizIdArr[j];
+
+			const unsubConfirmed = confirmedNotif(bizId);
+
+			unsubConfirmArr.push(unsubConfirmed);
+		}
 
 		return () => {
-			unsubscribeConfirmed();
-			unsubscribeNotice();
+			for (let i = 0; i < unsubPendArr.length; i++) {
+				const unsubCurrPending = unsubPendArr[i];
+				unsubCurrPending();
+			}
+
+			for (let j = 0; j < unsubConfirmArr.length; j++) {
+				const unsubCurrConfirm = unsubConfirmArr[j];
+				unsubCurrConfirm();
+			}
+
 			releaseWakeLock();
 			clearInterval(interval);
 			// testSoundOnLaunch("end");
@@ -127,76 +185,79 @@ function Layout({ children, currentPage, subPage, uid }) {
 	const testSoundOnLaunch = async (action) => {
 		const testAudio = new Audio("/sounds/smsTone.mp3");
 		const hasSound = await isSoundEnabled(testAudio, action);
-		console.log("returned function", hasSound);
 		setIsAudioEnabled(hasSound);
 	};
 
 	// * Check for old schedules in weeklySchedules
-	async function updateOldSchedules(bizId) {
-		const resUpdatePastSchedule = await updatePastSchedules(bizId);
-		const { success, message } = resUpdatePastSchedule;
+	const updateOldSchedules = async (bizIdArr) => {
+		for (let i = 0; i < bizIdArr.length; i++) {
+			const bizId = bizIdArr[i];
 
-		if (!success) {
-			console.log("update past schedule error", message);
+			const resUpdatePastSchedule = await updatePastSchedules(bizId);
+			const { success, message } = resUpdatePastSchedule;
+
+			if (!success) {
+				console.log("update past schedule error", message);
+			}
 		}
-	}
+	};
 
-	const updateYdayPaused = async (bizIdTemp) => {
-		const res = await updateYdaySchedPaused(bizIdTemp);
+	const updateYdayPaused = async (bizIdArr) => {
+		for (let i = 0; i < bizIdArr.length; i++) {
+			const bizIdTemp = bizIdArr[i];
+			const res = await updateYdaySchedPaused(bizIdTemp);
+		}
 	};
 
 	// Check if any schedules by interval. Shut down screen if no schedules
-	async function checkInterval(bizId) {
-		const bizDocRef = doc(db, "biz", bizId);
+	const checkInterval = async (bizIdArr) => {
+		updateVersion();
+		for (let i = 0; i < bizIdArr.length; i++) {
+			const bizId = bizIdArr[i];
 
-		try {
-			const scheduleSnapshot = await getDoc(bizDocRef);
-			const scheduleData = scheduleSnapshot.data();
-			const weeklySchedules = scheduleData.weeklySchedules;
+			const bizDocRef = doc(db, "biz", bizId);
 
-			const date = new Date();
-			const shortDate = date.toDateString();
-			const dayOne = date.getDay() + 1;
-			date.setDate(date.getDate() + 1);
-			const dayTwo = date.getDay() + 1;
-			const midNight = date.setHours(0, 0, 0, 0);
+			try {
+				const scheduleSnapshot = await getDoc(bizDocRef);
+				const scheduleData = scheduleSnapshot.data();
+				const weeklySchedules = scheduleData.weeklySchedules;
 
-			let posts = 0;
+				const date = new Date();
+				const shortDate = date.toDateString();
+				const dayOne = date.getDay() + 1;
+				date.setDate(date.getDate() + 1);
+				const dayTwo = date.getDay() + 1;
+				const midNight = date.setHours(0, 0, 0, 0);
 
-			const todaySchedules = weeklySchedules[dayOne];
-			const tomorrowSchedules = weeklySchedules[dayTwo];
+				let posts = 0;
 
-			for (const scheduleId in todaySchedules) {
-				const currSchedule = todaySchedules[scheduleId];
-				const numAvail = currSchedule.numAvailable;
+				const todaySchedules = weeklySchedules[dayOne];
+				const tomorrowSchedules = weeklySchedules[dayTwo];
 
-				posts += numAvail;
-			}
+				for (const scheduleId in todaySchedules) {
+					const currSchedule = todaySchedules[scheduleId];
+					const numAvail = currSchedule.numAvailable;
 
-			// * Counting tomorrow's orders
-			// for (const scheduleId in tomorrowSchedules) {
-			// 	const currSchedule = tomorrowSchedules[scheduleId];
-			// 	const numAvail = currSchedule.numAvailable;
-
-			// 	posts += numAvail;
-			// }
-
-			if (posts > 0) {
-				return;
-			} else {
-				const newDate = new Date();
-				const currTime = Date.parse(newDate);
-
-				// console.log("currTime", currTime);
-				// console.log("midNight", midNight);
-				if (currTime > midNight) {
-					releaseWakeLock();
+					posts += numAvail;
 				}
+
+				if (posts > 0) {
+					return;
+				} else {
+					const newDate = new Date();
+					const currTime = Date.parse(newDate);
+
+					// console.log("currTime", currTime);
+					// console.log("midNight", midNight);
+					if (currTime > midNight) {
+						releaseWakeLock();
+					}
+				}
+			} catch (error) {
+				console.log(error);
 			}
-		} catch (error) {
-			console.log(error);
 		}
-	}
+	};
 
 	// Function that attempts to request a wake lock.
 	const requestWakeLock = async () => {
@@ -243,108 +304,74 @@ function Layout({ children, currentPage, subPage, uid }) {
 			// console.log(currVersion);
 			if (!currVersion || currVersion !== versionNumber || currVersion === "") {
 				setLocalStorage("version", versionNumber);
-				router.reload();
+				Router.reload();
 			}
 		}
 	}
 
-	const liveNotificationsConfirmed = (bizIdTemp) => {
+	const pendingNotif = (bizId) => {
 		const date = new Date();
 		const dateString = date.toLocaleDateString();
 
-		const bizOrdersRef = collection(db, "biz", bizIdTemp, "orders");
-		const queryUnnoticed = query(
-			bizOrdersRef,
-			where("shortDate", "==", dateString),
-			where("status", "==", "Confirmed")
-		);
-		const unsubscribe = onSnapshot(
-			queryUnnoticed,
-			(querySnap) => {
-				const ordersArr = [];
-				querySnap.forEach((doc) => {
-					const data = doc.data();
-					data.orderId = doc.id;
-					ordersArr.push(data);
-				});
-				const queryLength = querySnap.size;
-
-				setNotificationsConfirmed({
-					numOrdersConfirmed: queryLength,
-					ordersConfirmedData: ordersArr,
-					ordersConfirmedErrorMessage: "",
-				});
-			},
-			(error) => {
-				console.log(error);
-				setNotificationsConfirmed({
-					ordersConfirmedErrorMessage: `Error fetching notifications: ${error}`,
-				});
-			}
-		);
-
-		return unsubscribe;
-	};
-
-	const liveNotificationsNotice = (bizIdTemp) => {
-		const date = new Date();
-		const dateString = date.toLocaleDateString();
-
-		const bizOrdersRef = collection(db, "biz", bizIdTemp, "orders");
-		const queryUnnoticed = query(
+		const bizOrdersRef = collection(db, "biz", bizId, "orders");
+		const qPending = query(
 			bizOrdersRef,
 
 			where("shortDate", "==", dateString),
-			where("isNoticed", "==", false)
+			where("isNoticed", "==", false),
+			where("statusIndex", "==", 0)
 		);
 
-		const unsubscribe = onSnapshot(
-			queryUnnoticed,
-			(querySnap) => {
-				const ordersArr = [];
-				querySnap.forEach((doc) => {
-					const data = doc.data();
-					data.orderId = doc.id;
-					ordersArr.push(data);
-				});
-				const queryLength = querySnap.size;
-				setNotificationsNotice({
-					numOrdersUnnoticed: queryLength,
-					orderData: ordersArr,
-					errorMessage: "",
-				});
-				if (queryLength && queryLength > 0) {
-					const incOrderCount = JSON.parse(getLocalStorage("incOrder"));
-					if (incOrderCount) {
-						const { isViewed, count } = incOrderCount;
+		const unsubPending = onSnapshot(qPending, (snapshot) => {
+			snapshot.docChanges().forEach((change) => {
+				if (change.type === "added") {
+					// setPendingOrders((prev) => ({
+					// 	pendingCount: prev.pendingCount + 1,
+					// }));
 
-						if (!isViewed) {
-							// * Play notification sound
-							buttonSoundRef.current.click();
-							handleOpen();
-						}
-					} else {
-						handleOpen();
-						// * Play notification sound
-						buttonSoundRef.current.click();
-					}
+					setOpen(true);
+					buttonSoundRef.current.click();
 				}
 
-				// * Set isViewed is false so new orders coming in can be seen.
-				const incOrder = {
-					isViewed: false,
-					count: queryLength,
-				};
-				setLocalStorage("incOrder", incOrder);
-			},
-			(error) => {
-				setNotificationsNotice({
-					errorMessage: `Error fetching notifications: ${error}`,
-				});
-			}
+				if (change.type === "removed") {
+					// setPendingOrders((prev) => ({
+					// 	pendingCount: prev.pendingCount - 1,
+					// }));
+				}
+			});
+		});
+
+		return unsubPending;
+	};
+
+	const confirmedNotif = (bizId) => {
+		const date = new Date();
+		const dateString = date.toLocaleDateString();
+
+		const bizOrdersRef = collection(db, "biz", bizId, "orders");
+		const qUnnoticed = query(
+			bizOrdersRef,
+			where("shortDate", "==", dateString),
+			where("statusIndex", "==", 1)
 		);
 
-		return unsubscribe;
+		const unsubConfirmed = onSnapshot(qUnnoticed, (snapshot) => {
+			snapshot.docChanges().forEach((change) => {
+				if (change.type === "added") {
+					setConfirmedOrders((prev) => ({
+						confirmedCount: prev.confirmedCount + 1,
+					}));
+				}
+
+				if (change.type === "removed") {
+					setConfirmedOrders((prev) => ({
+						confirmedCount: prev.confirmedCount - 1,
+					}));
+				}
+			});
+		});
+
+		return unsubConfirmed;
 	};
 
 	const closeEnableSoundModal = () => {
@@ -365,28 +392,30 @@ function Layout({ children, currentPage, subPage, uid }) {
 					<Box
 						sx={style}
 						onClick={() => {
-							const incOrder = {
-								isViewed: true,
-								count: numOrdersUnnoticed,
-							};
-
-							handleClose();
-							setLocalStorage("incOrder", incOrder);
-							if (currentPage === "Orders") {
-								const incOrder = {
-									isViewed: false,
-									count: numOrdersUnnoticed,
-								};
-								setLocalStorage("incOrder", incOrder);
-							}
 							playNotificationSound(audio, "end");
+							handleClose();
 
-							router.push(`/dashboard/${uid}/orders/incoming-orders`);
+							if (currentPage !== "Orders") {
+								// const incOrder = {
+								// 	isViewed: true,
+								// 	count: pendingCount,
+								// };
+								// setLocalStorage("incOrder", incOrder);
+								router.push(`/dashboard/${uid}/orders/incoming-orders`);
+							}
+
+							// if (currentPage === "Orders") {
+							// 	const incOrder = {
+							// 		isViewed: false,
+							// 		count: pendingCount,
+							// 	};
+							// 	setLocalStorage("incOrder", incOrder);
+							// }
 						}}
 						className={styles.Box}
 					>
 						<div className={styles.BoxContent}>
-							<h1>{numOrdersUnnoticed}</h1>
+							<h1>1</h1>
 							<div className={styles.BoxDescription}>
 								<h2>New Order</h2>
 								<p>Tap to view order</p>
@@ -398,7 +427,6 @@ function Layout({ children, currentPage, subPage, uid }) {
 		);
 	}
 
-	const handleOpen = () => setOpen(true);
 	const handleClose = () => setOpen(false);
 
 	if (currentPage === "public" || currentPage === "admin") {
@@ -432,7 +460,7 @@ function Layout({ children, currentPage, subPage, uid }) {
 								subPage={subPage}
 								notifications={notificationsNotice}
 								notificationsConfirmed={notificationsConfirmed}
-								bizId={bizId}
+								bizIdArr={bizId}
 							/>
 							<button
 								ref={buttonSoundRef}

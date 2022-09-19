@@ -19,7 +19,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../../../firebase/fireConfig";
 
-function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
+function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizIdArr }) {
 	const [profit, setProfit] = useState("0");
 	const [isSuccessAlertOpen, setIsSuccessAlertOpen] =
 		useState(detailsSubmitted);
@@ -29,9 +29,7 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 	const [isAlertOpen, setIsAlertOpen] = useState(true);
 	const [responseHandle, setResponseHandle] = useState({
 		loading: false,
-		successMessage: detailsSubmitted
-			? "Payouts on the first of the Month."
-			: "",
+		successMessage: detailsSubmitted ? "Payouts every Monday." : "",
 		errorMessage: errMsg,
 	});
 
@@ -40,54 +38,115 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 	const router = useRouter();
 
 	useEffect(() => {
-		getProfits(bizId);
+		getProfits(bizIdArr);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	const getProfits = async (bizId) => {
-		const { bizFeesDouble, lastPayoutDate } = await getBizFeesAndDates(bizId);
-		const { numOrders, totalSales } = await getTotalRevenueAndNumOrders(
-			bizId,
-			lastPayoutDate
-		);
+	const getProfits = async (bizIdArr) => {
+		let calculatedProfit = 0;
 
-		const calculatedProfit = (totalSales - numOrders * bizFeesDouble).toFixed(
-			2
-		);
+		for (let i = 0; i < bizIdArr.length; i++) {
+			const bizId = bizIdArr[i];
+
+			const {
+				bizFeesDble,
+				lastPayoutDate,
+				bizAddress,
+				customerFeesDble,
+				isBizFeesPercent,
+			} = await getBizFeesAndDates(uid, bizId);
+			const {
+				numOrders,
+				totalSales,
+				totalStripeFees,
+				totalSubTotal,
+				totalNoCommissionSales,
+				totalNoCommissionSubTotal,
+			} = await getTotalRevenueAndNumOrders(bizId, lastPayoutDate);
+			const totalCanceledStripeFees = await getTotalCanceledFees(
+				bizId,
+				lastPayoutDate
+			);
+			const profit = calculateProfits(
+				isBizFeesPercent,
+				totalSubTotal,
+				bizFeesDble,
+				numOrders,
+				totalSales,
+				totalCanceledStripeFees,
+				totalNoCommissionSales,
+				totalNoCommissionSubTotal
+			);
+			const profitNum = parseFloat(profit);
+
+			calculatedProfit += profitNum;
+		}
 
 		const calcProfitString = `$${calculatedProfit.toString()}`;
-
 		setProfit(calcProfitString);
 	};
 
-	const getBizFeesAndDates = async (bizId) => {
+	const getBizFeesAndDates = async (uid, bizId) => {
 		try {
-			const lastPayout = await getPayouts(bizId);
+			const lastPayout = await getPayouts(uid);
 
 			let lastPayoutDate;
-			let bizFeesDouble;
+			let bizFeesDble;
+			let isBizFeesPercent = false;
+			let bizAddress;
+			let customerFeesDble;
 
 			if (!lastPayout) {
 				const bizDocRef = doc(db, "biz", bizId);
 				// * If no payouts yet, use createdAt biz as a standard for payout dates
 				const bizSnapshot = await getDoc(bizDocRef);
-				const bizData = bizSnapshot.data();
-				const { bizFees, createdAt } = bizData;
-				const { feesAsDouble } = bizFees;
-				const { seconds, nanoseconds } = createdAt;
-				const createdAtEpoch = (seconds + nanoseconds * 0.000000001) * 1000;
 
-				lastPayoutDate = createdAtEpoch;
-				bizFeesDouble = feesAsDouble;
+				if (bizSnapshot.exists()) {
+					const bizData = bizSnapshot.data();
+					const address = bizData.address;
+					const { bizFees, createdAt, customerFees } = bizData;
+					const { feesAsDouble, pctFeesAsDouble } = bizFees;
+					const { seconds, nanoseconds } = createdAt;
+					const createdAtEpoch = (seconds + nanoseconds * 0.000000001) * 1000;
+
+					bizAddress = address;
+					lastPayoutDate = createdAtEpoch;
+
+					if (pctFeesAsDouble) {
+						bizFeesDble = pctFeesAsDouble;
+						isBizFeesPercent = true;
+					} else {
+						bizFeesDble = feesAsDouble;
+					}
+
+					customerFeesDble = customerFees.feesAsDouble;
+				} else {
+					// TODO: Handle Error for business does not exist
+				}
 			} else {
 				// * If has payouts before, use the last payout time
-				const { endDateEpoch, bizFeesDouble: feesDouble } = lastPayout;
+				const {
+					endDateEpoch,
+					bizFeesDouble,
+					isBizFeesPct,
+					address,
+					customerFeesDouble,
+				} = lastPayout;
 
+				bizAddress = address;
 				lastPayoutDate = endDateEpoch;
-				bizFeesDouble = feesDouble;
+				bizFeesDble = bizFeesDouble;
+				customerFeesDble = customerFeesDouble;
+				isBizFeesPercent = isBizFeesPct;
 			}
 
-			return { bizFeesDouble, lastPayoutDate };
+			return {
+				bizFeesDble,
+				lastPayoutDate,
+				bizAddress,
+				customerFeesDble,
+				isBizFeesPercent,
+			};
 		} catch (error) {
 			console.log("bizFees error", error);
 			// TODO: handle error
@@ -95,7 +154,7 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 	};
 
 	const getPayouts = async (bizId) => {
-		const payoutsDocRef = collection(db, "biz", bizId, "payouts");
+		const payoutsDocRef = collection(db, "bizAccount", bizId, "payouts");
 		const q = query(payoutsDocRef, orderBy("createdAt", "desc"), limit(1));
 
 		const payoutsSnapshot = await getDocs(q);
@@ -116,6 +175,18 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 	};
 
 	const getTotalRevenueAndNumOrders = async (bizId, lastPayoutDate) => {
+		const septFirst = new Date("September 1, 2022 00:00:00");
+		const septFirstEpoch = Date.parse(septFirst);
+
+		const noCommissionAugustBiz = [
+			// Funculo
+			"L27Fa9DmUzXmpLJr5BFz",
+			// Knead noods Pasata
+			"mMVqwtl3jmPm3vU2SuMG",
+			// Civilization
+			"PkSfV8QqS3frbO4kK5aZ",
+		];
+
 		const lastDatePaid = new Date(lastPayoutDate);
 		const ordersDocRef = collection(db, "biz", bizId, "orders");
 		const q = query(
@@ -125,31 +196,155 @@ function BankInfo({ stripeAccId, detailsSubmitted, errMsg, uid, bizId }) {
 		);
 
 		try {
-			const ordersSnapshot = await getDocs(q);
+			let noCommissionAugSalesArr = [];
+			let noCommissionAugSubTotalArr = [];
 			let salesPerOrderArr = [];
+			let subTotalAmtArr = [];
+			let stripeFeesArr = [];
+			let bizTaxArr = [];
+			let totalNoCommissionSales = 0;
+			let totalNoCommissionSubTotal = 0;
 			let numOrders = 0;
 			let totalSales = 0;
+			let totalStripeFees = 0;
+			let totalSubTotal = 0;
+			let totalBizTax = 0;
 
+			const ordersSnapshot = await getDocs(q);
 			ordersSnapshot.forEach((doc) => {
 				const ordersData = doc.data();
 				const totalPerOrder = ordersData.bizTotalPriceDouble;
+				const bizSubTotal = ordersData.subtotalAmt;
+				const bizTaxAmt = ordersData.bizTaxAmt;
+				const stripeFee = totalPerOrder * 0.029 + 0.3;
+				const orderEndTime = ordersData.endTime;
 
-				salesPerOrderArr.push(totalPerOrder);
+				if (
+					noCommissionAugustBiz.includes(bizId) &&
+					orderEndTime < septFirstEpoch
+				) {
+					noCommissionAugSalesArr.push(totalPerOrder);
+					noCommissionAugSubTotalArr.push(bizSubTotal);
+					stripeFeesArr.push(stripeFee);
+					bizTaxArr.push(bizTaxAmt);
+				} else {
+					salesPerOrderArr.push(totalPerOrder);
+					subTotalAmtArr.push(bizSubTotal);
+					stripeFeesArr.push(stripeFee);
+					bizTaxArr.push(bizTaxAmt);
+				}
 			});
 
 			const salesArrLength = salesPerOrderArr.length;
+			const noCommissionSalesArrLength = noCommissionAugSalesArr.length;
 
-			if (salesArrLength > 0) {
-				numOrders = salesArrLength;
-				totalSales = salesPerOrderArr.reduce((sum, val) => (sum += val));
+			if (salesArrLength > 0 || noCommissionSalesArrLength > 0) {
+				numOrders = salesArrLength + noCommissionSalesArrLength;
+
+				if (noCommissionSalesArrLength > 0) {
+					totalNoCommissionSubTotal = noCommissionAugSubTotalArr.reduce(
+						(sum, val) => (sum += val)
+					);
+					totalNoCommissionSales = noCommissionAugSalesArr.reduce(
+						(sum, val) => (sum += val)
+					);
+				}
+
+				if (salesArrLength > 0) {
+					totalSales = salesPerOrderArr.reduce((sum, val) => (sum += val));
+					totalSubTotal = subTotalAmtArr.reduce((sum, val) => (sum += val));
+				}
+
+				totalStripeFees = stripeFeesArr.reduce((sum, val) => (sum += val));
+				totalBizTax = bizTaxArr.reduce((sum, val) => (sum += val));
 			}
 
-			return { numOrders, totalSales };
+			return {
+				numOrders,
+				totalSales,
+				totalStripeFees,
+				totalSubTotal,
+				totalBizTax,
+				totalNoCommissionSales,
+				totalNoCommissionSubTotal,
+			};
 		} catch (error) {
 			console.log("error", error);
 			// TODO: handle error
 		}
 	};
+
+	const getTotalCanceledFees = async (bizId, lastPayoutDate) => {
+		const ordersDocRef = collection(db, "biz", bizId, "orders");
+		const q = query(
+			ordersDocRef,
+			where("endTime", ">", lastPayoutDate),
+			where("status", "==", "Canceled")
+		);
+
+		try {
+			const ordersSnapshot = await getDocs(q);
+
+			const stripeFeesArr = [];
+			let totalCanceledStripeFees = 0;
+
+			ordersSnapshot.forEach((doc) => {
+				const data = doc.data();
+				const totalPerOrder = data.bizTotalPriceDouble;
+				const stripeFee = totalPerOrder * 0.029 + 0.3;
+
+				stripeFeesArr.push(stripeFee);
+			});
+
+			const stripeFeesArrLength = stripeFeesArr.length;
+
+			if (stripeFeesArrLength > 0) {
+				totalCanceledStripeFees = stripeFeesArr.reduce(
+					(sum, val) => (sum += val)
+				);
+			}
+
+			return totalCanceledStripeFees;
+		} catch (error) {
+			console.log("get cancelled fees error", error);
+		}
+	};
+
+	const calculateProfits = (
+		isBizFeesPercent,
+		totalSubTotal,
+		bizFeesDble,
+		numOrders,
+		totalSales,
+		totalCanceledStripeFees,
+		totalNoCommissionSales,
+		totalNoCommissionSubTotal
+	) => {
+		let profit;
+
+		if (isBizFeesPercent) {
+			const nextPlateFees = totalSubTotal * (bizFeesDble / 100);
+			profit =
+				totalNoCommissionSales +
+				totalSales -
+				nextPlateFees -
+				totalCanceledStripeFees;
+		} else {
+			const nextPlateFees = bizFeesDble * numOrders;
+			profit =
+				totalNoCommissionSales +
+				totalSales -
+				nextPlateFees -
+				totalCanceledStripeFees;
+		}
+		const roundedProfit = stripeRound(profit);
+
+		return roundedProfit;
+	};
+
+	function stripeRound(num) {
+		return +(Math.round(num + "e+2") + "e-2");
+	}
 
 	// * ACTIONS -----------------------------------------------------------------
 

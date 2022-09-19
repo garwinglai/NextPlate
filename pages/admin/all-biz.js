@@ -159,13 +159,13 @@ function AllBiz() {
 					<p>{fetchMessage}</p>
 				) : queriedData.length !== 0 ? (
 					queriedData.map((biz, idx) => {
-						return <UserCard data={biz} key={biz[0].userInfo.uid} />;
+						return <UserCard data={biz} key={biz.bizId} />;
 					})
 				) : fetchingQuery ? (
 					<p>Loading...</p>
 				) : bizDataArr.length !== 0 ? (
 					bizDataArr.map((biz, idx) => {
-						return <UserCard data={biz} key={biz[0].userInfo.uid} />;
+						return <UserCard data={biz} key={biz.bizId} />;
 					})
 				) : (
 					<p>No business</p>

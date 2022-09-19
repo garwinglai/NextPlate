@@ -36,7 +36,9 @@ function Payouts() {
 		const date = new Date();
 		date.setDate(date.getDate() - 1);
 		const currPayoutEndDate = date.setHours(23, 59, 59, 999);
-		// const newDate = new Date(2022, 7, 21, 23, 59, 59, 999);
+
+		// * Manual add payouts if adding to biz and admin fails
+		// const newDate = new Date(2022, 8, 11, 23, 59, 59, 999);
 		// const currPayoutEndDate = Date.parse(newDate);
 
 		// console.log(currPayoutEndDate);
@@ -52,18 +54,23 @@ function Payouts() {
 				clientName,
 			} = currObj;
 
+			const res = await getBizFeesAndDates(bizUid, bizId);
+			if (!res) {
+				continue;
+			}
 			const {
 				bizFeesDble,
 				lastPayoutDate,
 				bizAddress,
 				customerFeesDble,
 				isBizFeesPercent,
-			} = await getBizFeesAndDates(bizUid, bizId);
+			} = res;
 			const {
 				numOrders,
 				totalSales,
 				totalStripeFees,
 				totalSubTotal,
+				totalBizTax,
 				totalNoCommissionSales,
 				totalNoCommissionSubTotal,
 			} = await getTotalRevenueAndNumOrders(
@@ -77,6 +84,7 @@ function Payouts() {
 				currPayoutEndDate
 			);
 			const profit = calculateProfits(
+				totalBizTax,
 				isBizFeesPercent,
 				totalSubTotal,
 				bizFeesDble,
@@ -145,6 +153,10 @@ function Payouts() {
 				"bmILh3RBrTj6cpn41fSx",
 				// Dulce
 				"ZL0JdKSRXHZkrspZXSWq",
+				// steak hogaie
+				"5TXFbZtAljwrhp9F1waK",
+				// tlapque rest
+				"eCTZ7qKXXXqSDs3w8yyg",
 			];
 
 			// ! Rabalais for payment (testing)
@@ -179,7 +191,7 @@ function Payouts() {
 					// }
 				}
 			});
-			console.log("bizArr", bizArr);
+
 			return bizArr;
 		} catch (error) {
 			console.log("getBizAccount", error);
@@ -204,6 +216,12 @@ function Payouts() {
 
 				if (bizSnapshot.exists()) {
 					const bizData = bizSnapshot.data();
+					const bizStatus = bizData.status;
+
+					if (bizStatus === 0) {
+						return null;
+					}
+
 					const address = bizData.address;
 					const { bizFees, createdAt, customerFees } = bizData;
 					const { feesAsDouble, pctFeesAsDouble } = bizFees;
@@ -212,6 +230,7 @@ function Payouts() {
 
 					bizAddress = address;
 					lastPayoutDate = createdAtEpoch;
+
 					if (pctFeesAsDouble) {
 						bizFeesDble = pctFeesAsDouble;
 						isBizFeesPercent = true;
@@ -294,8 +313,18 @@ function Payouts() {
 			ordersDocRef,
 			where("endTime", ">", lastPayoutDate),
 			where("endTime", "<=", currPayoutEndDate),
-			where("status", "==", "Completed")
+			// statusIndex 3 == Completed
+			where("statusIndex", "==", 3)
 		);
+
+		const q2 = query(
+			ordersDocRef,
+			where("endTime", ">", lastPayoutDate),
+			where("endTime", "<=", currPayoutEndDate),
+			// statusIndex 4 == No Show
+			where("statusIndex", "==", 5)
+		);
+
 		try {
 			let noCommissionAugSalesArr = [];
 			let noCommissionAugSubTotalArr = [];
@@ -311,13 +340,49 @@ function Payouts() {
 			let totalSubTotal = 0;
 			let totalBizTax = 0;
 
-			const ordersSnapshot = await getDocs(q);
-			ordersSnapshot.forEach((doc) => {
+			const ordersSnapshotCompleted = await getDocs(q);
+			const ordersSnapshotNoShow = await getDocs(q2);
+
+			ordersSnapshotCompleted.forEach((doc) => {
 				const ordersData = doc.data();
 				const totalPerOrder = ordersData.bizTotalPriceDouble;
 				const bizSubTotal = ordersData.subtotalAmt;
 				const bizTaxAmt = ordersData.bizTaxAmt;
-				const stripeFee = totalPerOrder * 0.029 + 0.3;
+				const totalPriceAmount = ordersData.totalPriceAmt;
+				const cardUsed = ordersData.cardUsed;
+				const stripeFee =
+					cardUsed === "*pop*"
+						? parseFloat(totalPriceAmount.slice(1)) * 0.015 + 0.11
+						: parseFloat(totalPriceAmount.slice(1)) * 0.029 + 0.3;
+				const orderEndTime = ordersData.endTime;
+
+				if (
+					noCommissionAugustBiz.includes(bizId) &&
+					orderEndTime < septFirstEpoch
+				) {
+					noCommissionAugSalesArr.push(totalPerOrder);
+					noCommissionAugSubTotalArr.push(bizSubTotal);
+					stripeFeesArr.push(stripeFee);
+					bizTaxArr.push(bizTaxAmt);
+				} else {
+					salesPerOrderArr.push(totalPerOrder);
+					subTotalAmtArr.push(bizSubTotal);
+					stripeFeesArr.push(stripeFee);
+					bizTaxArr.push(bizTaxAmt);
+				}
+			});
+
+			ordersSnapshotNoShow.forEach((doc) => {
+				const ordersData = doc.data();
+				const totalPerOrder = ordersData.bizTotalPriceDouble;
+				const bizSubTotal = ordersData.subtotalAmt;
+				const bizTaxAmt = ordersData.bizTaxAmt;
+				const totalPriceAmount = ordersData.totalPriceAmt;
+				const cardUsed = ordersData.cardUsed;
+				const stripeFee =
+					cardUsed === "*pop*"
+						? parseFloat(totalPriceAmount.slice(1)) * 0.015 + 0.11
+						: parseFloat(totalPriceAmount.slice(1)) * 0.029 + 0.3;
 				const orderEndTime = ordersData.endTime;
 
 				if (
@@ -397,9 +462,14 @@ function Payouts() {
 			ordersSnapshot.forEach((doc) => {
 				const data = doc.data();
 				const totalPerOrder = data.bizTotalPriceDouble;
-				const stripeFee = totalPerOrder * 0.029 + 0.3;
+				const cardUsed = data.cardUsed;
 
-				stripeFeesArr.push(stripeFee);
+				const ccFee =
+					cardUsed === "*pop"
+						? totalPerOrder * 0.015 + 0.11
+						: totalPerOrder * 0.029 + 0.3;
+
+				stripeFeesArr.push(ccFee);
 			});
 
 			const stripeFeesArrLength = stripeFeesArr.length;
@@ -417,6 +487,7 @@ function Payouts() {
 	};
 
 	const calculateProfits = (
+		totalBizTax,
 		isBizFeesPercent,
 		totalSubTotal,
 		bizFeesDble,
@@ -473,6 +544,8 @@ function Payouts() {
 		isBizFeesPercent
 	) => {
 		const date = new Date();
+		// const date = new Date(2022, 8, 12, 23, 59, 59, 999);
+
 		const endDateEpoch = currPayoutEndDate;
 		const endDateShort = new Date(currPayoutEndDate).toLocaleDateString();
 		const startDateEpoch = lastPayoutDate;
@@ -495,8 +568,8 @@ function Payouts() {
 		const paymentDateShort = date.toLocaleDateString();
 		const paidToName = name;
 		const address = bizAddress;
-		const totalStripeFeesDouble = roundedStripeFees;
-		const totalStripeFeesStr = `$${roundedStripeFees.toString()}`;
+		const totalCCFees = roundedStripeFees;
+		const totalCCFeesStr = `$${roundedStripeFees.toString()}`;
 		let nextPlateRevenueDouble =
 			numOrders * customerFeesDble + totalBizFeesDouble;
 		nextPlateRevenueDouble = stripeRound(nextPlateRevenueDouble);
@@ -505,7 +578,7 @@ function Payouts() {
 		const totalCanceledStripeFeesStr = `$${totalCanceledStripeFees.toString()}`;
 		const customerFeesString = `$${customerFeesDble.toString()}`;
 		const customerFeesDouble = customerFeesDble;
-		let nextPlateProfitDouble = nextPlateRevenueDouble - totalStripeFeesDouble;
+		let nextPlateProfitDouble = nextPlateRevenueDouble - totalCCFees;
 		nextPlateProfitDouble = stripeRound(nextPlateProfitDouble);
 		const nextPlateProfitString = `$${nextPlateProfitDouble.toString()}`;
 
@@ -536,8 +609,8 @@ function Payouts() {
 			stripeId,
 			numOrders,
 			totalSalesDouble,
-			totalStripeFeesStr,
-			totalStripeFeesDouble,
+			totalCCFeesStr,
+			totalCCFees,
 			nextPlateRevenueDouble,
 			nextPlateRevenueStr,
 			totalCanceledStripeFeesDouble,
@@ -573,12 +646,9 @@ function Payouts() {
 			const profit = currBizPayoutData.payoutAmtDouble;
 
 			// * Used to help save payout data to biz and admin if auto doesn't work
-			// const bizAccountSpud = "NUxPVSnDWPUK9PzkEpDZJxbKZYL2";
-			// const spudId = "23ZmuiVcKKqD5439wq3w";
+			// const savedId = ["OEwrZ5GPWKdOQJz1Hvz7"];
 
-			// console.log("curr biz id payout", bizId);
-
-			// if (bizId == spudId) {
+			// if (savedId.includes(bizId)) {
 			// 	// TODO add to bizAccount payouts & admin payouts
 			// 	console.log("spudnuts currpayout", currBizPayoutData);
 			// 	const success = true;
@@ -605,10 +675,14 @@ function Payouts() {
 			// 	continue;
 			// }
 
+			// * Payouts code start here.
 			const { success, message } = await payoutHeroku(profit, stripeId);
 
-			// if (success) {
-			// * Save successful payouts to biz
+			// TODO: Testing success / message
+			console.log("success", success);
+			console.log("message", message);
+			// // if (success) {
+			// // * Save successful payouts to biz
 			const bizPayoutId = await savePayoutBiz(
 				currBizPayoutData,
 				bizUid,
@@ -624,6 +698,7 @@ function Payouts() {
 				message,
 				bizPayoutId
 			);
+
 			// } else {
 			// console.log(`Error paying out biz: ${name}. BizId: ${bizId}`, message);
 			// * Save unsuccessful payouts to biz
@@ -646,6 +721,7 @@ function Payouts() {
 
 		try {
 			await batch.commit();
+			console.log("commit");
 			setPaidAll(true);
 			setShowPayoutBtn(false);
 			// console.log("saved to biz & admin");

@@ -17,26 +17,15 @@ import {
 	setLocalStorage,
 } from "../../../../actions/auth/auth";
 
-function OrderAction({
-	pendingCount,
-	audio,
-	isShow,
-	onClose,
-	orderDetails,
-	bizId,
-	dayIndex,
-	handleSuccessError,
-}) {
+function OrderAction({ isShow, onClose, orderDetails, bizId }) {
 	const [showFilter, setShowFilter] = useState(false);
-	const [isOpen, setIsOpen] = useState(false);
 	const [onUpdateResponse, setOnUpdateResponse] = useState({
 		loading: false,
-		success: false,
 		errMessage: "",
-		successMessage: "",
+		isOpen: false,
 	});
 
-	const { loading, success, errMessage, successMessage } = onUpdateResponse;
+	const { loading, errMessage, isOpen } = onUpdateResponse;
 	const {
 		customerName,
 		customerPhone,
@@ -47,17 +36,17 @@ function OrderAction({
 		shortDate,
 		orderId,
 		pickupWindow,
+		setPickupTime,
 		cardUsed,
 		payMethod,
 		items,
 		status,
+		statusIndex,
 		pickupWindowId,
 		customerId,
 		chargeId,
 		endTime,
 	} = orderDetails;
-
-	const router = useRouter();
 
 	const style = {
 		position: "absolute",
@@ -88,10 +77,10 @@ function OrderAction({
 					<Button
 						variant="contained"
 						fullWidth
-						name={status === "Reserved" ? "accept" : "complete"}
+						name={statusIndex === 0 ? "accept" : "complete"}
 						onClick={handleClick}
 					>
-						{status === "Reserved" ? "Accept" : "Complete"}
+						{statusIndex === 0 ? "Accept" : "Complete"}
 					</Button>
 				)}
 			</React.Fragment>
@@ -105,16 +94,10 @@ function OrderAction({
 
 		return (
 			<DeclineCancelModal
-				pendingCount={pendingCount}
-				audio={audio}
 				timeEpoch={timeEpoch}
 				endTimeEpoch={endTimeEpoch}
-				handleSuccessError={handleSuccessError}
 				orderDetails={orderDetails}
-				bizTotalPriceDouble={bizTotalPriceDouble}
 				bizId={bizId}
-				dayIndex={dayIndex}
-				setIsOpen={setIsOpen}
 				setOnUpdateResponse={setOnUpdateResponse}
 				setShowFilter={setShowFilter}
 			/>
@@ -124,35 +107,9 @@ function OrderAction({
 	// * Action ------------------------------------------------------------
 
 	async function handleClick(e) {
-		setOnUpdateResponse({ loading: true, success: false, errMessage: "" });
+		setOnUpdateResponse({ loading: true, errMessage: "" });
 		const { name } = e.target;
 		handleLSIncOrder(name);
-		// if (name === "past") {
-		// 	const resUpdate = await updateOrder(
-		// 		customerId,
-		// 		orderId,
-		// 		bizId,
-		// 		"Declined",
-		// 		2,
-		// 		"Business did not accept in time",
-		// 		dayIndex,
-		// 		pickupWindowId,
-		// 		null,
-		// 		null,
-		// 		null,
-		// 		null
-		// 	);
-		// 	if (resUpdate.success) {
-		// 		handleSuccessError("Time passed. Order declined.", null);
-		// 	} else {
-		// 		setIsOpen(true);
-		// 		setOnUpdateResponse({
-		// 			loading: false,
-		// 			success: false,
-		// 			errMessage: resUpdate.message,
-		// 		});
-		// 	}
-		// }
 
 		if (name === "accept") {
 			const resUpdate = await updateOrder(
@@ -162,25 +119,15 @@ function OrderAction({
 				"Confirmed",
 				1,
 				null,
-				dayIndex,
-				pickupWindowId,
 				bizTotalPriceDouble,
 				chargeId,
 				payMethod,
 				endTime
 			);
-			if (resUpdate.success) {
-				// if (pendingCount == 0) {
-				// 	playNotificationSound(audio, "end");
-				// 	removeLocalStorage("playSoundOrders");
-				// }
-				// setLocalStorage("playSound", "end");
-				// handleSuccessError(null, "Accepted.");
-			} else {
-				setIsOpen(true);
+			if (!resUpdate.success) {
 				setOnUpdateResponse({
 					loading: false,
-					success: false,
+					isOpen: true,
 					errMessage: resUpdate.message,
 				});
 			}
@@ -199,13 +146,10 @@ function OrderAction({
 				null,
 				null
 			);
-			if (resUpdate.success) {
-				// handleSuccessError(null, "Completed.");
-			} else {
-				setIsOpen(true);
+			if (!resUpdate.success) {
 				setOnUpdateResponse({
 					loading: false,
-					success: false,
+					isOpen: true,
 					errMessage: resUpdate.message,
 				});
 			}
@@ -239,7 +183,11 @@ function OrderAction({
 								<Alert
 									severity="error"
 									onClose={() => {
-										setIsOpen(false);
+										setOnUpdateResponse({
+											loading: false,
+											isOpen: false,
+											errMessage: "",
+										});
 									}}
 								>
 									<AlertTitle>Error</AlertTitle>
@@ -252,22 +200,26 @@ function OrderAction({
 						<div className={`${styles.Decline__status} ${styles.flexRow}`}>
 							<p
 								className={`${styles.Reserved}`}
-								style={{ display: status !== "Reserved" && "none" }}
+								style={{ display: statusIndex !== 0 && "none" }}
 							>
-								{status === "Reserved" && "Pending"}
+								{statusIndex === 0 && "Pending"}
 							</p>
 							<p
 								className={`${styles.Confirmed}`}
-								style={{ display: status !== "Confirmed" && "none" }}
+								style={{ display: statusIndex !== 1 && "none" }}
 							>
-								{status === "Confirmed" && "Pickup"}
+								{statusIndex === 1 && "Pickup"}
 							</p>
 							{showDeclineButton()}
 						</div>
 						<div className={`${styles.flexRow} ${styles.Header}`}>
 							<h3>{customerName}</h3>
 							<div className={`${styles.Header__right} ${styles.flexRow}`}>
-								<p>{pickupWindow}</p>
+								{setPickupTime ? (
+									<p>Pickup {setPickupTime}</p>
+								) : (
+									<p>{pickupWindow}</p>
+								)}
 							</div>
 						</div>
 						<div className={`${styles.paymentInfo}`}>
